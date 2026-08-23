@@ -300,7 +300,7 @@ export default function DetailSemester() {
 
   if (isLoading) return <SkeletonPage />;
 
-  if (isError || !data?.data) {
+  if (isError || !data?.data?.data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-[#3f4945]">
         <span className="material-symbols-outlined text-[56px] text-[#bfc9c4]">
@@ -320,8 +320,8 @@ export default function DetailSemester() {
     );
   }
 
-  const ta = data.data;
-  const semesters = ta.semesters ?? [];
+  const ta = data.data?.data;
+  const semesters = ta?.semesters ?? [];
   const semester = semesters.find(
     (s) => s.nama?.toLowerCase() === semesterNama?.toLowerCase(),
   );
@@ -348,10 +348,11 @@ export default function DetailSemester() {
     );
   }
 
-  const kelasList = data.kelas ?? [];
-  const kalenderAll = data.kalender ?? [];
-  const aktivitas = data.aktivitas ?? [];
-  const checklist = data.checklist ?? {};
+  const payload = data.data;
+  const kelasList = payload.kelas ?? [];
+  const kalenderAll = payload.kalender ?? [];
+  const aktivitas = payload.aktivitas ?? [];
+  const checklist = payload.checklist ?? {};
   const tglMulai = semester.tgl_mulai;
   const tglSelesai = semester.tgl_selesai;
   const isAktif = semester.is_active;
@@ -770,7 +771,7 @@ export default function DetailSemester() {
               {[
                 {
                   label: "Guru Mengajar",
-                  value: data.total_guru ?? "-",
+                  value: payload.total_guru ?? "-",
                   sub: "100% Aktif",
                   subColor: "text-[#006e2a]",
                   icon: "check_circle",
@@ -783,13 +784,13 @@ export default function DetailSemester() {
                 },
                 {
                   label: "Mata Pelajaran",
-                  value: data.total_mapel ?? "-",
+                  value: payload.total_mapel ?? "-",
                   sub: "Kurikulum",
                   subColor: "text-[#3f4945]/60",
                 },
                 {
                   label: "Total Jadwal",
-                  value: data.total_jadwal ?? "-",
+                  value: payload.total_jadwal ?? "-",
                   sub: "95% Terset",
                   subColor: "text-[#006e2a]",
                   icon: "verified",
@@ -1028,14 +1029,14 @@ export default function DetailSemester() {
                   },
                   {
                     label: "Transfer",
-                    value: data.total_siswa_transfer ?? 0,
+                    value: payload.total_siswa_transfer ?? 0,
                     color: "text-[#006e2a]",
                     bg: "bg-[#006e2a]/5",
                     border: "border-[#006e2a]/10",
                   },
                   {
                     label: "Tdk Aktif",
-                    value: data.total_siswa_nonaktif ?? 0,
+                    value: payload.total_siswa_nonaktif ?? 0,
                     color: "text-[#ba1a1a]",
                     bg: "bg-[#ba1a1a]/5",
                     border: "border-[#ba1a1a]/10",
@@ -1151,7 +1152,7 @@ export default function DetailSemester() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {(data.mapel_list ?? []).slice(0, 4).map((mp, i) => {
+            {(payload.mapel_list ?? []).slice(0, 4).map((mp, i) => {
               const icons = ["menu_book", "calculate", "science", "mosque"];
               const colorSets = [
                 {
@@ -1226,7 +1227,7 @@ export default function DetailSemester() {
                 </div>
               );
             })}
-            {(data.mapel_list ?? []).length === 0 &&
+            {(payload.mapel_list ?? []).length === 0 &&
               [...Array(4)].map((_, i) => (
                 <div
                   key={i}
@@ -1557,7 +1558,7 @@ export default function DetailSemester() {
           </div>
 
           {(() => {
-            const absensi = data.absensi_rekap ?? null;
+            const absensi = payload.absensi_rekap ?? null;
             const totalSiswaAbsen = absensi?.total_siswa ?? totalSiswa;
             const totalHadir = absensi?.hadir ?? null;
             const totalSakit = absensi?.sakit ?? null;
@@ -1914,14 +1915,14 @@ export default function DetailSemester() {
           </div>
 
           {(() => {
-            const nilai = data.penilaian_rekap ?? null;
+            const nilai = payload.penilaian_rekap ?? null;
             const mapelDinilai = nilai?.mapel_dinilai ?? null;
             const mapelBelumLengkap = nilai?.mapel_belum_lengkap ?? null;
             const guruInputNilai = nilai?.guru_input_nilai ?? null;
             const siswaSudahDinilai = nilai?.siswa_sudah_dinilai ?? null;
             const siswaBelumDinilai = nilai?.siswa_belum_dinilai ?? null;
             const pctKelengkapan = nilai?.pct_kelengkapan ?? null;
-            const totalMapelSem = data.total_mapel ?? 0;
+            const totalMapelSem = payload.total_mapel ?? 0;
             const hasData = nilai !== null;
 
             const pctMapel =
@@ -2096,7 +2097,7 @@ export default function DetailSemester() {
                             color: "#00342b",
                             sub:
                               guruInputNilai !== null
-                                ? `dari ${data.total_guru ?? "?"} guru mengajar`
+                                ? `dari ${payload.total_guru ?? "?"} guru mengajar`
                                 : null,
                           },
                           {
@@ -2213,7 +2214,7 @@ export default function DetailSemester() {
           </div>
 
           {(() => {
-            const rapor = data.rapor_rekap ?? null;
+            const rapor = payload.rapor_rekap ?? null;
             const belumLengkap = rapor?.belum_lengkap ?? null;
             const sudahLengkap = rapor?.sudah_lengkap ?? null;
             const diverifikasi = rapor?.diverifikasi ?? null;
@@ -2221,7 +2222,7 @@ export default function DetailSemester() {
             const sudahDicetak = rapor?.sudah_dicetak ?? null;
             const tglBagi = rapor?.tanggal_pembagian ?? null;
             const isGenap = semester.nama?.toLowerCase() === "genap";
-            const kenaikan = data.kenaikan_kelas ?? null;
+            const kenaikan = payload.kenaikan_kelas ?? null;
             const hasData = rapor !== null;
             const pctRapor =
               sudahLengkap !== null && totalSiswa > 0
