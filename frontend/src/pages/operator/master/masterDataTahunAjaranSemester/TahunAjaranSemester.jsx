@@ -226,233 +226,317 @@ function ModalTahunAjaran({ open, onClose, editData, queryClient }) {
   if (!open) return null;
 
   const inputCls =
-    "w-full px-4 py-2.5 bg-[#f8faf9] border border-[#bfc9c4]/40 rounded-xl text-sm text-[#111827] focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] outline-none transition-all placeholder:text-[#3f4945]/40";
+    "w-full bg-white text-on-surface text-sm rounded-lg border border-[#bfc9c4]/50 focus:border-[#00c853] focus:ring-4 focus:ring-[#00c853]/10 focus:outline-none transition-all px-4 py-2.5 shadow-sm placeholder:text-[#707975]/40";
+  const dateCls =
+    "w-full bg-[#f2f4f3]/50 text-on-surface text-sm rounded-lg border border-[#bfc9c4]/30 focus:border-[#00c853] focus:ring-4 focus:ring-[#00c853]/10 focus:bg-white focus:outline-none transition-all px-4 py-2.5";
   const labelCls =
-    "block text-[10px] font-bold text-[#00342b] uppercase tracking-wider mb-1.5";
+    "block text-[11px] font-semibold text-[#3f4945] uppercase tracking-wider mb-1.5";
+  const sectionBadge = (
+    <div className="flex items-center gap-3 mb-5">
+      <div className="px-3 py-1 rounded-full bg-[#006e2a]/10 border border-[#006e2a]/20 flex items-center gap-2 shadow-sm">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#006e2a] animate-pulse" />
+        <span className="text-[9px] text-[#006e2a] tracking-[0.2em] uppercase font-black">
+          Informasi Tahun Ajaran
+        </span>
+      </div>
+      <div className="h-px flex-1 bg-gradient-to-r from-[#006e2a]/20 to-transparent" />
+    </div>
+  );
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md p-4 sm:p-6 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-[28px] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200"
+        className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl relative flex flex-col my-auto max-h-full animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Header — dark green solid, sama persis gaya ModalEditSemester ── */}
-        <div className="bg-[#00342b] px-6 py-5 flex items-center gap-3 shrink-0">
-          <div className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-white text-[22px]">
-              {isEdit ? "edit_calendar" : "calendar_add_on"}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-white font-extrabold text-[17px] font-headline-card leading-tight">
-              {isEdit ? "Edit Tahun Ajaran" : "Tahun Ajaran Baru"}
-            </h3>
-            <p className="text-[#afefdd] text-[11px] mt-0.5">
+        {/* ── Header ── */}
+        <div className="flex items-start justify-between border-b border-[#bfc9c4]/20 p-6 md:p-8 sticky top-0 bg-[#f2f4f3] z-10 rounded-t-3xl overflow-hidden">
+          {/* decorative corner blob */}
+          <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-[80px] bg-[#00c853]/20 pointer-events-none" />
+          <div className="flex flex-col gap-3">
+            <h2 className="font-extrabold text-3xl md:text-4xl tracking-tighter leading-none text-[#004d40]">
+              {isEdit ? (
+                <>
+                  Edit{" "}
+                  <em className="font-serif not-italic text-[#006e2a]">
+                    Tahun Ajaran
+                  </em>
+                </>
+              ) : (
+                <>
+                  Tambah{" "}
+                  <em className="font-serif not-italic text-[#006e2a]">
+                    Tahun Ajaran
+                  </em>
+                </>
+              )}
+            </h2>
+            <p className="text-sm text-[#3f4945]/80 leading-relaxed max-w-md">
               {isEdit
-                ? `Perbarui periode ${form.tahun || "—"}`
-                : "Buat periode akademik & semester madrasah"}
+                ? `Perbarui data periode akademik ${form.tahun || "—"} madrasah.`
+                : "Siapkan periode akademik baru untuk sistem operasional madrasah."}
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-white/60 hover:bg-white/15 hover:text-white transition-colors shrink-0"
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-[#e1e3e2] text-[#3f4945] hover:bg-[#d8dada] hover:text-[#00342b] transition-all duration-300 shadow-sm active:scale-95 shrink-0"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
         {/* ── Body ── */}
-        <div className="px-6 py-5 space-y-5 overflow-y-auto custom-scrollbar flex-1">
-          {/* SECTION 1: Informasi Periode */}
-          <div>
-            <p className="text-[10px] font-black text-[#3f4945]/50 uppercase tracking-[0.2em] mb-3">
-              Informasi Periode
-            </p>
-            <div className="space-y-3">
-              <div>
-                <label className={labelCls}>
-                  Nama Tahun Ajaran <span className="text-[#ba1a1a]">*</span>
+        <div className="overflow-y-auto flex-1">
+          {/* SECTION 1: Informasi Tahun Ajaran */}
+          <div className="p-6 md:p-8 border-b border-[#bfc9c4]/20">
+            {sectionBadge}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Nama Tahun Ajaran — full width */}
+              <div className="md:col-span-2">
+                <label
+                  className="block text-sm font-semibold text-[#111827] mb-1.5"
+                  htmlFor="ta-tahun"
+                >
+                  Tahun Ajaran <span className="text-[#ba1a1a]">*</span>
                 </label>
                 <input
+                  id="ta-tahun"
                   value={form.tahun}
                   onChange={(e) => handleTahunTextChange(e.target.value)}
-                  className={inputCls}
-                  placeholder="Contoh: 2026/2027"
+                  className={`${inputCls} font-bold text-base`}
+                  placeholder="e.g. 2026/2027"
                   maxLength={9}
                 />
-                <p className="text-[11px] text-[#3f4945]/50 mt-1 flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[13px]">
-                    info
-                  </span>
+                <p className="text-xs text-[#707975] mt-1.5">
                   Format YYYY/YYYY — tanggal semester terisi otomatis.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>
-                    Mulai Periode <span className="text-[#ba1a1a]">*</span>
-                  </label>
+              {/* Mulai Periode */}
+              <div>
+                <label
+                  className="block text-sm font-semibold text-[#111827] mb-1.5"
+                  htmlFor="ta-mulai"
+                >
+                  Mulai Periode <span className="text-[#ba1a1a]">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="material-symbols-outlined text-[#707975] text-lg">
+                      calendar_month
+                    </span>
+                  </div>
                   <input
+                    id="ta-mulai"
                     type="date"
                     value={form.tgl_mulai_ta}
                     onChange={(e) => handleTglMulaiChange(e.target.value)}
-                    className={inputCls}
+                    className={`${inputCls} pl-10`}
                   />
                 </div>
-                <div>
-                  <label className={labelCls}>
-                    Selesai Periode <span className="text-[#ba1a1a]">*</span>
-                  </label>
+              </div>
+
+              {/* Selesai Periode */}
+              <div>
+                <label
+                  className="block text-sm font-semibold text-[#111827] mb-1.5"
+                  htmlFor="ta-selesai"
+                >
+                  Selesai Periode <span className="text-[#ba1a1a]">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="material-symbols-outlined text-[#707975] text-lg">
+                      calendar_month
+                    </span>
+                  </div>
                   <input
+                    id="ta-selesai"
                     type="date"
                     value={form.tgl_selesai_ta}
                     onChange={(e) => handleTglSelesaiChange(e.target.value)}
-                    className={inputCls}
+                    className={`${inputCls} pl-10`}
                   />
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Divider */}
-          <div className="h-px bg-[#eceeed]" />
-
-          {/* SECTION 2: Pengaturan Semester */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-black text-[#3f4945]/50 uppercase tracking-[0.2em]">
-                Pengaturan Semester
-              </p>
-              {/* Toggle pill */}
+            {/* Semester otomatis toggle */}
+            <div className="mt-6 flex items-center justify-between gap-4 py-2">
+              <div className="flex gap-3">
+                <div className="w-10 h-10 rounded-full bg-[#00c853]/5 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-[#00c853] text-xl">
+                    auto_mode
+                  </span>
+                </div>
+                <div>
+                  <h4 className="text-[#00342b] font-bold text-base leading-tight">
+                    Pengaturan Semester Otomatis
+                  </h4>
+                  <p className="text-[#3f4945]/70 text-xs mt-0.5 leading-tight">
+                    Bagi periode menjadi dua semester secara otomatis.
+                  </p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => set("buat_semester", !form.buat_semester)}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none ${
-                  form.buat_semester ? "bg-[#006e2a]" : "bg-[#bfc9c4]"
+                className={`relative inline-flex h-6 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-[#00c853]/20 shadow-inner ${
+                  form.buat_semester ? "bg-[#00c853]" : "bg-[#bfc9c4]"
                 }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                    form.buat_semester ? "translate-x-6" : "translate-x-1"
+                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow border border-gray-200/50 transition-transform duration-200 ${
+                    form.buat_semester ? "translate-x-6" : "translate-x-0.5"
                   }`}
                 />
               </button>
             </div>
+          </div>
+
+          {/* SECTION 2: Detail Semester */}
+          <div className="p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="px-3 py-1 rounded-full bg-[#006e2a]/10 border border-[#006e2a]/20 flex items-center gap-2 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#006e2a] animate-pulse" />
+                <span className="text-[9px] text-[#006e2a] tracking-[0.2em] uppercase font-black">
+                  Detail Semester
+                </span>
+              </div>
+              <div className="h-px flex-1 bg-gradient-to-r from-[#006e2a]/20 to-transparent" />
+            </div>
 
             {form.buat_semester ? (
-              <div className="space-y-3">
-                {/* Semester Ganjil */}
-                <div className="rounded-2xl border border-[#bfc9c4]/30 overflow-hidden">
-                  <div className="flex items-center gap-2.5 px-4 py-3 bg-[#f8faf9] border-b border-[#bfc9c4]/20">
-                    <span className="w-6 h-6 rounded-lg bg-[#00342b] text-white font-black text-xs flex items-center justify-center shrink-0">
-                      1
-                    </span>
-                    <span className="text-sm font-extrabold text-[#00342b]">
-                      Semester Ganjil
-                    </span>
-                    <span className="ml-auto text-[10px] bg-[#006e2a]/10 text-[#006e2a] font-bold px-2 py-0.5 rounded-full">
-                      Sem. 1
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* Semester Ganjil Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#bfc9c4]/30 shadow-sm relative overflow-hidden transition-all duration-300 hover:shadow-md hover:border-[#00c853]/30">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-[#004d40]" />
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-11 h-11 rounded-full bg-[#00c853]/5 flex items-center justify-center border border-[#00c853]/10 shadow-inner shrink-0">
+                      <span
+                        className="material-symbols-outlined text-[#004d40] text-2xl"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        looks_one
+                      </span>
+                    </div>
                     <div>
-                      <label className={labelCls}>Tgl Mulai</label>
+                      <h4 className="text-[#00342b] font-bold text-base leading-tight">
+                        Semester Ganjil
+                      </h4>
+                      <p className="text-[10px] text-[#00c853] font-black uppercase tracking-[0.15em] mt-0.5">
+                        Periode Pertama
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className={labelCls} htmlFor="ganjil-mulai">
+                        Tanggal Mulai
+                      </label>
                       <input
+                        id="ganjil-mulai"
                         type="date"
                         value={form.semester_ganjil_mulai}
                         onChange={(e) =>
                           set("semester_ganjil_mulai", e.target.value)
                         }
-                        className={inputCls}
+                        className={dateCls}
                       />
                     </div>
                     <div>
-                      <label className={labelCls}>Tgl Selesai</label>
+                      <label className={labelCls} htmlFor="ganjil-selesai">
+                        Tanggal Selesai
+                      </label>
                       <input
+                        id="ganjil-selesai"
                         type="date"
                         value={form.semester_ganjil_selesai}
                         onChange={(e) =>
                           set("semester_ganjil_selesai", e.target.value)
                         }
-                        className={inputCls}
+                        className={dateCls}
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Connector line */}
-                <div className="flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[#bfc9c4] text-[20px]">
-                    arrow_downward
-                  </span>
-                </div>
-
-                {/* Semester Genap */}
-                <div className="rounded-2xl border border-[#bfc9c4]/30 overflow-hidden">
-                  <div className="flex items-center gap-2.5 px-4 py-3 bg-[#f8faf9] border-b border-[#bfc9c4]/20">
-                    <span className="w-6 h-6 rounded-lg bg-[#3f4945]/15 text-[#3f4945] font-black text-xs flex items-center justify-center shrink-0">
-                      2
-                    </span>
-                    <span className="text-sm font-extrabold text-[#00342b]">
-                      Semester Genap
-                    </span>
-                    <span className="ml-auto text-[10px] bg-[#eceeed] text-[#3f4945] font-bold px-2 py-0.5 rounded-full">
-                      Sem. 2
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 p-4">
+                {/* Semester Genap Card */}
+                <div className="bg-white rounded-2xl p-5 border border-[#bfc9c4]/30 shadow-sm relative overflow-hidden transition-all duration-300 hover:shadow-md hover:border-[#00c853]/30">
+                  <div className="absolute top-0 left-0 w-1 h-full bg-[#00c853]" />
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-11 h-11 rounded-full bg-[#00c853]/5 flex items-center justify-center border border-[#00c853]/10 shadow-inner shrink-0">
+                      <span
+                        className="material-symbols-outlined text-[#00c853] text-2xl"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        looks_two
+                      </span>
+                    </div>
                     <div>
-                      <label className={labelCls}>Tgl Mulai</label>
+                      <h4 className="text-[#00342b] font-bold text-base leading-tight">
+                        Semester Genap
+                      </h4>
+                      <p className="text-[10px] text-[#00c853] font-black uppercase tracking-[0.15em] mt-0.5">
+                        Periode Kedua
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className={labelCls} htmlFor="genap-mulai">
+                        Tanggal Mulai
+                      </label>
                       <input
+                        id="genap-mulai"
                         type="date"
                         value={form.semester_genap_mulai}
                         onChange={(e) =>
                           set("semester_genap_mulai", e.target.value)
                         }
-                        className={inputCls}
+                        className={dateCls}
                       />
                     </div>
                     <div>
-                      <label className={labelCls}>Tgl Selesai</label>
+                      <label className={labelCls} htmlFor="genap-selesai">
+                        Tanggal Selesai
+                      </label>
                       <input
+                        id="genap-selesai"
                         type="date"
                         value={form.semester_genap_selesai}
                         onChange={(e) =>
                           set("semester_genap_selesai", e.target.value)
                         }
-                        className={inputCls}
+                        className={dateCls}
                       />
                     </div>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-3 px-4 py-3 bg-[#f8faf9] rounded-2xl border border-dashed border-[#bfc9c4]/50">
-                <span className="material-symbols-outlined text-[#bfc9c4] text-[20px]">
+              <div className="flex items-center gap-3 px-4 py-4 bg-[#f2f4f3] rounded-2xl border border-dashed border-[#bfc9c4]/50">
+                <span className="material-symbols-outlined text-[#707975] text-[20px]">
                   date_range
                 </span>
-                <p className="text-xs text-[#3f4945]/60">
+                <p className="text-sm text-[#3f4945]/70">
                   Semester tidak dibuat otomatis — dapat ditambahkan manual
                   nanti.
                 </p>
               </div>
             )}
           </div>
+        </div>
 
-          {/* Divider */}
-          <div className="h-px bg-[#eceeed]" />
-
-          {/* SECTION 3: Aktivasi */}
+        {/* ── Footer ── */}
+        <div className="bg-[#f2f4f3]/80 backdrop-blur-md px-6 md:px-8 py-5 border-t border-[#bfc9c4]/20 flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-0 z-10 rounded-b-3xl">
+          {/* Jadikan aktif checkbox */}
           <div
-            className={`rounded-2xl border p-4 transition-colors cursor-pointer ${
-              form.is_active
-                ? "bg-[#006e2a]/8 border-[#006e2a]/30"
-                : "bg-[#f8faf9] border-[#bfc9c4]/30 hover:border-[#006e2a]/20"
-            }`}
+            className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white border border-[#bfc9c4]/30 shadow-sm cursor-pointer hover:border-[#00c853]/30 transition-all"
             onClick={() => {
               const active = !form.is_active;
               setForm((f) => ({
@@ -462,68 +546,59 @@ function ModalTahunAjaran({ open, onClose, editData, queryClient }) {
               }));
             }}
           >
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
-                  form.is_active
-                    ? "bg-[#006e2a] border-[#006e2a]"
-                    : "bg-white border-[#bfc9c4]"
-                }`}
-              >
-                {form.is_active && (
-                  <span
-                    className="material-symbols-outlined text-white text-[14px]"
-                    style={{ fontVariationSettings: "'FILL' 1, 'wght' 700" }}
-                  >
-                    check
-                  </span>
-                )}
-              </div>
-              <div className="flex-1">
-                <span className="text-sm font-extrabold text-[#00342b] block">
-                  Jadikan Tahun Ajaran Aktif
-                </span>
-                <span className="text-[11px] text-[#3f4945]/60">
-                  Periode aktif saat ini akan dinonaktifkan secara otomatis.
-                </span>
-              </div>
+            <div
+              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                form.is_active
+                  ? "bg-[#004d40] border-[#004d40]"
+                  : "bg-white border-[#bfc9c4]"
+              }`}
+            >
               {form.is_active && (
-                <span className="text-[10px] bg-[#006e2a] text-white font-bold px-2 py-0.5 rounded-full shrink-0">
-                  AKTIF
+                <span
+                  className="material-symbols-outlined text-white text-[14px]"
+                  style={{ fontVariationSettings: "'FILL' 1, 'wght' 700" }}
+                >
+                  check
                 </span>
               )}
             </div>
+            <span className="text-[#00342b] font-bold text-xs uppercase tracking-wider">
+              Jadikan Aktif
+            </span>
           </div>
-        </div>
 
-        {/* ── Footer ── */}
-        <div className="flex gap-3 px-6 pb-6 pt-4 border-t border-[#eceeed] bg-white shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-3 rounded-full border border-[#bfc9c4]/50 text-[#3f4945] hover:bg-[#eceeed] text-xs font-bold uppercase tracking-wider transition-all"
-          >
-            Batal
-          </button>
-          <button
-            type="button"
-            onClick={() => mutation.mutate(form)}
-            disabled={mutation.isPending || !form.tahun}
-            className="flex-1 py-3 rounded-full bg-[#006e2a] text-white text-xs font-black uppercase tracking-wider hover:bg-[#00531e] shadow-lg shadow-[#006e2a]/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {mutation.isPending ? (
-              <>
-                <span className="material-symbols-outlined text-[16px] animate-spin">
-                  progress_activity
-                </span>
-                Menyimpan...
-              </>
-            ) : isEdit ? (
-              "Perbarui Periode"
-            ) : (
-              "Simpan Periode"
-            )}
-          </button>
+          {/* Action buttons */}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 sm:flex-none px-8 py-3 rounded-xl border border-[#bfc9c4]/50 text-[#3f4945] font-bold text-[11px] tracking-[0.1em] uppercase hover:bg-[#eceeed] hover:text-[#00342b] transition-all duration-300"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={() => mutation.mutate(form)}
+              disabled={mutation.isPending || !form.tahun}
+              className="flex-1 sm:flex-none px-10 py-3 rounded-xl bg-[#004d40] text-white font-bold text-[11px] tracking-[0.1em] uppercase shadow-lg shadow-[#004d40]/20 hover:bg-[#00c853] hover:shadow-[#00c853]/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2"
+            >
+              {mutation.isPending ? (
+                <>
+                  <span className="material-symbols-outlined text-[16px] animate-spin">
+                    progress_activity
+                  </span>
+                  Menyimpan...
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-sm">
+                    check_circle
+                  </span>
+                  {isEdit ? "Perbarui" : "Simpan"}
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>,
@@ -585,129 +660,170 @@ function ModalBuatSemester({ open, onClose, tahunAjaran, queryClient }) {
 
   if (!open) return null;
 
+  const dateCls =
+    "w-full bg-[#f2f4f3]/50 text-on-surface text-sm rounded-lg border border-[#bfc9c4]/30 focus:border-[#00c853] focus:ring-4 focus:ring-[#00c853]/10 focus:bg-white focus:outline-none transition-all px-4 py-2.5";
   const labelCls =
-    "block text-[10px] font-bold text-[#00342b] uppercase tracking-wider mb-1.5";
+    "block text-[11px] font-semibold text-[#3f4945] uppercase tracking-wider mb-1.5";
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* ── Header — dark green solid, selaras ModalEditSemester ── */}
-        <div className="bg-[#00342b] px-6 py-5 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-white/15 flex items-center justify-center shrink-0">
-            <span className="material-symbols-outlined text-white text-[22px]">
-              date_range
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-white font-extrabold text-[17px] font-headline-card leading-tight">
-              Buat Semester
-            </h3>
-            <p className="text-[#afefdd] text-[11px] mt-0.5">
-              Tahun Ajaran {tahun}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-md overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl relative flex flex-col my-auto animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ── Header ── */}
+        <div className="flex items-start justify-between border-b border-[#bfc9c4]/20 p-6 md:p-8 rounded-t-3xl overflow-hidden bg-[#f2f4f3]">
+          <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-[80px] bg-[#00c853]/20 pointer-events-none" />
+          <div className="flex flex-col gap-3">
+            <h2 className="font-extrabold text-3xl md:text-4xl tracking-tighter leading-none text-[#004d40]">
+              Buat{" "}
+              <em className="font-serif not-italic text-[#006e2a]">Semester</em>
+            </h2>
+            <p className="text-sm text-[#3f4945]/80 leading-relaxed">
+              Atur rentang tanggal semester untuk Tahun Ajaran{" "}
+              <span className="font-bold text-[#004d40]">{tahun}</span>.
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-xl flex items-center justify-center text-white/60 hover:bg-white/15 hover:text-white transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-[#e1e3e2] text-[#3f4945] hover:bg-[#d8dada] hover:text-[#00342b] transition-all duration-300 shadow-sm active:scale-95 shrink-0"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
         {/* ── Body ── */}
-        <div className="px-6 py-5 space-y-3">
-          <p className="text-[10px] font-black text-[#3f4945]/50 uppercase tracking-[0.2em] mb-4">
-            Atur Rentang Tanggal
-          </p>
-
-          {/* Semester Ganjil */}
-          <div className="rounded-2xl border border-[#bfc9c4]/30 overflow-hidden">
-            <div className="flex items-center gap-2.5 px-4 py-3 bg-[#f8faf9] border-b border-[#bfc9c4]/20">
-              <span className="w-6 h-6 rounded-lg bg-[#00342b] text-white font-black text-xs flex items-center justify-center shrink-0">
-                1
-              </span>
-              <span className="text-sm font-extrabold text-[#00342b]">
-                Semester Ganjil
-              </span>
-              <span className="ml-auto text-[10px] bg-[#006e2a]/10 text-[#006e2a] font-bold px-2 py-0.5 rounded-full">
-                Sem. 1
+        <div className="p-6 md:p-8">
+          {/* Section badge */}
+          <div className="flex items-center gap-3 mb-5">
+            <div className="px-3 py-1 rounded-full bg-[#006e2a]/10 border border-[#006e2a]/20 flex items-center gap-2 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#006e2a] animate-pulse" />
+              <span className="text-[9px] text-[#006e2a] tracking-[0.2em] uppercase font-black">
+                Detail Semester
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 p-4">
-              <div>
-                <label className={labelCls}>Tgl Mulai</label>
-                <input
-                  type="date"
-                  value={form.semester_ganjil_mulai}
-                  onChange={(e) => set("semester_ganjil_mulai", e.target.value)}
-                  className="w-full px-4 py-2.5 bg-[#f8faf9] border border-[#bfc9c4]/40 rounded-xl text-sm text-[#111827] focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Tgl Selesai</label>
-                <input
-                  type="date"
-                  value={form.semester_ganjil_selesai}
-                  onChange={(e) =>
-                    set("semester_ganjil_selesai", e.target.value)
-                  }
-                  className="w-full px-4 py-2.5 bg-[#f8faf9] border border-[#bfc9c4]/40 rounded-xl text-sm text-[#111827] focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] outline-none transition-all"
-                />
-              </div>
-            </div>
+            <div className="h-px flex-1 bg-gradient-to-r from-[#006e2a]/20 to-transparent" />
           </div>
 
-          {/* Connector */}
-          <div className="flex items-center justify-center py-0.5">
-            <span className="material-symbols-outlined text-[#bfc9c4] text-[20px]">
-              arrow_downward
-            </span>
-          </div>
-
-          {/* Semester Genap */}
-          <div className="rounded-2xl border border-[#bfc9c4]/30 overflow-hidden">
-            <div className="flex items-center gap-2.5 px-4 py-3 bg-[#f8faf9] border-b border-[#bfc9c4]/20">
-              <span className="w-6 h-6 rounded-lg bg-[#3f4945]/15 text-[#3f4945] font-black text-xs flex items-center justify-center shrink-0">
-                2
-              </span>
-              <span className="text-sm font-extrabold text-[#00342b]">
-                Semester Genap
-              </span>
-              <span className="ml-auto text-[10px] bg-[#eceeed] text-[#3f4945] font-bold px-2 py-0.5 rounded-full">
-                Sem. 2
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-3 p-4">
-              <div>
-                <label className={labelCls}>Tgl Mulai</label>
-                <input
-                  type="date"
-                  value={form.semester_genap_mulai}
-                  onChange={(e) => set("semester_genap_mulai", e.target.value)}
-                  className="w-full px-4 py-2.5 bg-[#f8faf9] border border-[#bfc9c4]/40 rounded-xl text-sm text-[#111827] focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] outline-none transition-all"
-                />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Semester Ganjil Card */}
+            <div className="bg-white rounded-2xl p-5 border border-[#bfc9c4]/30 shadow-sm relative overflow-hidden transition-all duration-300 hover:shadow-md hover:border-[#00c853]/30">
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#004d40]" />
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 rounded-full bg-[#00c853]/5 flex items-center justify-center border border-[#00c853]/10 shadow-inner shrink-0">
+                  <span
+                    className="material-symbols-outlined text-[#004d40] text-2xl"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    looks_one
+                  </span>
+                </div>
+                <div>
+                  <h4 className="text-[#00342b] font-bold text-base leading-tight">
+                    Semester Ganjil
+                  </h4>
+                  <p className="text-[10px] text-[#00c853] font-black uppercase tracking-[0.15em] mt-0.5">
+                    Periode Pertama
+                  </p>
+                </div>
               </div>
-              <div>
-                <label className={labelCls}>Tgl Selesai</label>
-                <input
-                  type="date"
-                  value={form.semester_genap_selesai}
-                  onChange={(e) =>
-                    set("semester_genap_selesai", e.target.value)
-                  }
-                  className="w-full px-4 py-2.5 bg-[#f8faf9] border border-[#bfc9c4]/40 rounded-xl text-sm text-[#111827] focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] outline-none transition-all"
-                />
+              <div className="space-y-3">
+                <div>
+                  <label className={labelCls} htmlFor="bs-ganjil-mulai">
+                    Tanggal Mulai
+                  </label>
+                  <input
+                    id="bs-ganjil-mulai"
+                    type="date"
+                    value={form.semester_ganjil_mulai}
+                    onChange={(e) =>
+                      set("semester_ganjil_mulai", e.target.value)
+                    }
+                    className={dateCls}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="bs-ganjil-selesai">
+                    Tanggal Selesai
+                  </label>
+                  <input
+                    id="bs-ganjil-selesai"
+                    type="date"
+                    value={form.semester_ganjil_selesai}
+                    onChange={(e) =>
+                      set("semester_ganjil_selesai", e.target.value)
+                    }
+                    className={dateCls}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Semester Genap Card */}
+            <div className="bg-white rounded-2xl p-5 border border-[#bfc9c4]/30 shadow-sm relative overflow-hidden transition-all duration-300 hover:shadow-md hover:border-[#00c853]/30">
+              <div className="absolute top-0 left-0 w-1 h-full bg-[#00c853]" />
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-11 h-11 rounded-full bg-[#00c853]/5 flex items-center justify-center border border-[#00c853]/10 shadow-inner shrink-0">
+                  <span
+                    className="material-symbols-outlined text-[#00c853] text-2xl"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    looks_two
+                  </span>
+                </div>
+                <div>
+                  <h4 className="text-[#00342b] font-bold text-base leading-tight">
+                    Semester Genap
+                  </h4>
+                  <p className="text-[10px] text-[#00c853] font-black uppercase tracking-[0.15em] mt-0.5">
+                    Periode Kedua
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className={labelCls} htmlFor="bs-genap-mulai">
+                    Tanggal Mulai
+                  </label>
+                  <input
+                    id="bs-genap-mulai"
+                    type="date"
+                    value={form.semester_genap_mulai}
+                    onChange={(e) =>
+                      set("semester_genap_mulai", e.target.value)
+                    }
+                    className={dateCls}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls} htmlFor="bs-genap-selesai">
+                    Tanggal Selesai
+                  </label>
+                  <input
+                    id="bs-genap-selesai"
+                    type="date"
+                    value={form.semester_genap_selesai}
+                    onChange={(e) =>
+                      set("semester_genap_selesai", e.target.value)
+                    }
+                    className={dateCls}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex gap-3 px-6 pb-6 pt-2">
+        <div className="bg-[#f2f4f3]/80 backdrop-blur-md px-6 md:px-8 py-5 border-t border-[#bfc9c4]/20 flex items-center justify-end gap-3 rounded-b-3xl">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-3 rounded-full border border-[#bfc9c4]/50 text-[#3f4945] hover:bg-[#eceeed] text-xs font-bold uppercase tracking-wider transition-all"
+            className="px-8 py-3 rounded-xl border border-[#bfc9c4]/50 text-[#3f4945] font-bold text-[11px] tracking-[0.1em] uppercase hover:bg-[#eceeed] hover:text-[#00342b] transition-all duration-300"
           >
             Batal
           </button>
@@ -721,7 +837,7 @@ function ModalBuatSemester({ open, onClose, tahunAjaran, queryClient }) {
               !form.semester_genap_mulai ||
               !form.semester_genap_selesai
             }
-            className="flex-1 py-3 rounded-full bg-[#006e2a] text-white text-xs font-black uppercase tracking-wider hover:bg-[#00531e] shadow-lg shadow-[#006e2a]/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="px-10 py-3 rounded-xl bg-[#004d40] text-white font-bold text-[11px] tracking-[0.1em] uppercase shadow-lg shadow-[#004d40]/20 hover:bg-[#00c853] hover:shadow-[#00c853]/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center gap-2"
           >
             {mutation.isPending ? (
               <>
@@ -731,7 +847,12 @@ function ModalBuatSemester({ open, onClose, tahunAjaran, queryClient }) {
                 Menyimpan...
               </>
             ) : (
-              "Buat Semester"
+              <>
+                <span className="material-symbols-outlined text-sm">
+                  check_circle
+                </span>
+                Buat Semester
+              </>
             )}
           </button>
         </div>
@@ -1956,41 +2077,53 @@ export default function TahunAjaran() {
       {confirmModal.open &&
         createPortal(
           <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md p-4"
             onClick={closeConfirm}
           >
             <div
-              className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200 relative"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Header */}
-              <div className={`px-6 pt-6 pb-4 flex items-start gap-4`}>
+              {/* Decorative top strip */}
+              <div
+                className={`h-1.5 w-full ${
+                  confirmModal.isDanger ? "bg-[#ba1a1a]" : "bg-[#00c853]"
+                }`}
+              />
+              {/* Body */}
+              <div className="px-6 pt-6 pb-4">
+                {/* Icon */}
                 <div
-                  className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-4 ${
                     confirmModal.isDanger
-                      ? "bg-[#ba1a1a]/10 text-[#ba1a1a]"
-                      : "bg-[#006e2a]/10 text-[#006e2a]"
+                      ? "bg-[#ba1a1a]/8 border border-[#ba1a1a]/15"
+                      : "bg-[#00c853]/8 border border-[#00c853]/15"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[22px]">
+                  <span
+                    className={`material-symbols-outlined text-[28px] ${
+                      confirmModal.isDanger
+                        ? "text-[#ba1a1a]"
+                        : "text-[#004d40]"
+                    }`}
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
                     {confirmModal.isDanger ? "warning" : "check_circle"}
                   </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-extrabold text-[#00342b] mb-1">
-                    {confirmModal.title}
-                  </h3>
-                  <p className="text-sm text-[#3f4945]/80 leading-relaxed">
-                    {confirmModal.message}
-                  </p>
-                </div>
+                <h3 className="text-lg font-extrabold text-[#00342b] mb-2 tracking-tight">
+                  {confirmModal.title}
+                </h3>
+                <p className="text-sm text-[#3f4945]/80 leading-relaxed">
+                  {confirmModal.message}
+                </p>
               </div>
               {/* Footer */}
-              <div className="flex gap-2.5 px-6 pb-6 pt-2">
+              <div className="flex gap-3 px-6 pb-6 pt-2">
                 <button
                   type="button"
                   onClick={closeConfirm}
-                  className="flex-1 py-2.5 rounded-full border border-[#bfc9c4]/50 text-[#3f4945] hover:bg-[#eceeed] text-xs font-bold uppercase tracking-wider transition-all"
+                  className="flex-1 py-2.5 rounded-xl border border-[#bfc9c4]/50 text-[#3f4945] font-bold text-[11px] tracking-[0.1em] uppercase hover:bg-[#eceeed] hover:text-[#00342b] transition-all duration-300"
                 >
                   Batal
                 </button>
@@ -2000,12 +2133,18 @@ export default function TahunAjaran() {
                     confirmModal.onConfirm?.();
                     closeConfirm();
                   }}
-                  className={`flex-1 py-2.5 rounded-full text-white text-xs font-black uppercase tracking-wider shadow-md transition-all ${
+                  className={`flex-1 py-2.5 rounded-xl text-white font-bold text-[11px] tracking-[0.1em] uppercase shadow-lg transition-all duration-300 hover:-translate-y-0.5 flex items-center justify-center gap-1.5 ${
                     confirmModal.isDanger
-                      ? "bg-[#ba1a1a] hover:bg-[#93000a] shadow-[#ba1a1a]/30"
-                      : "bg-[#006e2a] hover:bg-[#00531e] shadow-[#006e2a]/30"
+                      ? "bg-[#ba1a1a] hover:bg-[#93000a] shadow-[#ba1a1a]/20 hover:shadow-[#ba1a1a]/40"
+                      : "bg-[#004d40] hover:bg-[#00c853] shadow-[#004d40]/20 hover:shadow-[#00c853]/40"
                   }`}
                 >
+                  <span
+                    className="material-symbols-outlined text-sm"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    {confirmModal.isDanger ? "delete" : "check_circle"}
+                  </span>
                   {confirmModal.isDanger ? "Ya, Hapus" : "Ya, Aktifkan"}
                 </button>
               </div>
