@@ -12,6 +12,7 @@ export const tahunAjaranKeys = {
   details: () => [...tahunAjaranKeys.all, "detail"],
   detail: (id) => [...tahunAjaranKeys.details(), id],
   dropdown: () => [...tahunAjaranKeys.all, "dropdown"],
+  trash: () => [...tahunAjaranKeys.all, "trash"],
 };
 
 // ── Queries ──────────────────────────────────────────────────────────────────
@@ -183,20 +184,67 @@ export function useUpdateSemester(taId) {
   });
 }
 
-/** Hapus tahun ajaran (backend mencegah jika ada data akademik terikat) */
+/** Soft-delete tahun ajaran (pindah ke recycle bin) */
 export function useDeleteTahunAjaran() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => api.delete(`${BASE}/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
-      toast.success("Tahun ajaran berhasil dihapus.");
+      toast.success("Tahun ajaran dipindahkan ke recycle bin.");
     },
     onError: (err) => {
       toast.error(
         err.response?.data?.message ?? "Gagal menghapus tahun ajaran.",
       );
+    },
+  });
+}
+
+/** Ambil daftar tahun ajaran yang sudah dihapus (recycle bin) */
+export function useTrashTahunAjaran() {
+  return useQuery({
+    queryKey: tahunAjaranKeys.trash(),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/trash`);
+      return data.data ?? [];
+    },
+    staleTime: 30_000,
+  });
+}
+
+/** Pulihkan tahun ajaran dari recycle bin */
+export function useRestoreTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.patch(`${BASE}/${id}/restore`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
+      toast.success("Tahun ajaran berhasil dipulihkan.");
+    },
+    onError: (err) => {
+      toast.error(
+        err.response?.data?.message ?? "Gagal memulihkan tahun ajaran.",
+      );
+    },
+  });
+}
+
+/** Hapus permanen dari recycle bin */
+export function useForceDeleteTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.delete(`${BASE}/${id}/force-delete`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
+      toast.success("Tahun ajaran dihapus secara permanen.");
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message ?? "Gagal menghapus permanen.");
     },
   });
 }

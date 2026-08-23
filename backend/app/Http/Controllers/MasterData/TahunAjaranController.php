@@ -241,8 +241,71 @@ class TahunAjaranController extends Controller
         $tahunAjaran = TahunAjaran::findOrFail($id);
         Gate::authorize('manage', $tahunAjaran);
 
+        if ($tahunAjaran->is_active) {
+            return $this->error(
+                'Tahun ajaran aktif tidak dapat dihapus. Nonaktifkan terlebih dahulu.',
+                'CONFLICT',
+                422
+            );
+        }
+
+        DB::beginTransaction();
+        try {
+            $tahunAjaran->semesters()->delete(); // soft delete semester juga
+            $tahunAjaran->delete();              // soft delete
+
+            ActivityLog::log('delete', 'tahun_ajaran', $id, "Memindahkan tahun ajaran {$tahunAjaran->tahun} ke recycle bin.");
+
+            DB::commit();
+
+            return $this->success(null, 'Tahun ajaran dipindahkan ke recycle bin.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error('Gagal menghapus tahun ajaran: ' . $e->getMessage(), 'SERVER_ERROR', 500);
+        }
+    }
+
+    public function trash(): JsonResponse
+    {
+        $data = TahunAjaran::onlyTrashed()
+            ->with(['semesters' => fn($q) => $q->withTrashed()])
+            ->orderByDesc('deleted_at')
+            ->get();
+
+        return $this->success($data);
+    }
+
+    public function restore(int $id): JsonResponse
+    {
+        $tahunAjaran = TahunAjaran::onlyTrashed()->findOrFail($id);
+        Gate::authorize('manage', $tahunAjaran);
+
+        DB::beginTransaction();
+        try {
+            $tahunAjaran->restore();
+            $tahunAjaran->semesters()->withTrashed()->restore();
+
+            ActivityLog::log('restore', 'tahun_ajaran', $id, "Memulihkan tahun ajaran {$tahunAjaran->tahun} dari recycle bin.");
+
+            DB::commit();
+
+            return $this->success(
+                $tahunAjaran->load('semesters'),
+                'Tahun ajaran berhasil dipulihkan.'
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error('Gagal memulihkan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
+        }
+    }
+
+    public function forceDelete(int $id): JsonResponse
+    {
+        $tahunAjaran = TahunAjaran::onlyTrashed()->findOrFail($id);
+        Gate::authorize('forceDelete', $tahunAjaran);
+
         $blockers = [
-            'kelas' => Kelas::where('tahun_ajaran_id', $id)->exists(),
+            'kelas' => Kelas::withTrashed()->where('tahun_ajaran_id', $id)->exists(),
             'plot_guru' => PlotGuruMapel::where('tahun_ajaran_id', $id)->exists(),
             'riwayat' => RiwayatKelas::where('tahun_ajaran_id', $id)->exists(),
             'absensi' => Absensi::where('tahun_ajaran_id', $id)->exists(),
@@ -252,7 +315,7 @@ class TahunAjaranController extends Controller
 
         if (in_array(true, $blockers, true)) {
             return $this->error(
-                'Tahun ajaran ini tidak dapat dihapus karena sudah memiliki data akademik (kelas, jadwal/plot guru, absensi, kalender, atau penugasan wali kelas).',
+                'Tidak dapat dihapus permanen — masih ada data akademik yang terikat (kelas, absensi, kalender, dll).',
                 'CONFLICT',
                 422
             );
@@ -260,15 +323,17 @@ class TahunAjaranController extends Controller
 
         DB::beginTransaction();
         try {
-            $tahunAjaran->semesters()->delete();
-            $tahunAjaran->delete();
+            $tahunAjaran->semesters()->withTrashed()->forceDelete();
+            $tahunAjaran->forceDelete();
+
+            ActivityLog::log('force_delete', 'tahun_ajaran', $id, "Menghapus permanen tahun ajaran {$tahunAjaran->tahun}.");
 
             DB::commit();
 
-            return $this->success(null, 'Tahun ajaran berhasil dihapus.');
+            return $this->success(null, 'Tahun ajaran dihapus secara permanen.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $this->error('Gagal menghapus tahun ajaran: ' . $e->getMessage(), 'SERVER_ERROR', 500);
+            return $this->error('Gagal menghapus permanen: ' . $e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 }

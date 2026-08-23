@@ -31,4 +31,14 @@ class TahunAjaranPolicy
         return (int) $user->school_id === (int) $tahunAjaran->school_id
             && ($user->hasRole('operator') || $user->hasRole('kepsek'));
     }
+
+    public function restore(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return (int) $user->school_id === (int) $tahunAjaran->school_id;
+    }
+
+    public function forceDelete(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return (int) $user->school_id === (int) $tahunAjaran->school_id;
+    }
 }

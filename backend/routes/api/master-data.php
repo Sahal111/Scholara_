@@ -242,6 +242,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
     
         Route::middleware('permission:master_data.tahun_ajaran.view')->group(function () {
             Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
+            // Static routes BEFORE /{id} wildcard
+            Route::get('/tahun-ajaran/trash', [TahunAjaranController::class, 'trash']);
             Route::get('/tahun-ajaran/{id}', [TahunAjaranController::class, 'show']);
         });
 
@@ -251,6 +253,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
             Route::patch('/tahun-ajaran/{id}/aktif', [TahunAjaranController::class, 'setAktif']);
             Route::patch('/tahun-ajaran/{id}/semester-aktif', [TahunAjaranController::class, 'setSemesterAktif']);
             Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
+            Route::patch('/tahun-ajaran/{id}/restore', [TahunAjaranController::class, 'restore']);
+            Route::delete('/tahun-ajaran/{id}/force-delete', [TahunAjaranController::class, 'forceDelete']);
         });
 
         // Naik Kelas — butuh manage kelas + siswa
