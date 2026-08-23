@@ -15,19 +15,19 @@ use App\Models\PlotGuruMapel;
 use App\Models\Absensi;
 use App\Models\KalenderAkademik;
 use App\Models\UserWaliKelas;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
 class TahunAjaranController extends Controller
 {
-    public function index()
+    public function index(): JsonResponse
     {
         $data = TahunAjaran::with('semesters')->orderByDesc('tahun')->get();
 
-        return response()->json(['success' => true, 'data' => $data]);
+        return $this->success($data);
     }
 
-    public function show($id)
+    public function show($id): JsonResponse
     {
         $tahunAjaran = TahunAjaran::with('semesters')->findOrFail($id);
 
@@ -39,9 +39,11 @@ class TahunAjaranController extends Controller
         $tahunAjaran->tanggal_selesai = $genap?->tgl_selesai ?? $ganjil?->tgl_selesai;
         $tahunAjaran->semester_aktif = $tahunAjaran->semesters->firstWhere('is_active', true)?->nama ?? null;
 
-        // ── Otoritas Tanda Tangan ──
-        $kepsekNama = \App\Models\Pengaturan::where('key', 'kepala_madrasah')->value('value') ?? '';
-        $kepsekNip = \App\Models\Pengaturan::where('key', 'nip_kepala_madrasah')->value('value') ?? '';
+        // ── Otoritas Tanda Tangan (1 query, bukan 2) ──
+        $pengaturan = \App\Models\Pengaturan::whereIn('key', ['kepala_madrasah', 'nip_kepala_madrasah'])
+            ->pluck('value', 'key');
+        $kepsekNama = $pengaturan->get('kepala_madrasah', '');
+        $kepsekNip = $pengaturan->get('nip_kepala_madrasah', '');
 
         // ── Hari Libur dari kalender_akademiks ──
         $totalHariLibur = \App\Models\KalenderAkademik::where('tahun_ajaran_id', $id)
@@ -60,7 +62,7 @@ class TahunAjaranController extends Controller
             ->where('jenis_perubahan', 'naik_kelas')
             ->exists();
 
-        // Ambil semua kelas pada tahun ajaran ini beserta wali kelas dan semester
+        // Ambil semua kelas pada tahun ajaran ini
         $kelasList = Kelas::with(['wali:id,nuptk,nama', 'semester:id,nama'])
             ->where('tahun_ajaran_id', $id)
             ->orderBy('tingkat')
@@ -85,7 +87,7 @@ class TahunAjaranController extends Controller
                 ];
             });
 
-        // Hitung distribusi per tingkat untuk stat card
+        // Hitung distribusi per tingkat
         $distribusiTingkat = $kelasList->groupBy('tingkat')->map(function ($group, $tingkat) {
             return [
                 'tingkat' => $tingkat,
@@ -94,7 +96,6 @@ class TahunAjaranController extends Controller
             ];
         })->values();
 
-        // ── Stats tambahan ──────────────────────────────────────
         $semesterIds = $tahunAjaran->semesters->pluck('id');
 
         $totalGuruMengajar = \App\Models\PlotGuruMapel::where('tahun_ajaran_id', $id)
@@ -106,11 +107,8 @@ class TahunAjaranController extends Controller
             ->distinct('mapel_id')->count('mapel_id');
 
         $totalWaliKelas = $kelasList->filter(fn($k) => $k['nama_wali'] !== '-')->count();
-
         $totalRuangan = $kelasList->filter(fn($k) => !empty($k['ruangan']))->pluck('ruangan')->unique()->count();
-
-        $totalJadwal = \App\Models\JadwalPelajaran::whereIn('semester_id', $semesterIds)
-            ->where('is_active', true)->count();
+        $totalJadwal = \App\Models\JadwalPelajaran::whereIn('semester_id', $semesterIds)->where('is_active', true)->count();
 
         $tglMulai = $ganjil?->tgl_mulai;
         $tglSelesai = $genap?->tgl_selesai ?? $ganjil?->tgl_selesai;
@@ -119,12 +117,10 @@ class TahunAjaranController extends Controller
             : null;
         $hariEfektif = $hariTotal !== null ? max(0, $hariTotal - $totalHariLibur) : null;
 
-        // ── Kalender akademik ─────────────────────────────────
         $kalender = \App\Models\KalenderAkademik::where('tahun_ajaran_id', $id)
             ->orderBy('tanggal_mulai')
             ->get(['id', 'judul', 'jenis', 'tanggal_mulai', 'tanggal_selesai', 'is_nasional']);
 
-        // ── Aktivitas terbaru ─────────────────────────────────
         $aktivitas = \App\Models\ActivityLog::with('user:id,username')
             ->where('module', 'tahun_ajaran')
             ->where('subject_id', $id)
@@ -132,15 +128,16 @@ class TahunAjaranController extends Controller
             ->take(8)
             ->get(['id', 'user_id', 'action', 'keterangan', 'created_at']);
 
-        // ── Navigasi TA sebelum & sesudah ────────────────────
         $allTA = TahunAjaran::orderBy('tahun')->pluck('tahun', 'id');
         $taIds = $allTA->keys()->values();
         $currentIndex = $taIds->search($tahunAjaran->id);
-        $taPrev = $currentIndex > 0 ? TahunAjaran::find($taIds[$currentIndex - 1], ['id', 'tahun', 'is_active']) : null;
+        $taPrev = $currentIndex > 0
+            ? TahunAjaran::find($taIds[$currentIndex - 1], ['id', 'tahun', 'is_active'])
+            : null;
         $taNext = ($currentIndex !== false && $currentIndex < $taIds->count() - 1)
-            ? TahunAjaran::find($taIds[$currentIndex + 1], ['id', 'tahun', 'is_active']) : null;
+            ? TahunAjaran::find($taIds[$currentIndex + 1], ['id', 'tahun', 'is_active'])
+            : null;
 
-        // ── Checklist kesiapan ───────────────────────────────
         $checklist = [
             'ta_dibuat' => true,
             'semester_dibuat' => $tahunAjaran->semesters->count() >= 2,
@@ -154,15 +151,13 @@ class TahunAjaranController extends Controller
             'kepsek_dikunci' => !empty($kepsekNama),
         ];
 
-        // ── Append ke objek tahunAjaran ───────────────────────
         $tahunAjaran->kepsek_nama = $kepsekNama;
         $tahunAjaran->kepsek_nip = $kepsekNip;
         $tahunAjaran->total_hari_libur = $totalHariLibur;
         $tahunAjaran->total_hari_efektif = $hariEfektif;
         $tahunAjaran->is_tutup_buku = $sudahNaikKelas;
 
-        return response()->json([
-            'success' => true,
+        return $this->success([
             'data' => $tahunAjaran,
             'kelas' => $kelasList,
             'total_kelas' => $kelasList->count(),
@@ -181,9 +176,8 @@ class TahunAjaranController extends Controller
         ]);
     }
 
-    public function store(StoreTahunAjaranRequest $request)
+    public function store(StoreTahunAjaranRequest $request): JsonResponse
     {
-
         DB::beginTransaction();
         try {
             if ($request->is_active) {
@@ -230,23 +224,20 @@ class TahunAjaranController extends Controller
                 "Membuat tahun ajaran {$tahunAjaran->tahun}" . ($request->buat_semester ? ' beserta semester.' : '.'),
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tahun ajaran berhasil ditambahkan.',
-                'data' => $tahunAjaran->load('semesters'),
-            ], 201);
+            return $this->created(
+                $tahunAjaran->load('semesters'),
+                'Tahun ajaran berhasil ditambahkan.'
+            );
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
+            return $this->error('Terjadi kesalahan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
-    public function update(UpdateTahunAjaranRequest $request, $id)
+    public function update(UpdateTahunAjaranRequest $request, $id): JsonResponse
     {
         $tahunAjaran = TahunAjaran::findOrFail($id);
+        $this->authorize('manage', $tahunAjaran);
 
         DB::beginTransaction();
         try {
@@ -260,15 +251,12 @@ class TahunAjaranController extends Controller
             ]);
 
             if ($request->buat_semester) {
-                // Ambil semester lama dengan filter school_id eksplisit dari relasi TA.
-                // JANGAN pakai withoutGlobalScopes() — bisa membaca data semester sekolah lain
-                // karena tahun_ajaran_id adalah integer yang berurutan di shared DB.
                 $schoolId = $tahunAjaran->school_id;
 
                 $semGanjilLama = Semester::where('school_id', $schoolId)
                     ->where('tahun_ajaran_id', $tahunAjaran->id)
                     ->where('nama', 'Ganjil')
-                    ->withTrashed()  // inklusif soft-deleted supaya restore bisa jalan
+                    ->withTrashed()
                     ->first();
 
                 $semGenapLama = Semester::where('school_id', $schoolId)
@@ -277,8 +265,6 @@ class TahunAjaranController extends Controller
                     ->withTrashed()
                     ->first();
 
-                // Reset is_active semua semester milik sekolah ini jika semester_aktif dikirim.
-                // Semester::query() sudah inject SchoolScope via HasSchoolScope, aman.
                 if ($request->has('semester_aktif') && $request->semester_aktif && $request->is_active) {
                     Semester::query()->update(['is_active' => false]);
                 }
@@ -288,16 +274,10 @@ class TahunAjaranController extends Controller
                         ['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil'],
                         [
                             'school_id' => $schoolId,
-                            'tgl_mulai' => $request->has('semester_ganjil_mulai')
-                                ? $request->semester_ganjil_mulai
-                                : $semGanjilLama?->tgl_mulai,
-                            'tgl_selesai' => $request->has('semester_ganjil_selesai')
-                                ? $request->semester_ganjil_selesai
-                                : $semGanjilLama?->tgl_selesai,
-                            'is_active' => $request->has('semester_aktif') && $request->is_active
-                                ? ($request->semester_aktif === 'Ganjil')
-                                : ($semGanjilLama?->is_active ?? false),
-                            'deleted_at' => null, // restore jika sebelumnya ter-soft-delete
+                            'tgl_mulai' => $request->has('semester_ganjil_mulai') ? $request->semester_ganjil_mulai : $semGanjilLama?->tgl_mulai,
+                            'tgl_selesai' => $request->has('semester_ganjil_selesai') ? $request->semester_ganjil_selesai : $semGanjilLama?->tgl_selesai,
+                            'is_active' => $request->has('semester_aktif') && $request->is_active ? ($request->semester_aktif === 'Ganjil') : ($semGanjilLama?->is_active ?? false),
+                            'deleted_at' => null,
                         ]
                     );
                 }
@@ -307,15 +287,9 @@ class TahunAjaranController extends Controller
                         ['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Genap'],
                         [
                             'school_id' => $schoolId,
-                            'tgl_mulai' => $request->has('semester_genap_mulai')
-                                ? $request->semester_genap_mulai
-                                : $semGenapLama?->tgl_mulai,
-                            'tgl_selesai' => $request->has('semester_genap_selesai')
-                                ? $request->semester_genap_selesai
-                                : $semGenapLama?->tgl_selesai,
-                            'is_active' => $request->has('semester_aktif') && $request->is_active
-                                ? ($request->semester_aktif === 'Genap')
-                                : ($semGenapLama?->is_active ?? false),
+                            'tgl_mulai' => $request->has('semester_genap_mulai') ? $request->semester_genap_mulai : $semGenapLama?->tgl_mulai,
+                            'tgl_selesai' => $request->has('semester_genap_selesai') ? $request->semester_genap_selesai : $semGenapLama?->tgl_selesai,
+                            'is_active' => $request->has('semester_aktif') && $request->is_active ? ($request->semester_aktif === 'Genap') : ($semGenapLama?->is_active ?? false),
                             'deleted_at' => null,
                         ]
                     );
@@ -331,58 +305,51 @@ class TahunAjaranController extends Controller
                 "Memperbarui tahun ajaran {$tahunAjaran->tahun}" . ($request->buat_semester ? ' dan semester.' : '.'),
             );
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tahun ajaran berhasil diperbarui.',
-                'data' => $tahunAjaran->load('semesters'),
-            ]);
+            return $this->success(
+                $tahunAjaran->load('semesters'),
+                'Tahun ajaran berhasil diperbarui.'
+            );
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
+            return $this->error('Terjadi kesalahan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
-    public function setAktif($id)
+    public function setAktif($id): JsonResponse
     {
-        // Scope manual via relasi — aman multi-tenant
-        // TahunAjaran pakai SchoolScope, jadi ::all() sudah ter-filter by school_id.
-        // Tapi ::query()->update() tidak trigger scope, jadi harus via loop atau subquery.
-        $taIds = TahunAjaran::pluck('id'); // SchoolScope aktif di sini
+        $tahunAjaran = TahunAjaran::findOrFail($id);
+        $this->authorize('manage', $tahunAjaran);
+
+        $taIds = TahunAjaran::pluck('id');
         TahunAjaran::whereIn('id', $taIds)->update(['is_active' => false]);
         Semester::whereIn('tahun_ajaran_id', $taIds)->update(['is_active' => false]);
-
-        // Aktifkan tahun ajaran yang dipilih
-        $tahunAjaran = TahunAjaran::findOrFail($id);
         $tahunAjaran->update(['is_active' => true]);
 
-        // Aktifkan semester Ganjil secara default
         Semester::where('tahun_ajaran_id', $id)
             ->where('nama', 'Ganjil')
             ->update(['is_active' => true]);
 
         ActivityLog::log('set_aktif', 'tahun_ajaran', $id, "Mengaktifkan tahun ajaran {$tahunAjaran->tahun}.");
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Tahun ajaran aktif berhasil diubah.',
-            'data' => $tahunAjaran->load('semesters'),
-        ]);
+        return $this->success(
+            $tahunAjaran->load('semesters'),
+            'Tahun ajaran aktif berhasil diubah.'
+        );
     }
 
-    public function setSemesterAktif(SetSemesterAktifRequest $request, $id)
+    public function setSemesterAktif(SetSemesterAktifRequest $request, $id): JsonResponse
     {
         $tahunAjaran = TahunAjaran::findOrFail($id);
+        $this->authorize('manage', $tahunAjaran);
+
         if (!$tahunAjaran->is_active) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Aktifkan tahun ajaran ini terlebih dahulu.',
-            ], 422);
+            return $this->error(
+                'Aktifkan tahun ajaran ini terlebih dahulu.',
+                'VALIDATION_ERROR',
+                422
+            );
         }
 
-        // Scope via tahun_ajaran_id sudah cukup aman (id sudah dikonfirmasi milik school ini)
         Semester::where('tahun_ajaran_id', $id)->update(['is_active' => false]);
         Semester::where('tahun_ajaran_id', $id)
             ->where('nama', $request->semester_nama)
@@ -395,17 +362,17 @@ class TahunAjaranController extends Controller
             "Mengaktifkan Semester {$request->semester_nama} pada tahun ajaran {$tahunAjaran->tahun}.",
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => "Semester {$request->semester_nama} berhasil diaktifkan.",
-            'data' => $tahunAjaran->load('semesters'), // ← tambah ini agar frontend bisa update state
-        ]);
+        return $this->success(
+            $tahunAjaran->load('semesters'),
+            "Semester {$request->semester_nama} berhasil diaktifkan."
+        );
     }
-    public function destroy($id)
+
+    public function destroy($id): JsonResponse
     {
         $tahunAjaran = TahunAjaran::findOrFail($id);
+        $this->authorize('manage', $tahunAjaran);
 
-        // Cek seluruh relasi data akademik yang terikat pada tahun ajaran ini
         $adaKelas = Kelas::where('tahun_ajaran_id', $id)->exists();
         $adaPlotGuru = PlotGuruMapel::where('tahun_ajaran_id', $id)->exists();
         $adaRiwayatKelas = RiwayatKelas::where('tahun_ajaran_id', $id)->exists();
@@ -414,30 +381,24 @@ class TahunAjaranController extends Controller
         $adaWaliKelas = UserWaliKelas::where('tahun_ajaran_id', $id)->exists();
 
         if ($adaKelas || $adaPlotGuru || $adaRiwayatKelas || $adaAbsensi || $adaKalender || $adaWaliKelas) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tahun ajaran ini tidak dapat dihapus karena sudah memiliki data akademik (kelas, jadwal/plot guru, absensi, kalender, atau penugasan wali kelas).',
-            ], 422);
+            return $this->error(
+                'Tahun ajaran ini tidak dapat dihapus karena sudah memiliki data akademik (kelas, jadwal/plot guru, absensi, kalender, atau penugasan wali kelas).',
+                'CONFLICT',
+                422
+            );
         }
 
         DB::beginTransaction();
         try {
-            // Hapus semester pendamping secara bersih agar tidak meninggalkan orphan rows
             $tahunAjaran->semesters()->delete();
             $tahunAjaran->delete();
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tahun ajaran berhasil dihapus.',
-            ]);
+            return $this->success(null, 'Tahun ajaran berhasil dihapus.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus tahun ajaran: ' . $e->getMessage(),
-            ], 500);
+            return $this->error('Gagal menghapus tahun ajaran: ' . $e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 }

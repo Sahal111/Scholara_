@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
+import { tahunAjaranKeys } from "../../../../hooks/api/useTahunAjaran";
 
 // ── Date Formatting Helpers ──────────────────────────────────────────────────
 function fmt(str) {
@@ -496,7 +497,7 @@ export default function DetailTahunAjaran() {
   const [searchKelas, setSearchKelas] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["detail-tahun-ajaran", id],
+    queryKey: tahunAjaranKeys.detail(id),
     queryFn: () =>
       api.get(`/operator/master-data/tahun-ajaran/${id}`).then((r) => r.data),
     retry: false, // ← jangan retry, biar error langsung kelihatan
@@ -508,8 +509,9 @@ export default function DetailTahunAjaran() {
       api.patch(`/operator/master-data/tahun-ajaran/${id}/aktif`),
     onSuccess: () => {
       toast.success("Tahun ajaran berhasil diaktifkan.");
-      queryClient.invalidateQueries(["detail-tahun-ajaran", id]);
-      queryClient.invalidateQueries(["tahun-ajaran"]);
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
     },
     onError: (err) =>
       toast.error(
@@ -524,8 +526,8 @@ export default function DetailTahunAjaran() {
       }),
     onSuccess: (_, semesterNama) => {
       toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
-      queryClient.invalidateQueries(["detail-tahun-ajaran", id]);
-      queryClient.invalidateQueries(["tahun-ajaran"]);
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
     },
     onError: (err) =>
       toast.error(
@@ -3275,9 +3277,13 @@ export default function DetailTahunAjaran() {
         onClose={() => setEditModalOpen(false)}
         ta={ta}
         onUpdated={() => {
-          refetch();
-          queryClient.invalidateQueries(["detail-tahun-ajaran", id]);
-          queryClient.invalidateQueries(["tahun-ajaran"]);
+          queryClient.invalidateQueries({
+            queryKey: tahunAjaranKeys.detail(id),
+          });
+          queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+          queryClient.invalidateQueries({
+            queryKey: tahunAjaranKeys.dropdown(),
+          });
         }}
       />
 
