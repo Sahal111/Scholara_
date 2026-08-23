@@ -1525,6 +1525,1049 @@ export default function DetailSemester() {
           </div>
         </section>
 
+        {/* ── SECTION: Absensi Semester ── */}
+        <section className="relative z-10">
+          {/* Section Header */}
+          <div className="flex flex-col gap-3 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#006e2a]/5 border border-[#006e2a]/10 w-fit">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#006e2a] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#006e2a]" />
+                </span>
+                <span className="material-symbols-outlined text-[#006e2a] text-[16px]">
+                  co_present
+                </span>
+                <span className="text-[10px] font-bold text-[#006e2a] uppercase tracking-[0.3em]">
+                  Operasional Semester
+                </span>
+              </div>
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-[#006e2a]/20 to-transparent" />
+            </div>
+            <h2 className="font-headline-section text-3xl md:text-4xl font-extrabold text-[#00342b] tracking-tight">
+              Data{" "}
+              <span className="font-serif-accent italic font-normal text-[#3ce36a]">
+                Absensi
+              </span>
+            </h2>
+            <p className="text-[#3f4945]/70 text-sm font-medium max-w-xl leading-relaxed">
+              Rekap kehadiran siswa sepanjang Semester {semester.nama}{" "}
+              {ta.tahun}.
+            </p>
+          </div>
+
+          {(() => {
+            const absensi = data.absensi_rekap ?? null;
+            const totalSiswaAbsen = absensi?.total_siswa ?? totalSiswa;
+            const totalHadir = absensi?.hadir ?? null;
+            const totalSakit = absensi?.sakit ?? null;
+            const totalIzin = absensi?.izin ?? null;
+            const totalAlpa = absensi?.alpa ?? null;
+            const totalPertemuan =
+              (totalHadir ?? 0) +
+              (totalSakit ?? 0) +
+              (totalIzin ?? 0) +
+              (totalAlpa ?? 0);
+            const pctHadir =
+              totalPertemuan > 0
+                ? Math.round(((totalHadir ?? 0) / totalPertemuan) * 100)
+                : null;
+            const siswaAdaData = absensi?.siswa_ada_data ?? null;
+            const siswaBelumData = absensi?.siswa_belum_data ?? null;
+            const siswaBermasalah = absensi?.siswa_bermasalah ?? null;
+            const hasData = absensi !== null;
+
+            return (
+              <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-8 sm:p-10 border border-white/50 shadow-xl relative overflow-hidden">
+                <div className="absolute -right-20 -top-20 w-64 h-64 bg-[#006e2a]/5 rounded-full blur-[100px] pointer-events-none" />
+                <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-[#00342b]/5 rounded-full blur-[80px] pointer-events-none" />
+
+                {!hasData ? (
+                  /* ── Empty State ── */
+                  <div className="relative z-10 flex flex-col items-center justify-center py-16 gap-5 text-center">
+                    <div className="w-20 h-20 rounded-3xl bg-[#006e2a]/5 flex items-center justify-center text-[#006e2a]/40">
+                      <span className="material-symbols-outlined text-[48px]">
+                        event_busy
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-headline-card text-lg font-bold text-[#00342b] mb-1">
+                        Belum Ada Data Absensi
+                      </p>
+                      <p className="text-sm text-[#3f4945]/60 max-w-sm leading-relaxed">
+                        Data absensi akan muncul setelah guru mulai merekap
+                        kehadiran siswa pada semester ini.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#eaa300]/10 border border-[#eaa300]/20">
+                      <span className="w-2 h-2 rounded-full bg-[#eaa300] animate-pulse" />
+                      <span className="text-[11px] font-bold text-[#eaa300] uppercase tracking-wider">
+                        Menunggu Input Absensi
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative z-10">
+                    {/* Top row: persentase kehadiran besar + ringkasan */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+                      {/* Kiri: Gauge kehadiran */}
+                      <div className="lg:col-span-4">
+                        <div className="bg-gradient-to-br from-[#00342b] to-[#006e2a] rounded-[2rem] p-8 text-center relative overflow-hidden h-full flex flex-col items-center justify-center gap-4">
+                          <div
+                            className="absolute inset-0 opacity-[0.08] pointer-events-none rounded-[2rem] overflow-hidden"
+                            style={{
+                              backgroundImage:
+                                "radial-gradient(#69ff87 0.5px, transparent 0.5px)",
+                              backgroundSize: "14px 14px",
+                            }}
+                          />
+                          <p className="text-[10px] font-bold text-white/50 uppercase tracking-[0.3em] relative z-10">
+                            Tingkat Kehadiran
+                          </p>
+                          <div className="relative w-36 h-36 z-10">
+                            <svg
+                              className="w-full h-full -rotate-90"
+                              viewBox="0 0 36 36"
+                            >
+                              <circle
+                                cx="18"
+                                cy="18"
+                                fill="none"
+                                r="15"
+                                stroke="rgba(255,255,255,0.1)"
+                                strokeWidth="3.5"
+                              />
+                              <circle
+                                cx="18"
+                                cy="18"
+                                fill="none"
+                                r="15"
+                                stroke="#69ff87"
+                                strokeDasharray={`${pctHadir ?? 0}, 100`}
+                                strokeLinecap="round"
+                                strokeWidth="3.5"
+                                style={{
+                                  filter:
+                                    "drop-shadow(0 0 8px rgba(105,255,135,0.5))",
+                                }}
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <span className="text-4xl font-black text-white font-headline-card leading-none">
+                                {pctHadir !== null ? `${pctHadir}%` : "—"}
+                              </span>
+                              <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider mt-1">
+                                Hadir
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#69ff87]/15 border border-[#69ff87]/20 z-10">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#69ff87] animate-pulse" />
+                            <span className="text-[10px] font-black text-[#69ff87] uppercase tracking-wider">
+                              {(pctHadir ?? 0) >= 90
+                                ? "Sangat Baik"
+                                : (pctHadir ?? 0) >= 75
+                                  ? "Cukup Baik"
+                                  : "Perlu Perhatian"}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-white/30 z-10">
+                            {totalPertemuan.toLocaleString("id-ID")} total
+                            pertemuan direkap
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Kanan: Breakdown hadir/sakit/izin/alpa */}
+                      <div className="lg:col-span-8 grid grid-cols-2 gap-4">
+                        {[
+                          {
+                            label: "Hadir",
+                            value: totalHadir,
+                            icon: "check_circle",
+                            color: "#006e2a",
+                            bg: "bg-[#006e2a]/5",
+                            border: "border-[#006e2a]/15",
+                            pct: pctHadir,
+                          },
+                          {
+                            label: "Sakit",
+                            value: totalSakit,
+                            icon: "medical_services",
+                            color: "#eaa300",
+                            bg: "bg-[#eaa300]/5",
+                            border: "border-[#eaa300]/15",
+                            pct:
+                              totalPertemuan > 0
+                                ? Math.round(
+                                    ((totalSakit ?? 0) / totalPertemuan) * 100,
+                                  )
+                                : null,
+                          },
+                          {
+                            label: "Izin",
+                            value: totalIzin,
+                            icon: "assignment_turned_in",
+                            color: "#00342b",
+                            bg: "bg-[#00342b]/5",
+                            border: "border-[#00342b]/15",
+                            pct:
+                              totalPertemuan > 0
+                                ? Math.round(
+                                    ((totalIzin ?? 0) / totalPertemuan) * 100,
+                                  )
+                                : null,
+                          },
+                          {
+                            label: "Alpa",
+                            value: totalAlpa,
+                            icon: "cancel",
+                            color: "#ba1a1a",
+                            bg: "bg-[#ba1a1a]/5",
+                            border: "border-[#ba1a1a]/15",
+                            pct:
+                              totalPertemuan > 0
+                                ? Math.round(
+                                    ((totalAlpa ?? 0) / totalPertemuan) * 100,
+                                  )
+                                : null,
+                          },
+                        ].map((item) => (
+                          <div
+                            key={item.label}
+                            className={`${item.bg} ${item.border} border rounded-[1.5rem] p-5 sm:p-6 flex flex-col gap-3 hover:-translate-y-1 transition-all duration-300 hover:shadow-lg group`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div
+                                className="w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                                style={{ background: `${item.color}18` }}
+                              >
+                                <span
+                                  className="material-symbols-outlined text-[20px]"
+                                  style={{
+                                    color: item.color,
+                                    fontVariationSettings: "'FILL' 1",
+                                  }}
+                                >
+                                  {item.icon}
+                                </span>
+                              </div>
+                              {item.pct !== null && (
+                                <span
+                                  className="text-[10px] font-black px-2 py-0.5 rounded-full border"
+                                  style={{
+                                    color: item.color,
+                                    background: `${item.color}12`,
+                                    borderColor: `${item.color}25`,
+                                  }}
+                                >
+                                  {item.pct}%
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <p
+                                className="text-3xl font-black font-headline-card leading-none mb-1"
+                                style={{
+                                  color:
+                                    item.value === null
+                                      ? "#bfc9c4"
+                                      : item.color,
+                                }}
+                              >
+                                {item.value !== null
+                                  ? item.value.toLocaleString("id-ID")
+                                  : "—"}
+                              </p>
+                              <p className="text-[10px] font-bold text-[#3f4945]/60 uppercase tracking-wider">
+                                {item.label}
+                              </p>
+                            </div>
+                            {item.pct !== null && (
+                              <div className="w-full h-1.5 bg-[#e6e9e8] rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full transition-all duration-700"
+                                  style={{
+                                    width: `${item.pct}%`,
+                                    background: item.color,
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Bottom row: status siswa */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6 border-t border-[#bfc9c4]/15">
+                      {[
+                        {
+                          label: "Siswa Ada Data Absensi",
+                          value: siswaAdaData,
+                          icon: "group",
+                          color: "#006e2a",
+                          sub:
+                            totalSiswaAbsen > 0 && siswaAdaData !== null
+                              ? `${Math.round((siswaAdaData / totalSiswaAbsen) * 100)}% dari total`
+                              : null,
+                        },
+                        {
+                          label: "Siswa Belum Ada Data",
+                          value: siswaBelumData,
+                          icon: "person_off",
+                          color: "#eaa300",
+                          sub:
+                            siswaBelumData !== null && siswaBelumData > 0
+                              ? "Perlu segera direkap"
+                              : siswaBelumData === 0
+                                ? "Semua sudah direkap"
+                                : null,
+                          isWarning:
+                            siswaBelumData !== null && siswaBelumData > 0,
+                        },
+                        {
+                          label: "Siswa Bermasalah",
+                          value: siswaBermasalah,
+                          icon: "warning",
+                          color: "#ba1a1a",
+                          sub:
+                            siswaBermasalah !== null && siswaBermasalah > 0
+                              ? "Kehadiran di bawah standar"
+                              : siswaBermasalah === 0
+                                ? "Tidak ada masalah"
+                                : null,
+                          isWarning:
+                            siswaBermasalah !== null && siswaBermasalah > 0,
+                        },
+                      ].map((item) => (
+                        <div
+                          key={item.label}
+                          className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${item.isWarning ? "bg-[#ba1a1a]/5 border-[#ba1a1a]/15" : "bg-[#f8faf9] border-[#bfc9c4]/20"}`}
+                        >
+                          <div
+                            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                            style={{ background: `${item.color}18` }}
+                          >
+                            <span
+                              className="material-symbols-outlined text-[22px]"
+                              style={{ color: item.color }}
+                            >
+                              {item.icon}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold text-[#3f4945]/60 uppercase tracking-wider mb-0.5 leading-tight">
+                              {item.label}
+                            </p>
+                            <p
+                              className="text-xl font-black font-headline-card"
+                              style={{
+                                color:
+                                  item.value === null ? "#bfc9c4" : item.color,
+                              }}
+                            >
+                              {item.value !== null
+                                ? item.value.toLocaleString("id-ID")
+                                : "—"}
+                            </p>
+                            {item.sub && (
+                              <p className="text-[10px] text-[#3f4945]/50 mt-0.5">
+                                {item.sub}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </section>
+
+        {/* ── SECTION: Penilaian Semester ── */}
+        <section className="relative z-10">
+          {/* Section Header */}
+          <div className="flex flex-col gap-3 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#00342b]/5 border border-[#00342b]/10 w-fit">
+                <span className="material-symbols-outlined text-[#00342b] text-[16px]">
+                  grade
+                </span>
+                <span className="text-[10px] font-bold text-[#00342b] uppercase tracking-[0.3em]">
+                  Akademik
+                </span>
+              </div>
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-[#00342b]/20 to-transparent" />
+            </div>
+            <h2 className="font-headline-section text-3xl md:text-4xl font-extrabold text-[#00342b] tracking-tight">
+              Data{" "}
+              <span className="font-serif-accent italic font-normal text-[#3ce36a]">
+                Penilaian
+              </span>
+            </h2>
+            <p className="text-[#3f4945]/70 text-sm font-medium max-w-xl leading-relaxed">
+              Kelengkapan input nilai siswa Semester {semester.nama} {ta.tahun}.
+            </p>
+          </div>
+
+          {(() => {
+            const nilai = data.penilaian_rekap ?? null;
+            const mapelDinilai = nilai?.mapel_dinilai ?? null;
+            const mapelBelumLengkap = nilai?.mapel_belum_lengkap ?? null;
+            const guruInputNilai = nilai?.guru_input_nilai ?? null;
+            const siswaSudahDinilai = nilai?.siswa_sudah_dinilai ?? null;
+            const siswaBelumDinilai = nilai?.siswa_belum_dinilai ?? null;
+            const pctKelengkapan = nilai?.pct_kelengkapan ?? null;
+            const totalMapelSem = data.total_mapel ?? 0;
+            const hasData = nilai !== null;
+
+            const pctMapel =
+              mapelDinilai !== null && totalMapelSem > 0
+                ? Math.round((mapelDinilai / totalMapelSem) * 100)
+                : null;
+            const pctSiswa =
+              siswaSudahDinilai !== null && totalSiswa > 0
+                ? Math.round((siswaSudahDinilai / totalSiswa) * 100)
+                : null;
+
+            return (
+              <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-8 sm:p-10 border border-white/50 shadow-xl relative overflow-hidden">
+                <div className="absolute -left-20 -top-20 w-64 h-64 bg-[#00342b]/5 rounded-full blur-[100px] pointer-events-none" />
+
+                {!hasData ? (
+                  /* ── Empty State ── */
+                  <div className="relative z-10 flex flex-col items-center justify-center py-16 gap-5 text-center">
+                    <div className="w-20 h-20 rounded-3xl bg-[#00342b]/5 flex items-center justify-center text-[#00342b]/30">
+                      <span className="material-symbols-outlined text-[48px]">
+                        assignment_late
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-headline-card text-lg font-bold text-[#00342b] mb-1">
+                        Belum Ada Data Penilaian
+                      </p>
+                      <p className="text-sm text-[#3f4945]/60 max-w-sm leading-relaxed">
+                        Data nilai siswa akan tersedia setelah guru mulai
+                        menginput nilai pada semester ini.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#eaa300]/10 border border-[#eaa300]/20">
+                      <span className="w-2 h-2 rounded-full bg-[#eaa300] animate-pulse" />
+                      <span className="text-[11px] font-bold text-[#eaa300] uppercase tracking-wider">
+                        Menunggu Input Nilai
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative z-10">
+                    {/* Progress kelengkapan nilai — utama */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+                      {/* Kiri: Kelengkapan besar */}
+                      <div className="lg:col-span-5">
+                        <div className="bg-[#f8faf9] border border-[#bfc9c4]/20 rounded-[2rem] p-8 h-full flex flex-col justify-between gap-6">
+                          <div>
+                            <p className="text-[10px] font-bold text-[#3f4945]/50 uppercase tracking-[0.25em] mb-3">
+                              Kelengkapan Nilai
+                            </p>
+                            <div className="flex items-baseline gap-2 mb-1">
+                              <span className="text-6xl font-black text-[#00342b] font-headline-card leading-none">
+                                {pctKelengkapan !== null
+                                  ? pctKelengkapan
+                                  : (pctSiswa ?? "—")}
+                              </span>
+                              {(pctKelengkapan ?? pctSiswa) !== null && (
+                                <span className="text-2xl font-bold text-[#006e2a]">
+                                  %
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[#3f4945]/60 text-sm">
+                              {siswaSudahDinilai !== null
+                                ? `${siswaSudahDinilai.toLocaleString("id-ID")} dari ${totalSiswa.toLocaleString("id-ID")} siswa sudah memiliki nilai`
+                                : ""}
+                            </p>
+                          </div>
+
+                          {/* Dual progress bars */}
+                          <div className="space-y-4">
+                            {/* Mapel */}
+                            <div>
+                              <div className="flex justify-between items-center mb-1.5">
+                                <span className="text-[10px] font-bold text-[#3f4945]/60 uppercase tracking-wider">
+                                  Mapel Selesai
+                                </span>
+                                <span className="text-[11px] font-black text-[#006e2a]">
+                                  {mapelDinilai !== null ? mapelDinilai : "—"} /{" "}
+                                  {totalMapelSem}
+                                </span>
+                              </div>
+                              <div className="w-full h-2 bg-[#e6e9e8] rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-[#006e2a] rounded-full transition-all duration-700"
+                                  style={{ width: `${pctMapel ?? 0}%` }}
+                                />
+                              </div>
+                            </div>
+                            {/* Siswa */}
+                            <div>
+                              <div className="flex justify-between items-center mb-1.5">
+                                <span className="text-[10px] font-bold text-[#3f4945]/60 uppercase tracking-wider">
+                                  Siswa Dinilai
+                                </span>
+                                <span className="text-[11px] font-black text-[#00342b]">
+                                  {siswaSudahDinilai !== null
+                                    ? siswaSudahDinilai
+                                    : "—"}{" "}
+                                  / {totalSiswa}
+                                </span>
+                              </div>
+                              <div className="w-full h-2 bg-[#e6e9e8] rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-[#00342b] rounded-full transition-all duration-700"
+                                  style={{ width: `${pctSiswa ?? 0}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Status badge */}
+                          <div
+                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border w-fit text-[10px] font-black uppercase tracking-wider
+                            ${
+                              (pctKelengkapan ?? pctSiswa ?? 0) >= 90
+                                ? "bg-[#006e2a]/10 border-[#006e2a]/20 text-[#006e2a]"
+                                : (pctKelengkapan ?? pctSiswa ?? 0) >= 60
+                                  ? "bg-[#eaa300]/10 border-[#eaa300]/20 text-[#eaa300]"
+                                  : "bg-[#ba1a1a]/10 border-[#ba1a1a]/20 text-[#ba1a1a]"
+                            }`}
+                          >
+                            <span
+                              className="w-1.5 h-1.5 rounded-full animate-pulse"
+                              style={{
+                                background:
+                                  (pctKelengkapan ?? pctSiswa ?? 0) >= 90
+                                    ? "#006e2a"
+                                    : (pctKelengkapan ?? pctSiswa ?? 0) >= 60
+                                      ? "#eaa300"
+                                      : "#ba1a1a",
+                              }}
+                            />
+                            {(pctKelengkapan ?? pctSiswa ?? 0) >= 90
+                              ? "Hampir Lengkap"
+                              : (pctKelengkapan ?? pctSiswa ?? 0) >= 60
+                                ? "Sedang Berjalan"
+                                : "Perlu Perhatian"}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Kanan: 4 metric cards */}
+                      <div className="lg:col-span-7 grid grid-cols-2 gap-4">
+                        {[
+                          {
+                            label: "Mapel Dinilai",
+                            value: mapelDinilai,
+                            total: totalMapelSem,
+                            icon: "menu_book",
+                            color: "#006e2a",
+                            sub:
+                              pctMapel !== null ? `${pctMapel}% selesai` : null,
+                          },
+                          {
+                            label: "Mapel Belum Lengkap",
+                            value: mapelBelumLengkap,
+                            icon: "pending_actions",
+                            color: "#ba1a1a",
+                            sub:
+                              mapelBelumLengkap === 0
+                                ? "Semua mapel selesai"
+                                : mapelBelumLengkap !== null
+                                  ? "Perlu dilengkapi"
+                                  : null,
+                            isGood: mapelBelumLengkap === 0,
+                          },
+                          {
+                            label: "Guru Input Nilai",
+                            value: guruInputNilai,
+                            icon: "person_celebrate",
+                            color: "#00342b",
+                            sub:
+                              guruInputNilai !== null
+                                ? `dari ${data.total_guru ?? "?"} guru mengajar`
+                                : null,
+                          },
+                          {
+                            label: "Siswa Belum Dinilai",
+                            value: siswaBelumDinilai,
+                            icon: "person_off",
+                            color: "#eaa300",
+                            sub:
+                              siswaBelumDinilai === 0
+                                ? "Semua siswa sudah dinilai"
+                                : siswaBelumDinilai !== null
+                                  ? "Perlu segera dilengkapi"
+                                  : null,
+                            isGood: siswaBelumDinilai === 0,
+                          },
+                        ].map((item) => {
+                          const finalColor = item.isGood
+                            ? "#006e2a"
+                            : item.color;
+                          return (
+                            <div
+                              key={item.label}
+                              className="bg-white border border-[#bfc9c4]/20 rounded-[1.5rem] p-5 sm:p-6 flex flex-col justify-between gap-4 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 group"
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform"
+                                  style={{ background: `${finalColor}18` }}
+                                >
+                                  <span
+                                    className="material-symbols-outlined text-[20px]"
+                                    style={{
+                                      color: finalColor,
+                                      fontVariationSettings: "'FILL' 1",
+                                    }}
+                                  >
+                                    {item.isGood ? "check_circle" : item.icon}
+                                  </span>
+                                </div>
+                                {item.sub && (
+                                  <span
+                                    className="text-[9px] font-bold px-2 py-0.5 rounded-full border leading-tight text-right max-w-[100px]"
+                                    style={{
+                                      color: finalColor,
+                                      background: `${finalColor}10`,
+                                      borderColor: `${finalColor}22`,
+                                    }}
+                                  >
+                                    {item.sub}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <p
+                                  className="text-2xl font-black font-headline-card leading-none mb-1"
+                                  style={{
+                                    color:
+                                      item.value === null
+                                        ? "#bfc9c4"
+                                        : finalColor,
+                                  }}
+                                >
+                                  {item.value !== null
+                                    ? item.value.toLocaleString("id-ID")
+                                    : "—"}
+                                  {item.total !== undefined &&
+                                    item.value !== null && (
+                                      <span className="text-base font-bold text-[#3f4945]/30 ml-1">
+                                        /{item.total}
+                                      </span>
+                                    )}
+                                </p>
+                                <p className="text-[10px] font-bold text-[#3f4945]/60 uppercase tracking-wider">
+                                  {item.label}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </section>
+
+        {/* ── SECTION: Rapor Semester ── */}
+        <section className="relative z-10">
+          {/* Section Header */}
+          <div className="flex flex-col gap-3 mb-8">
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#006e2a]/5 border border-[#006e2a]/10 w-fit">
+                <span className="material-symbols-outlined text-[#006e2a] text-[16px]">
+                  description
+                </span>
+                <span className="text-[10px] font-bold text-[#006e2a] uppercase tracking-[0.3em]">
+                  Hasil Akhir
+                </span>
+              </div>
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-[#006e2a]/20 to-transparent" />
+            </div>
+            <h2 className="font-headline-section text-3xl md:text-4xl font-extrabold text-[#00342b] tracking-tight">
+              Status{" "}
+              <span className="font-serif-accent italic font-normal text-[#3ce36a]">
+                Rapor
+              </span>
+            </h2>
+            <p className="text-[#3f4945]/70 text-sm font-medium max-w-xl leading-relaxed">
+              Progres pengisian, verifikasi, dan distribusi rapor Semester{" "}
+              {semester.nama} {ta.tahun}.
+            </p>
+          </div>
+
+          {(() => {
+            const rapor = data.rapor_rekap ?? null;
+            const belumLengkap = rapor?.belum_lengkap ?? null;
+            const sudahLengkap = rapor?.sudah_lengkap ?? null;
+            const diverifikasi = rapor?.diverifikasi ?? null;
+            const siapCetak = rapor?.siap_cetak ?? null;
+            const sudahDicetak = rapor?.sudah_dicetak ?? null;
+            const tglBagi = rapor?.tanggal_pembagian ?? null;
+            const isGenap = semester.nama?.toLowerCase() === "genap";
+            const kenaikan = data.kenaikan_kelas ?? null;
+            const hasData = rapor !== null;
+            const pctRapor =
+              sudahLengkap !== null && totalSiswa > 0
+                ? Math.round((sudahLengkap / totalSiswa) * 100)
+                : null;
+
+            const raporStages = [
+              {
+                label: "Belum Lengkap",
+                value: belumLengkap,
+                icon: "edit_note",
+                color: "#eaa300",
+                isWarning: belumLengkap !== null && belumLengkap > 0,
+              },
+              {
+                label: "Sudah Lengkap",
+                value: sudahLengkap,
+                icon: "assignment_turned_in",
+                color: "#006e2a",
+              },
+              {
+                label: "Diverifikasi",
+                value: diverifikasi,
+                icon: "verified",
+                color: "#00342b",
+              },
+              {
+                label: "Siap Cetak",
+                value: siapCetak,
+                icon: "print",
+                color: "#006e2a",
+              },
+              {
+                label: "Sudah Dicetak",
+                value: sudahDicetak,
+                icon: "task_alt",
+                color: "#3f4945",
+              },
+            ];
+
+            return (
+              <div className="space-y-6">
+                {/* Card Rapor Utama */}
+                <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-8 sm:p-10 border border-white/50 shadow-xl relative overflow-hidden">
+                  <div className="absolute -right-16 -bottom-16 w-56 h-56 bg-[#006e2a]/5 rounded-full blur-[90px] pointer-events-none" />
+
+                  {!hasData ? (
+                    /* ── Empty State ── */
+                    <div className="relative z-10 flex flex-col items-center justify-center py-16 gap-5 text-center">
+                      <div className="w-20 h-20 rounded-3xl bg-[#006e2a]/5 flex items-center justify-center text-[#006e2a]/30">
+                        <span className="material-symbols-outlined text-[48px]">
+                          description
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-headline-card text-lg font-bold text-[#00342b] mb-1">
+                          Rapor Belum Diproses
+                        </p>
+                        <p className="text-sm text-[#3f4945]/60 max-w-sm leading-relaxed">
+                          Pengisian rapor dimulai setelah semua nilai siswa
+                          sudah diinput dan divalidasi.
+                        </p>
+                      </div>
+                      {tglBagi && (
+                        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-[#006e2a]/5 border border-[#006e2a]/15">
+                          <span className="material-symbols-outlined text-[#006e2a] text-[18px]">
+                            event
+                          </span>
+                          <div className="text-left">
+                            <p className="text-[9px] font-bold text-[#3f4945]/50 uppercase tracking-wider">
+                              Rencana Pembagian
+                            </p>
+                            <p className="text-sm font-bold text-[#00342b]">
+                              {new Date(tglBagi).toLocaleDateString("id-ID", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#eaa300]/10 border border-[#eaa300]/20">
+                        <span className="w-2 h-2 rounded-full bg-[#eaa300] animate-pulse" />
+                        <span className="text-[11px] font-bold text-[#eaa300] uppercase tracking-wider">
+                          Menunggu Nilai Lengkap
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative z-10">
+                      {/* Header baris: pct besar + tanggal bagi */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+                        <div>
+                          <p className="text-[10px] font-bold text-[#3f4945]/50 uppercase tracking-[0.25em] mb-2">
+                            Rapor Selesai
+                          </p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-6xl font-black text-[#006e2a] font-headline-card leading-none">
+                              {pctRapor !== null ? pctRapor : "—"}
+                            </span>
+                            {pctRapor !== null && (
+                              <span className="text-2xl font-bold text-[#006e2a]">
+                                %
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-[#3f4945]/60 mt-1">
+                            {sudahLengkap !== null
+                              ? `${sudahLengkap.toLocaleString("id-ID")} dari ${totalSiswa.toLocaleString("id-ID")} rapor selesai`
+                              : ""}
+                          </p>
+                        </div>
+
+                        {/* Tanggal & status cetak */}
+                        <div className="flex flex-col gap-3">
+                          {tglBagi && (
+                            <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#006e2a]/5 border border-[#006e2a]/15">
+                              <span className="material-symbols-outlined text-[#006e2a] text-[20px]">
+                                event
+                              </span>
+                              <div>
+                                <p className="text-[9px] font-bold text-[#3f4945]/50 uppercase tracking-wider">
+                                  Pembagian Rapor
+                                </p>
+                                <p className="text-sm font-bold text-[#00342b]">
+                                  {new Date(tglBagi).toLocaleDateString(
+                                    "id-ID",
+                                    {
+                                      day: "numeric",
+                                      month: "long",
+                                      year: "numeric",
+                                    },
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                          <div
+                            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border ${(sudahDicetak ?? 0) > 0 ? "bg-[#006e2a]/5 border-[#006e2a]/15" : "bg-[#f8faf9] border-[#bfc9c4]/20"}`}
+                          >
+                            <span
+                              className="material-symbols-outlined text-[18px]"
+                              style={{
+                                color:
+                                  (sudahDicetak ?? 0) > 0
+                                    ? "#006e2a"
+                                    : "#bfc9c4",
+                              }}
+                            >
+                              print
+                            </span>
+                            <span
+                              className="text-xs font-bold"
+                              style={{
+                                color:
+                                  (sudahDicetak ?? 0) > 0
+                                    ? "#006e2a"
+                                    : "#3f4945",
+                              }}
+                            >
+                              {(sudahDicetak ?? 0) > 0
+                                ? `${(sudahDicetak ?? 0).toLocaleString("id-ID")} rapor sudah dicetak`
+                                : "Belum ada rapor dicetak"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Progress bar + pipeline stages */}
+                      <div className="mb-6">
+                        <div className="w-full h-2.5 bg-[#e6e9e8] rounded-full overflow-hidden mb-5">
+                          <div
+                            className="h-full bg-gradient-to-r from-[#006e2a] to-[#69ff87] rounded-full transition-all duration-700"
+                            style={{ width: `${pctRapor ?? 0}%` }}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                          {raporStages.map((stage) => (
+                            <div
+                              key={stage.label}
+                              className={`flex flex-col gap-2 p-3.5 rounded-2xl border transition-all duration-300 hover:shadow-md
+                                ${stage.isWarning ? "bg-[#eaa300]/5 border-[#eaa300]/20" : "bg-[#f8faf9] border-[#bfc9c4]/20"}`}
+                            >
+                              <div
+                                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                                style={{
+                                  background: `${stage.isWarning ? "#eaa300" : stage.color}18`,
+                                }}
+                              >
+                                <span
+                                  className="material-symbols-outlined text-[16px]"
+                                  style={{
+                                    color: stage.isWarning
+                                      ? "#eaa300"
+                                      : stage.color,
+                                    fontVariationSettings: "'FILL' 1",
+                                  }}
+                                >
+                                  {stage.icon}
+                                </span>
+                              </div>
+                              <p
+                                className="text-lg font-black font-headline-card leading-none"
+                                style={{
+                                  color:
+                                    stage.value === null
+                                      ? "#bfc9c4"
+                                      : stage.isWarning
+                                        ? "#eaa300"
+                                        : stage.color,
+                                }}
+                              >
+                                {stage.value !== null
+                                  ? stage.value.toLocaleString("id-ID")
+                                  : "—"}
+                              </p>
+                              <p className="text-[9px] font-bold text-[#3f4945]/60 uppercase tracking-wider leading-tight">
+                                {stage.label}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Kenaikan Kelas — hanya tampil di Semester Genap */}
+                {isGenap && (
+                  <div className="bg-[#00342b] rounded-[2.5rem] p-8 sm:p-10 shadow-[0_20px_50px_rgba(0,52,43,0.25)] relative overflow-hidden">
+                    <div
+                      className="absolute inset-0 opacity-[0.06] pointer-events-none rounded-[2.5rem] overflow-hidden"
+                      style={{
+                        backgroundImage:
+                          "radial-gradient(#69ff87 0.5px, transparent 0.5px)",
+                        backgroundSize: "16px 16px",
+                      }}
+                    />
+                    <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-[#69ff87]/10 rounded-full blur-[80px] pointer-events-none" />
+
+                    <div className="relative z-10">
+                      {/* Header */}
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 rounded-2xl bg-[#69ff87]/10 flex items-center justify-center text-[#69ff87]">
+                          <span
+                            className="material-symbols-outlined text-[26px]"
+                            style={{ fontVariationSettings: "'FILL' 1" }}
+                          >
+                            trending_up
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.25em]">
+                            Semester Genap
+                          </p>
+                          <h3 className="text-xl font-extrabold text-white font-headline-card tracking-tight">
+                            Kenaikan Kelas
+                          </h3>
+                        </div>
+                      </div>
+
+                      {kenaikan === null ? (
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-[#eaa300]/10 border border-[#eaa300]/20">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#eaa300] animate-pulse" />
+                            <span className="text-sm font-bold text-[#eaa300] uppercase tracking-wider">
+                              Belum Diproses
+                            </span>
+                          </div>
+                          <p className="text-white/40 text-sm leading-relaxed">
+                            Proses kenaikan kelas akan tersedia setelah seluruh
+                            nilai rapor selesai dan terverifikasi.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                          {[
+                            {
+                              label: "Naik Kelas",
+                              value: kenaikan.naik,
+                              icon: "arrow_upward",
+                              color: "#69ff87",
+                            },
+                            {
+                              label: "Tidak Naik",
+                              value: kenaikan.tidak_naik,
+                              icon: "arrow_downward",
+                              color: "#ba1a1a",
+                            },
+                            {
+                              label: "Belum Ditentukan",
+                              value: kenaikan.belum_ditentukan,
+                              icon: "help",
+                              color: "#eaa300",
+                            },
+                            {
+                              label: "Lulus / Tamat",
+                              value: kenaikan.lulus,
+                              icon: "school",
+                              color: "#69ff87",
+                            },
+                          ].map((item) => (
+                            <div
+                              key={item.label}
+                              className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-3 hover:bg-white/10 transition-all duration-300"
+                            >
+                              <div
+                                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                style={{ background: `${item.color}20` }}
+                              >
+                                <span
+                                  className="material-symbols-outlined text-[20px]"
+                                  style={{ color: item.color }}
+                                >
+                                  {item.icon}
+                                </span>
+                              </div>
+                              <p
+                                className="text-3xl font-black font-headline-card leading-none"
+                                style={{
+                                  color:
+                                    item.value === null
+                                      ? "rgba(255,255,255,0.15)"
+                                      : item.color,
+                                }}
+                              >
+                                {item.value !== null
+                                  ? item.value.toLocaleString("id-ID")
+                                  : "—"}
+                              </p>
+                              <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider leading-tight">
+                                {item.label}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </section>
+
         {/* ── SECTION: Navigasi Semester ── */}
         <section className="relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
