@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
-  useTahunAjaranTrash,
+  useTrashTahunAjaran,
   useRestoreTahunAjaran,
   useForceDeleteTahunAjaran,
 } from "../../../../../hooks/api/useTahunAjaran";
