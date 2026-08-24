@@ -4,42 +4,22 @@ import { useState, useEffect } from "react";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
 import { tahunAjaranKeys } from "../../../../hooks/api/useTahunAjaran";
+import ModalEditSemesterComp from "./components/ModalEditSemester";
+import MetricCardComp from "./components/MetricCard";
+import KalenderItemComp from "./components/KalenderItem";
+import {
+  fmt,
+  fmtShort,
+  daysBetween,
+  daysRemaining,
+  calcProgress,
+  weeksBetween,
+} from "./utils/tahunAjaranHelpers";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function fmt(str) {
-  if (!str) return "-";
-  return new Date(str).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-function fmtShort(str) {
-  if (!str) return "-";
-  return new Date(str).toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-  });
-}
-function daysBetween(a, b) {
-  if (!a || !b) return null;
-  return Math.max(0, Math.round((new Date(b) - new Date(a)) / 86400000));
-}
-function daysRemaining(end) {
-  if (!end) return null;
-  return Math.round((new Date(end) - new Date()) / 86400000);
-}
-function calcProgress(start, end) {
-  if (!start || !end) return 0;
-  const total = daysBetween(start, end);
-  if (!total) return 0;
-  const rem = Math.max(0, daysRemaining(end) ?? 0);
-  return Math.max(0, Math.min(100, Math.round(((total - rem) / total) * 100)));
-}
-function weeksBetween(a, b) {
-  const d = daysBetween(a, b);
-  return d != null ? Math.floor(d / 7) : null;
-}
+// ── Alias — komponen dipindah ke ./components/ ────────────────────────────────
+const ModalEditSemester = ModalEditSemesterComp;
+const MetricCard = MetricCardComp;
+const KalenderItem = KalenderItemComp;
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 function Sk({ className = "" }) {
@@ -70,201 +50,7 @@ function SkeletonPage() {
   );
 }
 
-// ── Modal Edit Semester ───────────────────────────────────────────────────────
-function ModalEditSemester({
-  open,
-  semester,
-  tahunAjaran,
-  tahunAjaranId,
-  onClose,
-  queryClient,
-}) {
-  const [form, setForm] = useState({ tgl_mulai: "", tgl_selesai: "" });
-  useEffect(() => {
-    if (open && semester) {
-      setForm({
-        tgl_mulai: semester.tgl_mulai ? semester.tgl_mulai.slice(0, 10) : "",
-        tgl_selesai: semester.tgl_selesai
-          ? semester.tgl_selesai.slice(0, 10)
-          : "",
-      });
-    }
-  }, [open, semester]);
-
-  const namaSem = semester?.nama?.toLowerCase() ?? "ganjil";
-  const mut = useMutation({
-    mutationFn: () =>
-      api.put(`/operator/master-data/tahun-ajaran/${tahunAjaranId}`, {
-        tahun: tahunAjaran?.tahun,
-        is_active: tahunAjaran?.is_active ?? false,
-        buat_semester: true,
-        [`semester_${namaSem}_mulai`]: form.tgl_mulai || null,
-        [`semester_${namaSem}_selesai`]: form.tgl_selesai || null,
-        ...(tahunAjaran?.is_active && semester?.is_active
-          ? { semester_aktif: semester.nama }
-          : {}),
-      }),
-    onSuccess: () => {
-      toast.success("Semester berhasil diperbarui.");
-      // Gunakan tahunAjaranKeys agar cache yang di-invalidate sinkron
-      // dengan TahunAjaranSemester.jsx dan halaman lain yang pakai hook yang sama.
-      queryClient.invalidateQueries({
-        queryKey: tahunAjaranKeys.detail(tahunAjaranId),
-      });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      onClose();
-    },
-    onError: (err) =>
-      toast.error(err.response?.data?.message ?? "Gagal menyimpan."),
-  });
-
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-[28px] shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="bg-[#00342b] px-6 py-5 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">
-            <span className="material-symbols-outlined text-white text-[20px]">
-              edit_calendar
-            </span>
-          </div>
-          <div>
-            <h2 className="text-white font-extrabold text-[17px] font-headline-card">
-              Edit Semester {semester?.nama}
-            </h2>
-            <p className="text-[#afefdd] text-[11px]">
-              Ubah tanggal mulai & selesai
-            </p>
-          </div>
-        </div>
-        <div className="p-6 space-y-4">
-          {[
-            { label: "Tanggal Mulai", key: "tgl_mulai" },
-            { label: "Tanggal Selesai", key: "tgl_selesai" },
-          ].map(({ label, key }) => (
-            <div key={key}>
-              <label className="block text-xs font-bold text-[#00342b] uppercase tracking-wider mb-1.5">
-                {label}
-              </label>
-              <input
-                type="date"
-                value={form[key]}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, [key]: e.target.value }))
-                }
-                className="w-full px-4 py-2.5 bg-[#f8faf9] border border-[#bfc9c4]/40 rounded-xl text-sm text-[#111827] focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] outline-none transition-all"
-              />
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-3 px-6 pb-6">
-          <button
-            onClick={onClose}
-            className="flex-1 py-3 rounded-full border border-[#bfc9c4]/50 text-[#3f4945] font-bold text-xs uppercase tracking-wider hover:bg-[#eceeed] transition"
-          >
-            Batal
-          </button>
-          <button
-            onClick={() => mut.mutate()}
-            disabled={mut.isPending}
-            className="flex-1 py-3 rounded-full bg-[#006e2a] hover:bg-[#00531e] text-white font-black text-xs uppercase tracking-wider transition shadow-lg shadow-[#006e2a]/30 disabled:opacity-60"
-          >
-            {mut.isPending ? "Menyimpan..." : "Simpan"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Kalender Item ─────────────────────────────────────────────────────────────
-function KalenderItem({ item }) {
-  const colorMap = {
-    libur: "bg-[#ba1a1a]",
-    pts: "bg-[#006e2a]",
-    pas: "bg-[#eaa300]",
-    ph: "bg-[#006e2a]",
-    kegiatan: "bg-[#3f4945]",
-  };
-  const jenis = item.jenis?.toLowerCase();
-  const isUpcoming =
-    item.tanggal_mulai && new Date(item.tanggal_mulai) > new Date();
-  const dotColor = colorMap[jenis] ?? "bg-[#bfc9c4]";
-  const labelColor =
-    jenis === "libur"
-      ? "text-[#ba1a1a] bg-[#ba1a1a]/10"
-      : jenis === "pts" || jenis === "pas"
-        ? "text-[#006e2a] bg-[#006e2a]/10"
-        : "text-[#3f4945]/60 bg-[#eceeed]";
-
-  return (
-    <div className="group/item relative flex gap-5 pl-1 hover:bg-[#f8faf9] hover:translate-x-1 p-2 -ml-2 rounded-xl transition-all duration-300">
-      <div className="relative z-10 flex-shrink-0 w-10 h-10 rounded-xl bg-white/80 border border-[#bfc9c4]/20 flex items-center justify-center shadow-sm group-hover/item:scale-110 transition-transform">
-        <span
-          className={`w-2.5 h-2.5 rounded-full ${dotColor} ${isUpcoming ? "animate-pulse" : ""}`}
-        />
-      </div>
-      <div className="flex flex-col gap-1 justify-center">
-        <span
-          className={`text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-full w-fit ${labelColor}`}
-        >
-          {fmtShort(item.tanggal_mulai)}
-          {item.tanggal_selesai && item.tanggal_selesai !== item.tanggal_mulai
-            ? ` – ${fmtShort(item.tanggal_selesai)}`
-            : ""}
-        </span>
-        <h4 className="text-sm font-bold text-[#00342b]">{item.judul}</h4>
-        {item.is_nasional && (
-          <span className="text-[10px] text-[#ba1a1a] font-bold uppercase">
-            Nasional
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Metric Card ───────────────────────────────────────────────────────────────
-function MetricCard({
-  label,
-  value,
-  icon,
-  colorClass = "text-[#006e2a]",
-  barWidth,
-  barColor = "bg-[#006e2a]",
-}) {
-  return (
-    <div className="p-5 bg-[#f2f4f3]/50 rounded-2xl border border-[#bfc9c4]/10 hover:border-[#006e2a]/30 transition-colors group">
-      <div className="flex justify-between items-end mb-3">
-        <div>
-          <p className="text-[10px] font-black text-[#3f4945]/50 uppercase tracking-[0.2em] mb-1">
-            {label}
-          </p>
-          <p
-            className={`text-2xl font-extrabold ${colorClass} group-hover:opacity-80 transition-colors font-headline-card`}
-          >
-            {value}
-          </p>
-        </div>
-        <span
-          className={`material-symbols-outlined ${colorClass} opacity-40 group-hover:opacity-80 transition-colors`}
-        >
-          {icon}
-        </span>
-      </div>
-      {barWidth != null && (
-        <div className="w-full h-1.5 bg-[#eceeed] rounded-full overflow-hidden">
-          <div
-            className={`h-full ${barColor} rounded-full`}
-            style={{ width: `${barWidth}%` }}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// ── DEAD: inline ModalEditSemester, MetricCard, KalenderItem — replaced by imports
 export default function DetailSemester() {
   const { taId, semesterNama } = useParams();
   const navigate = useNavigate();

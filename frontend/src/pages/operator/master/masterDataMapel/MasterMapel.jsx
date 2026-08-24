@@ -16,26 +16,15 @@ const TINGKAT_OPTIONS = ["1", "2", "3", "4", "5", "6"];
 const KURIKULUM_OPTIONS = ["Kurikulum 2013", "Kurikulum Merdeka", "Keduanya"];
 
 const KELOMPOK_BADGE = {
-  "A - Wajib": "bg-[#DBEAFE] text-[#1D4ED8] border border-[#BFDBFE]",
-  "B - Wajib": "bg-[#EDE9FE] text-[#5B21B6] border border-[#DDD6FE]",
-  "C - Muatan Lokal": "bg-[#F3E8FF] text-[#7E22CE] border border-[#E9D5FF]",
-  "Pengembangan Diri": "bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]",
-  Ekstrakurikuler:
-    "bg-on-primary-container text-success border border-success/20",
-  Lainnya:
-    "bg-surface-container text-text-secondary border border-border-light",
+  "A - Wajib": "bg-[#d1fae5] text-[#065f46] border border-[#a7f3d0]",
+  "B - Wajib": "bg-[#dbeafe] text-[#1e40af] border border-[#bfdbfe]",
+  "C - Muatan Lokal": "bg-[#fef3c7] text-[#92400e] border border-[#fde68a]",
+  "Pengembangan Diri": "bg-[#ede9fe] text-[#5b21b6] border border-[#ddd6fe]",
+  Ekstrakurikuler: "bg-[#fce7f3] text-[#9d174d] border border-[#fbcfe8]",
+  Lainnya: "bg-[#f3f4f6] text-[#374151] border border-[#e5e7eb]",
 };
 
-const KELOMPOK_ICON = {
-  "A - Wajib": "menu_book",
-  "B - Wajib": "import_contacts",
-  "C - Muatan Lokal": "diversity_3",
-  "Pengembangan Diri": "self_improvement",
-  Ekstrakurikuler: "sports_soccer",
-  Lainnya: "category",
-};
-
-/* ─── Modal Form ─────────────────────────────────────────────── */
+/* ─── Modal Tambah/Edit ───────────────────────────────────────── */
 function ModalMapel({ open, onClose, editData, queryClient }) {
   const isEdit = !!editData;
 
@@ -54,6 +43,7 @@ function ModalMapel({ open, onClose, editData, queryClient }) {
     tingkat: [],
     jam_per_minggu: "2",
     kurikulum: "Keduanya",
+    is_active: true,
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -109,37 +99,46 @@ function ModalMapel({ open, onClose, editData, queryClient }) {
   if (!open) return null;
 
   const inputCls =
-    "w-full px-4 py-2.5 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all";
+    "w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 px-4 text-[#191c1c] placeholder:text-[#3f4945]/50 focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] transition-all font-medium text-sm outline-none";
   const labelCls =
-    "block text-label-md font-semibold text-text-secondary mb-1.5";
+    "block text-xs font-black text-[#3f4945] uppercase tracking-widest mb-2";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border-light">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-[#bfc9c4]/20">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#bfc9c4]/20">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[20px] text-primary">
+            <div className="w-10 h-10 rounded-xl bg-[#006e2a]/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[20px] text-[#006e2a]">
                 {isEdit ? "edit_note" : "add_circle"}
               </span>
             </div>
-            <h3 className="text-section-title font-semibold text-on-surface">
-              {isEdit ? "Edit Mata Pelajaran" : "Tambah Mata Pelajaran"}
-            </h3>
+            <div>
+              <h3 className="font-extrabold text-[#00342b] text-lg">
+                {isEdit ? "Edit Mata Pelajaran" : "Tambah Mata Pelajaran"}
+              </h3>
+              <p className="text-xs text-[#3f4945]/70 mt-0.5">
+                {isEdit
+                  ? "Perbarui data mata pelajaran"
+                  : "Isi data mata pelajaran baru"}
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container-low hover:text-on-surface transition-colors"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-[#3f4945] hover:bg-[#f2f4f3] hover:text-[#191c1c] transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
+        {/* Body */}
         <div className="px-6 py-5 space-y-4 max-h-[68vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelCls}>
-                Kode Mapel <span className="text-danger">*</span>
+                Kode Mapel <span className="text-red-500">*</span>
               </label>
               <input
                 value={form.kode}
@@ -151,7 +150,7 @@ function ModalMapel({ open, onClose, editData, queryClient }) {
             </div>
             <div>
               <label className={labelCls}>
-                Jam / Minggu <span className="text-danger">*</span>
+                Jam / Minggu <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -166,7 +165,7 @@ function ModalMapel({ open, onClose, editData, queryClient }) {
 
           <div>
             <label className={labelCls}>
-              Nama Mata Pelajaran <span className="text-danger">*</span>
+              Nama Mata Pelajaran <span className="text-red-500">*</span>
             </label>
             <input
               value={form.nama_mapel}
@@ -179,33 +178,38 @@ function ModalMapel({ open, onClose, editData, queryClient }) {
 
           <div>
             <label className={labelCls}>
-              Kelompok <span className="text-danger">*</span>
+              Kelompok <span className="text-red-500">*</span>
             </label>
-            <select
-              value={form.kelompok}
-              onChange={(e) => set("kelompok", e.target.value)}
-              className={inputCls}
-            >
-              {KELOMPOK_OPTIONS.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={form.kelompok}
+                onChange={(e) => set("kelompok", e.target.value)}
+                className={inputCls + " appearance-none pr-10 cursor-pointer"}
+              >
+                {KELOMPOK_OPTIONS.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[20px]">
+                expand_more
+              </span>
+            </div>
           </div>
 
           <div>
             <label className={labelCls}>
-              Tingkat <span className="text-danger">*</span>
+              Tingkat <span className="text-red-500">*</span>
             </label>
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => set("tingkat", [])}
-                className={`px-3 py-1.5 rounded-lg text-label-md font-semibold border transition-colors ${
+                className={`px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest border transition-colors ${
                   (form.tingkat ?? []).length === 0
-                    ? "bg-primary text-white border-primary"
-                    : "bg-background-light text-text-secondary border-border-light hover:border-primary/50"
+                    ? "bg-[#006e2a] text-white border-[#006e2a]"
+                    : "bg-[#f2f4f3]/50 text-[#3f4945] border-[#bfc9c4]/20 hover:border-[#006e2a]/50"
                 }`}
               >
                 Semua
@@ -217,10 +221,10 @@ function ModalMapel({ open, onClose, editData, queryClient }) {
                     key={t}
                     type="button"
                     onClick={() => toggleTingkat(t)}
-                    className={`px-3 py-1.5 rounded-lg text-label-md font-semibold border transition-colors ${
+                    className={`px-4 py-2 rounded-2xl text-xs font-black uppercase tracking-widest border transition-colors ${
                       selected
-                        ? "bg-[#EDE9FE] text-[#5B21B6] border-[#DDD6FE]"
-                        : "bg-background-light text-text-secondary border-border-light hover:border-[#C4B5FD]"
+                        ? "bg-[#006e2a]/10 text-[#006e2a] border-[#006e2a]/30"
+                        : "bg-[#f2f4f3]/50 text-[#3f4945] border-[#bfc9c4]/20 hover:border-[#006e2a]/50"
                     }`}
                   >
                     Tk. {t}
@@ -228,7 +232,7 @@ function ModalMapel({ open, onClose, editData, queryClient }) {
                 );
               })}
             </div>
-            <p className="text-xs text-text-secondary mt-1.5">
+            <p className="text-xs text-[#3f4945]/70 mt-2">
               {(form.tingkat ?? []).length === 0
                 ? "Berlaku untuk semua tingkat (1–6)"
                 : `Dipilih: Tingkat ${(form.tingkat ?? []).join(", ")}`}
@@ -237,28 +241,31 @@ function ModalMapel({ open, onClose, editData, queryClient }) {
 
           <div>
             <label className={labelCls}>
-              Kurikulum <span className="text-danger">*</span>
+              Kurikulum <span className="text-red-500">*</span>
             </label>
-            <select
-              value={form.kurikulum}
-              onChange={(e) => set("kurikulum", e.target.value)}
-              className={inputCls}
-            >
-              {KURIKULUM_OPTIONS.map((k) => (
-                <option key={k} value={k}>
-                  {k}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={form.kurikulum}
+                onChange={(e) => set("kurikulum", e.target.value)}
+                className={inputCls + " appearance-none pr-10 cursor-pointer"}
+              >
+                {KURIKULUM_OPTIONS.map((k) => (
+                  <option key={k} value={k}>
+                    {k}
+                  </option>
+                ))}
+              </select>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[20px]">
+                expand_more
+              </span>
+            </div>
           </div>
 
           {isEdit && (
-            <div className="flex items-center justify-between bg-surface-container-low rounded-xl px-4 py-3 border border-border-light">
+            <div className="flex items-center justify-between bg-[#f2f4f3]/50 rounded-2xl px-5 py-4 border border-[#bfc9c4]/20">
               <div>
-                <p className="text-body-md font-semibold text-on-surface">
-                  Status Aktif
-                </p>
-                <p className="text-label-md text-text-secondary">
+                <p className="text-sm font-bold text-[#191c1c]">Status Aktif</p>
+                <p className="text-xs text-[#3f4945]/70 mt-0.5">
                   {form.is_active
                     ? "Mapel ini aktif dan dapat digunakan"
                     : "Mapel ini tidak aktif"}
@@ -268,7 +275,7 @@ function ModalMapel({ open, onClose, editData, queryClient }) {
                 type="button"
                 onClick={() => set("is_active", !form.is_active)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                  form.is_active ? "bg-primary" : "bg-border-light"
+                  form.is_active ? "bg-[#006e2a]" : "bg-[#bfc9c4]"
                 }`}
               >
                 <span
@@ -281,17 +288,18 @@ function ModalMapel({ open, onClose, editData, queryClient }) {
           )}
         </div>
 
-        <div className="flex gap-3 px-6 py-4 border-t border-border-light">
+        {/* Footer */}
+        <div className="flex gap-3 px-6 py-5 border-t border-[#bfc9c4]/20">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 border border-border-light rounded-lg text-on-surface font-semibold hover:bg-surface-container-low transition-colors text-body-md"
+            className="flex-1 py-3 border border-[#bfc9c4]/30 rounded-2xl text-[#191c1c] font-bold text-sm hover:bg-[#f2f4f3] transition-colors"
           >
             Batal
           </button>
           <button
             onClick={() => mutation.mutate(form)}
             disabled={mutation.isPending}
-            className="flex-1 py-2.5 bg-primary text-white rounded-lg font-semibold hover:bg-on-primary-fixed-variant transition-colors text-body-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-[#006e2a] text-white rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-[#065043] transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#006e2a]/20"
           >
             {mutation.isPending ? (
               <>
@@ -318,7 +326,7 @@ function ModalImport({ open, onClose, queryClient }) {
   const fileRef = useRef(null);
   const [file, setFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
-  const [result, setResult] = useState(null); // hasil import
+  const [result, setResult] = useState(null);
 
   useEffect(() => {
     if (open) {
@@ -335,9 +343,8 @@ function ModalImport({ open, onClose, queryClient }) {
     onSuccess: (res) => {
       setResult(res.data);
       queryClient.invalidateQueries(["master-mapel"]);
-      if (res.data.imported > 0) {
+      if (res.data.imported > 0)
         toast.success(`${res.data.imported} data berhasil diimpor!`);
-      }
     },
     onError: (err) => {
       toast.error(err.response?.data?.message ?? "Gagal mengimpor file.");
@@ -390,68 +397,68 @@ function ModalImport({ open, onClose, queryClient }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg overflow-hidden border border-[#bfc9c4]/20">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border-light">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#bfc9c4]/20">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#EDE9FE] flex items-center justify-center">
-              <span className="material-symbols-outlined text-[20px] text-[#5B21B6]">
+            <div className="w-10 h-10 rounded-xl bg-[#3f2900]/10 flex items-center justify-center">
+              <span className="material-symbols-outlined text-[20px] text-[#3f2900]">
                 upload_file
               </span>
             </div>
             <div>
-              <h3 className="text-section-title font-semibold text-on-surface">
+              <h3 className="font-extrabold text-[#00342b] text-lg">
                 Import Mata Pelajaran
               </h3>
-              <p className="text-xs text-text-secondary">
+              <p className="text-xs text-[#3f4945]/70 mt-0.5">
                 Upload file Excel (.xlsx) untuk import massal
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container-low hover:text-on-surface transition-colors"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-[#3f4945] hover:bg-[#f2f4f3] transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          {/* Info format */}
-          <div className="bg-[#EDE9FE]/40 border border-[#DDD6FE] rounded-xl p-4">
-            <p className="text-label-md font-semibold text-[#5B21B6] mb-2 flex items-center gap-1.5">
+          {/* Format info */}
+          <div className="bg-[#ffdead]/20 border border-[#ffdead]/40 rounded-2xl p-4">
+            <p className="text-xs font-black text-[#3f2900] mb-2 flex items-center gap-1.5 uppercase tracking-widest">
               <span className="material-symbols-outlined text-[16px]">
                 info
               </span>
-              Format Excel yang diperlukan
+              Format Excel yang Diperlukan
             </p>
-            <p className="text-xs text-[#5B21B6]/80 font-mono bg-white/70 rounded-lg px-3 py-2 border border-[#DDD6FE]">
+            <p className="text-xs text-[#3f2900]/80 font-mono bg-white/70 rounded-xl px-3 py-2 border border-[#ffdead]/30">
               kode | nama_mapel | kelompok | tingkat | jam_per_minggu |
               kurikulum
             </p>
-            <ul className="text-xs text-text-secondary mt-2 space-y-1 list-disc list-inside">
+            <ul className="text-xs text-[#3f4945] mt-2 space-y-1 list-disc list-inside">
               <li>
-                <span className="font-medium">kelompok</span>: A - Wajib / B -
-                Wajib / C - Muatan Lokal / Pengembangan Diri / Ekstrakurikuler
+                <span className="font-bold">kelompok</span>: A - Wajib / B -
+                Wajib / C - Muatan Lokal / ...
               </li>
               <li>
-                <span className="font-medium">tingkat</span>: Semua / angka
+                <span className="font-bold">tingkat</span>: Semua / angka
                 dipisah koma (1,2,3)
               </li>
               <li>
-                <span className="font-medium">kurikulum</span>: Kurikulum 2013 /
+                <span className="font-bold">kurikulum</span>: Kurikulum 2013 /
                 Kurikulum Merdeka / Keduanya
               </li>
             </ul>
             <button
               onClick={downloadTemplate}
-              className="mt-3 flex items-center gap-1.5 text-xs font-semibold text-[#5B21B6] hover:underline"
+              className="mt-3 flex items-center gap-1.5 text-xs font-black text-[#3f2900] hover:underline uppercase tracking-wider"
             >
               <span className="material-symbols-outlined text-[14px]">
                 download
               </span>
-              Unduh template Excel (.xlsx)
+              Unduh Template Excel (.xlsx)
             </button>
           </div>
 
@@ -465,12 +472,12 @@ function ModalImport({ open, onClose, queryClient }) {
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
               onClick={() => fileRef.current?.click()}
-              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+              className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${
                 dragOver
-                  ? "border-primary bg-primary/5"
+                  ? "border-[#006e2a] bg-[#006e2a]/5"
                   : file
-                    ? "border-success bg-on-primary-container"
-                    : "border-border-light hover:border-primary/50 hover:bg-background-light"
+                    ? "border-[#006e2a] bg-[#d1fae5]/30"
+                    : "border-[#bfc9c4]/40 hover:border-[#006e2a]/50 hover:bg-[#f2f4f3]/50"
               }`}
             >
               <input
@@ -482,25 +489,25 @@ function ModalImport({ open, onClose, queryClient }) {
               />
               {file ? (
                 <>
-                  <span className="material-symbols-outlined text-[36px] text-success mb-2">
+                  <span className="material-symbols-outlined text-[36px] text-[#006e2a] mb-2">
                     check_circle
                   </span>
-                  <p className="text-body-md font-semibold text-on-surface">
+                  <p className="text-sm font-bold text-[#191c1c]">
                     {file.name}
                   </p>
-                  <p className="text-xs text-text-secondary mt-1">
+                  <p className="text-xs text-[#3f4945]/70 mt-1">
                     {(file.size / 1024).toFixed(1)} KB · Klik untuk ganti file
                   </p>
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-[36px] text-text-secondary mb-2">
+                  <span className="material-symbols-outlined text-[36px] text-[#707975] mb-2">
                     cloud_upload
                   </span>
-                  <p className="text-body-md font-semibold text-on-surface">
+                  <p className="text-sm font-bold text-[#191c1c]">
                     Drag & drop file Excel di sini
                   </p>
-                  <p className="text-xs text-text-secondary mt-1">
+                  <p className="text-xs text-[#3f4945]/70 mt-1">
                     atau klik untuk memilih file (.xlsx / .xls)
                   </p>
                 </>
@@ -512,50 +519,48 @@ function ModalImport({ open, onClose, queryClient }) {
           {result && (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-on-primary-container border border-success/20 rounded-xl p-4 text-center">
-                  <p className="text-2xl font-bold text-success">
+                <div className="bg-[#d1fae5] border border-[#006e2a]/20 rounded-2xl p-4 text-center">
+                  <p className="text-2xl font-extrabold text-[#006e2a]">
                     {result.imported}
                   </p>
-                  <p className="text-xs text-text-secondary mt-1">
+                  <p className="text-xs text-[#3f4945] mt-1 font-medium">
                     Data Diimpor
                   </p>
                 </div>
                 <div
-                  className={`border rounded-xl p-4 text-center ${result.skipped > 0 ? "bg-[#FEF3C7] border-[#FDE68A]" : "bg-surface-container-low border-border-light"}`}
+                  className={`border rounded-2xl p-4 text-center ${result.skipped > 0 ? "bg-[#fef3c7] border-[#fde68a]" : "bg-[#f2f4f3] border-[#bfc9c4]/20"}`}
                 >
                   <p
-                    className={`text-2xl font-bold ${result.skipped > 0 ? "text-warning" : "text-text-secondary"}`}
+                    className={`text-2xl font-extrabold ${result.skipped > 0 ? "text-[#92400e]" : "text-[#707975]"}`}
                   >
                     {result.skipped}
                   </p>
-                  <p className="text-xs text-text-secondary mt-1">
+                  <p className="text-xs text-[#3f4945] mt-1 font-medium">
                     Baris Dilewati
                   </p>
                 </div>
               </div>
-
-              {result.errors && result.errors.length > 0 && (
-                <div className="bg-error-container border border-danger/20 rounded-xl p-3 max-h-32 overflow-y-auto">
-                  <p className="text-xs font-semibold text-danger mb-1.5 flex items-center gap-1">
+              {result.errors?.length > 0 && (
+                <div className="bg-[#ffdad6] border border-[#ba1a1a]/20 rounded-2xl p-3 max-h-32 overflow-y-auto">
+                  <p className="text-xs font-black text-[#ba1a1a] mb-1.5 flex items-center gap-1 uppercase tracking-widest">
                     <span className="material-symbols-outlined text-[14px]">
                       warning
                     </span>
                     Detail Baris Bermasalah
                   </p>
                   {result.errors.map((e, i) => (
-                    <p key={i} className="text-xs text-danger/80 font-mono">
+                    <p key={i} className="text-xs text-[#ba1a1a]/80 font-mono">
                       • {e}
                     </p>
                   ))}
                 </div>
               )}
-
               <button
                 onClick={() => {
                   setFile(null);
                   setResult(null);
                 }}
-                className="w-full py-2 border border-border-light rounded-lg text-sm text-text-secondary hover:bg-surface-container-low transition-colors"
+                className="w-full py-2.5 border border-[#bfc9c4]/30 rounded-2xl text-sm font-bold text-[#3f4945] hover:bg-[#f2f4f3] transition-colors"
               >
                 Import File Lain
               </button>
@@ -564,18 +569,18 @@ function ModalImport({ open, onClose, queryClient }) {
         </div>
 
         {/* Footer */}
-        {!result && (
-          <div className="flex gap-3 px-6 py-4 border-t border-border-light">
+        {!result ? (
+          <div className="flex gap-3 px-6 py-5 border-t border-[#bfc9c4]/20">
             <button
               onClick={onClose}
-              className="flex-1 py-2.5 border border-border-light rounded-lg text-on-surface font-semibold hover:bg-surface-container-low transition-colors text-body-md"
+              className="flex-1 py-3 border border-[#bfc9c4]/30 rounded-2xl text-[#191c1c] font-bold text-sm hover:bg-[#f2f4f3] transition-colors"
             >
               Batal
             </button>
             <button
               onClick={handleSubmit}
               disabled={!file || importMutation.isPending}
-              className="flex-1 py-2.5 bg-[#5B21B6] text-white rounded-lg font-semibold hover:bg-[#4C1D95] transition-colors text-body-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-3 bg-[#006e2a] text-white rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-[#065043] transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-[#006e2a]/20"
             >
               {importMutation.isPending ? (
                 <>
@@ -592,12 +597,11 @@ function ModalImport({ open, onClose, queryClient }) {
               )}
             </button>
           </div>
-        )}
-        {result && (
-          <div className="px-6 py-4 border-t border-border-light">
+        ) : (
+          <div className="px-6 py-5 border-t border-[#bfc9c4]/20">
             <button
               onClick={onClose}
-              className="w-full py-2.5 bg-primary text-white rounded-lg font-semibold hover:bg-on-primary-fixed-variant transition-colors text-body-md"
+              className="w-full py-3 bg-[#006e2a] text-white rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-[#065043] transition-colors shadow-lg shadow-[#006e2a]/20"
             >
               Selesai
             </button>
@@ -608,38 +612,36 @@ function ModalImport({ open, onClose, queryClient }) {
   );
 }
 
-/* ─── Delete Confirm Modal ───────────────────────────────────── */
+/* ─── Modal Hapus ────────────────────────────────────────────── */
 function ModalHapus({ target, onClose, onConfirm, isPending }) {
   if (!target) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center">
-        <div className="w-14 h-14 rounded-full bg-error-container flex items-center justify-center mx-auto mb-4">
-          <span className="material-symbols-outlined text-[28px] text-danger">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md p-8 text-center border border-[#bfc9c4]/20">
+        <div className="w-16 h-16 rounded-full bg-[#ffdad6] flex items-center justify-center mx-auto mb-5">
+          <span className="material-symbols-outlined text-[28px] text-[#ba1a1a]">
             delete_forever
           </span>
         </div>
-        <h3 className="text-section-title font-bold text-on-surface mb-2">
+        <h3 className="text-xl font-extrabold text-[#00342b] mb-2">
           Hapus Mata Pelajaran?
         </h3>
-        <p className="text-body-md text-text-secondary mb-6">
+        <p className="text-sm text-[#3f4945] mb-8 leading-relaxed">
           Mata pelajaran{" "}
-          <span className="font-semibold text-on-surface">
-            {target.nama_mapel}
-          </span>{" "}
-          akan dihapus secara permanen.
+          <span className="font-bold text-[#191c1c]">{target.nama_mapel}</span>{" "}
+          akan dihapus secara permanen dan tidak dapat dikembalikan.
         </p>
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 border border-border-light rounded-lg text-on-surface font-semibold hover:bg-surface-container-low transition-colors"
+            className="flex-1 py-3 border border-[#bfc9c4]/30 rounded-2xl text-[#191c1c] font-bold text-sm hover:bg-[#f2f4f3] transition-colors"
           >
             Batal
           </button>
           <button
             onClick={onConfirm}
             disabled={isPending}
-            className="flex-1 py-2.5 bg-danger text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 py-3 bg-[#ba1a1a] text-white rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-red-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isPending ? (
               <>
@@ -674,7 +676,6 @@ export default function MasterMapel() {
   const [filterTingkat, setFilterTingkat] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [page, setPage] = useState(1);
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -726,7 +727,7 @@ export default function MasterMapel() {
     },
   });
 
-  /* ── Export Excel ── */
+  /* ── Export ── */
   const handleExport = async () => {
     setExportLoading(true);
     try {
@@ -761,7 +762,6 @@ export default function MasterMapel() {
   const totalData = meta?.total ?? 0;
   const lastPage = meta?.last_page ?? 1;
   const totalAktif = list.filter((m) => m.is_active).length;
-  const totalMapel = list.length;
 
   const hasActiveFilters =
     filterKelompok || filterTingkat || filterStatus || search;
@@ -774,318 +774,353 @@ export default function MasterMapel() {
     setPage(1);
   };
 
-  /* ── Render ── */
+  /* ── Helpers ── */
+  const renderTingkat = (tingkat) => {
+    const raw = tingkat ? String(tingkat).trim() : "";
+    if (!raw || raw.toLowerCase() === "semua") {
+      return (
+        <span className="px-2.5 py-1 bg-[#dbeafe] text-[#1e40af] rounded-full text-[11px] font-bold uppercase tracking-wider whitespace-nowrap">
+          Semua
+        </span>
+      );
+    }
+    return raw
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .map((t) => (
+        <span
+          key={t}
+          className="px-2 py-1 bg-[#006e2a]/10 text-[#006e2a] rounded-full text-[11px] font-bold whitespace-nowrap"
+        >
+          Tk.{t}
+        </span>
+      ));
+  };
+
+  const renderKurikulum = (kurikulum) => {
+    if (kurikulum === "Keduanya")
+      return (
+        <div className="flex flex-wrap gap-1">
+          <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-[#fef3c7] text-[#92400e] border border-[#fde68a] whitespace-nowrap">
+            K2013
+          </span>
+          <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-[#d1fae5] text-[#065f46] border border-[#a7f3d0] whitespace-nowrap">
+            Merdeka
+          </span>
+        </div>
+      );
+    if (kurikulum === "Kurikulum 2013")
+      return (
+        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#fef3c7] text-[#92400e] border border-[#fde68a] whitespace-nowrap">
+          K2013
+        </span>
+      );
+    return (
+      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#d1fae5] text-[#065f46] border border-[#a7f3d0] whitespace-nowrap">
+        Merdeka
+      </span>
+    );
+  };
+
+  /* ── Render Pagination Pages ── */
+  const renderPages = () => {
+    const pages = [];
+    const total = lastPage;
+    if (total <= 5) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (page > 3) pages.push("...");
+      for (
+        let i = Math.max(2, page - 1);
+        i <= Math.min(total - 1, page + 1);
+        i++
+      )
+        pages.push(i);
+      if (page < total - 2) pages.push("...");
+      pages.push(total);
+    }
+    return pages;
+  };
+
   return (
-    <div className="space-y-space-lg">
-      {/* ── Page Header ─────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <nav className="flex items-center gap-1 text-label-md text-text-secondary mb-2">
-            <span>Dashboard</span>
-            <span className="material-symbols-outlined text-[14px]">
-              chevron_right
+    <div className="space-y-10">
+      {/* ── Page Header ── */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+        <div className="flex-1">
+          {/* Breadcrumb badge */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="px-4 py-1.5 rounded-full bg-[#006e2a]/10 border border-[#006e2a]/20 flex items-center gap-2 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-[#006e2a] animate-pulse" />
+              <span className="text-[10px] text-[#006e2a] tracking-[0.2em] uppercase font-black">
+                MASTER DATA
+              </span>
+            </div>
+            <div className="h-px w-24 bg-gradient-to-r from-[#006e2a]/20 to-transparent" />
+          </div>
+          <h1 className="font-['Plus_Jakarta_Sans'] text-4xl md:text-5xl text-[#00342b] font-extrabold leading-tight tracking-tighter mb-3">
+            Mata{" "}
+            <span className="font-['EB_Garamond'] italic text-[#006e2a] font-normal">
+              Pelajaran
             </span>
-            <span>Data Master</span>
-            <span className="material-symbols-outlined text-[14px]">
-              chevron_right
-            </span>
-            <span className="text-primary font-semibold">Mata Pelajaran</span>
-          </nav>
-          <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface">
-            Master Data Mata Pelajaran
           </h1>
-          <p className="text-body-md text-text-secondary mt-1">
-            Kelola seluruh mata pelajaran yang digunakan pada jadwal, nilai, dan
-            rapor.
+          <p className="text-[#3f4945] max-w-2xl leading-relaxed opacity-80 text-base">
+            Kelola daftar mata pelajaran, kelompok, kurikulum, dan status
+            pembelajaran secara terpusat.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => queryClient.invalidateQueries(["master-mapel"])}
-            className="bg-surface-container-lowest hover:bg-surface-container-low border border-border-light text-on-surface font-semibold py-2 px-3 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm text-label-md"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              refresh
-            </span>
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-
-          {/* Tombol Import */}
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => setImportOpen(true)}
-            className="bg-[#EDE9FE] hover:bg-[#DDD6FE] border border-[#DDD6FE] text-[#5B21B6] font-semibold py-2 px-3 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm text-label-md"
+            className="px-5 py-2.5 rounded-full border border-[#bfc9c4]/30 text-[#00342b] hover:bg-[#f2f4f3]/50 transition-all flex items-center gap-2 font-bold text-sm bg-white/50 backdrop-blur-sm"
           >
             <span className="material-symbols-outlined text-[18px]">
-              upload_file
+              upload
             </span>
-            <span className="hidden sm:inline">Import</span>
+            Import
           </button>
-
-          {/* Tombol Export */}
           <button
             onClick={handleExport}
             disabled={exportLoading}
-            className="bg-surface-container-lowest hover:bg-surface-container-low border border-border-light text-on-surface font-semibold py-2 px-3 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm text-label-md disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-5 py-2.5 rounded-full border border-[#bfc9c4]/30 text-[#00342b] hover:bg-[#f2f4f3]/50 transition-all flex items-center gap-2 font-bold text-sm bg-white/50 backdrop-blur-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {exportLoading ? (
-              <div className="w-4 h-4 border-2 border-on-surface border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-[#00342b] border-t-transparent rounded-full animate-spin" />
             ) : (
               <span className="material-symbols-outlined text-[18px]">
-                file_download
+                download
               </span>
             )}
-            <span className="hidden sm:inline">
-              {exportLoading ? "Mengekspor..." : "Export Excel"}
-            </span>
+            {exportLoading ? "Mengekspor..." : "Export"}
           </button>
-
           <button
             onClick={() => {
               setEditData(null);
               setModalOpen(true);
             }}
-            className="bg-primary hover:bg-on-primary-fixed-variant text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm text-label-md"
+            className="bg-[#006e2a] text-white px-7 py-3.5 rounded-full font-black text-[10px] tracking-[0.2em] flex items-center gap-3 shadow-xl shadow-[#006e2a]/30 hover:shadow-[#006e2a]/50 hover:-translate-y-0.5 hover:scale-[1.03] transition-all duration-300 group border border-white/20 uppercase"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
+            <div className="bg-white/20 rounded-full p-1 group-hover:rotate-90 transition-transform duration-500">
+              <span className="material-symbols-outlined text-[18px] block">
+                add
+              </span>
+            </div>
             Tambah Mata Pelajaran
           </button>
         </div>
       </div>
 
-      {/* ── Stats Grid ──────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-surface-container-lowest border border-border-light p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-[18px] text-text-secondary">
-              auto_stories
-            </span>
-          </div>
-          <p className="text-label-md text-text-secondary mb-1">Total Mapel</p>
-          <h3 className="text-headline-md font-bold text-on-surface">
-            {isLoading ? "—" : totalData}
-          </h3>
-        </div>
-
-        <div className="bg-surface-container-lowest border border-border-light p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-8 h-8 rounded-full bg-on-primary-container flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-[18px] text-success">
-              check_circle
-            </span>
-          </div>
-          <p className="text-label-md text-text-secondary mb-1">Mapel Aktif</p>
-          <h3 className="text-headline-md font-bold text-on-surface">
-            {isLoading ? "—" : totalAktif}
-          </h3>
-          {!isLoading && totalMapel > 0 && (
-            <div className="w-full bg-border-light rounded-full h-1.5 mt-2">
+      {/* ── Stats Grid ── */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
+        {[
+          {
+            icon: "menu_book",
+            label: "Mata Pelajaran",
+            badge: "Total",
+            value: isLoading ? "—" : totalData,
+            iconBg: "bg-[#006e2a]/10",
+            iconColor: "text-[#006e2a]",
+            hoverBg: "group-hover:bg-[#006e2a] group-hover:text-white",
+          },
+          {
+            icon: "check_circle",
+            label: "Status Aktif",
+            badge: "Aktif",
+            value: isLoading ? "—" : totalAktif,
+            iconBg: "bg-[#006e2a]/10",
+            iconColor: "text-[#006e2a]",
+            hoverBg: "group-hover:bg-[#006e2a] group-hover:text-white",
+          },
+          {
+            icon: "cancel",
+            label: "Non-Aktif",
+            badge: "Inaktif",
+            value: isLoading ? "—" : list.length - totalAktif,
+            iconBg: "bg-[#bfc9c4]/20",
+            iconColor: "text-[#707975]",
+            hoverBg: "group-hover:bg-[#707975] group-hover:text-white",
+          },
+          {
+            icon: "layers",
+            label: "Halaman Ini",
+            badge: "Tampil",
+            value: isLoading ? "—" : list.length,
+            iconBg: "bg-[#006e2a]/10",
+            iconColor: "text-[#006e2a]",
+            hoverBg: "group-hover:bg-[#006e2a] group-hover:text-white",
+          },
+          {
+            icon: "category",
+            label: "Kelompok Mapel",
+            badge: "Grup",
+            value: isLoading
+              ? "—"
+              : [...new Set(list.map((m) => m.kelompok))].length,
+            iconBg: "bg-[#006e2a]/10",
+            iconColor: "text-[#006e2a]",
+            hoverBg: "group-hover:bg-[#006e2a] group-hover:text-white",
+          },
+        ].map((stat) => (
+          <div
+            key={stat.label}
+            className="bg-white border border-[#bfc9c4]/20 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 group"
+          >
+            <div className="flex justify-between items-start mb-4">
               <div
-                className="bg-success h-1.5 rounded-full"
-                style={{
-                  width: `${Math.round((totalAktif / totalMapel) * 100)}%`,
-                }}
-              />
+                className={`w-10 h-10 rounded-xl ${stat.iconBg} flex items-center justify-center ${stat.iconColor} ${stat.hoverBg} transition-colors duration-300`}
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  {stat.icon}
+                </span>
+              </div>
+              <span
+                className={`text-[10px] font-black tracking-widest uppercase opacity-50 ${stat.iconColor}`}
+              >
+                {stat.badge}
+              </span>
             </div>
-          )}
+            <p className="text-[10px] font-black text-[#3f4945] uppercase tracking-wider mb-1">
+              {stat.label}
+            </p>
+            <h2 className="text-3xl font-extrabold text-[#00342b] tracking-tighter">
+              {stat.value}
+            </h2>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Toolbar ── */}
+      <div className="bg-white border border-[#bfc9c4]/20 rounded-[2rem] p-4 flex flex-col lg:flex-row gap-4 items-center shadow-sm">
+        {/* Search */}
+        <div className="relative flex-1 w-full group">
+          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#707975] group-focus-within:text-[#006e2a] transition-colors text-[20px]">
+            search
+          </span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Cari mata pelajaran, kode, atau kategori..."
+            className="w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 pl-12 pr-4 text-[#191c1c] placeholder:text-[#3f4945]/50 focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] transition-all font-medium text-sm outline-none"
+          />
         </div>
 
-        <div className="bg-surface-container-lowest border border-border-light p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-[18px] text-text-secondary">
-              cancel
+        <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full lg:w-auto">
+          {/* Status */}
+          <div className="relative min-w-[150px] flex-1 lg:flex-none">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 pl-4 pr-10 text-[#191c1c] font-black text-xs uppercase tracking-wider focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] appearance-none cursor-pointer transition-all outline-none"
+            >
+              <option value="">Status: Semua</option>
+              <option value="1">Aktif</option>
+              <option value="0">Nonaktif</option>
+            </select>
+            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[20px]">
+              expand_more
             </span>
           </div>
-          <p className="text-label-md text-text-secondary mb-1">Non-aktif</p>
-          <h3 className="text-headline-md font-bold text-on-surface">
-            {isLoading ? "—" : totalMapel - totalAktif}
-          </h3>
-        </div>
 
-        <div className="bg-surface-container-lowest border border-border-light p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-8 h-8 rounded-full bg-[#DBEAFE] flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-[18px] text-info">
-              layers
+          {/* Kelompok */}
+          <div className="relative min-w-[180px] flex-1 lg:flex-none">
+            <select
+              value={filterKelompok}
+              onChange={(e) => setFilterKelompok(e.target.value)}
+              className="w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 pl-4 pr-10 text-[#191c1c] font-black text-xs uppercase tracking-wider focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] appearance-none cursor-pointer transition-all outline-none"
+            >
+              <option value="">Kelompok: Semua</option>
+              {KELOMPOK_OPTIONS.map((k) => (
+                <option key={k} value={k}>
+                  {k}
+                </option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[20px]">
+              expand_more
             </span>
           </div>
-          <p className="text-label-md text-text-secondary mb-1">Halaman Ini</p>
-          <h3 className="text-headline-md font-bold text-on-surface">
-            {isLoading ? "—" : totalMapel}
-          </h3>
+
+          {/* Tingkat */}
+          <div className="relative min-w-[160px] flex-1 lg:flex-none">
+            <select
+              value={filterTingkat}
+              onChange={(e) => setFilterTingkat(e.target.value)}
+              className="w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 pl-4 pr-10 text-[#191c1c] font-black text-xs uppercase tracking-wider focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] appearance-none cursor-pointer transition-all outline-none"
+            >
+              <option value="">Tingkat: Semua</option>
+              {TINGKAT_OPTIONS.map((t) => (
+                <option key={t} value={t}>
+                  Tingkat {t}
+                </option>
+              ))}
+            </select>
+            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[20px]">
+              expand_more
+            </span>
+          </div>
+
+          <div className="h-10 w-px bg-[#bfc9c4]/20 hidden lg:block mx-1" />
+
+          <button
+            onClick={resetFilters}
+            title="Reset Filter"
+            className="flex items-center gap-2 px-5 py-3.5 rounded-2xl border border-[#bfc9c4]/20 text-[#3f4945] hover:bg-[#ffdad6]/20 hover:text-[#ba1a1a] hover:border-[#ba1a1a]/30 transition-all font-black text-xs uppercase tracking-widest bg-white/50 whitespace-nowrap"
+          >
+            <span className="material-symbols-outlined text-[18px]">
+              filter_alt_off
+            </span>
+            <span>Reset</span>
+          </button>
         </div>
       </div>
 
-      {/* ── Main Data Card ──────────────────────────────────── */}
-      <div className="bg-surface-container-lowest border border-border-light rounded-2xl shadow-sm flex flex-col min-h-[480px]">
-        {/* Toolbar */}
-        <div className="p-4 border-b border-border-light space-y-3">
-          <div className="flex flex-col sm:flex-row justify-between gap-3">
-            <div className="relative w-full sm:max-w-md">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-[20px]">
-                search
-              </span>
-              <input
-                type="text"
-                placeholder="Cari kode atau nama mapel..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-              />
-            </div>
-            <button
-              className="sm:hidden flex items-center justify-center gap-2 border border-border-light rounded-lg py-2 px-4 bg-background-light text-text-secondary text-label-md"
-              onClick={() => setMobileFilterOpen((v) => !v)}
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                filter_list
-              </span>
-              Filters{" "}
-              {hasActiveFilters && (
-                <span className="w-2 h-2 rounded-full bg-primary ml-1" />
-              )}
-            </button>
-          </div>
-
-          <div
-            className={`${mobileFilterOpen ? "flex" : "hidden"} sm:flex flex-wrap items-center gap-2`}
-          >
-            <div className="relative">
-              <select
-                value={filterKelompok}
-                onChange={(e) => setFilterKelompok(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-1.5 border border-border-light rounded-lg bg-background-light text-label-md text-text-secondary hover:border-text-secondary transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">Semua Kelompok</option>
-                {KELOMPOK_OPTIONS.map((k) => (
-                  <option key={k} value={k}>
-                    {k}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-text-secondary pointer-events-none">
-                arrow_drop_down
-              </span>
-            </div>
-
-            <div className="relative">
-              <select
-                value={filterTingkat}
-                onChange={(e) => setFilterTingkat(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-1.5 border border-border-light rounded-lg bg-background-light text-label-md text-text-secondary hover:border-text-secondary transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">Semua Tingkat</option>
-                {TINGKAT_OPTIONS.map((t) => (
-                  <option key={t} value={t}>
-                    Tingkat {t}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-text-secondary pointer-events-none">
-                arrow_drop_down
-              </span>
-            </div>
-
-            <div className="relative">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="appearance-none pl-3 pr-8 py-1.5 border border-border-light rounded-lg bg-background-light text-label-md text-text-secondary hover:border-text-secondary transition-colors cursor-pointer outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">Semua Status</option>
-                <option value="1">Aktif</option>
-                <option value="0">Non-aktif</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-text-secondary pointer-events-none">
-                arrow_drop_down
-              </span>
-            </div>
-
-            {filterKelompok && (
-              <div className="flex items-center border border-primary/30 bg-primary/5 rounded-lg px-3 py-1.5">
-                <span className="text-label-md text-primary">
-                  {filterKelompok}
-                </span>
-                <button
-                  onClick={() => setFilterKelompok("")}
-                  className="ml-2 text-primary hover:text-danger"
-                >
-                  <span className="material-symbols-outlined text-[14px]">
-                    close
-                  </span>
-                </button>
-              </div>
-            )}
-            {filterTingkat && (
-              <div className="flex items-center border border-primary/30 bg-primary/5 rounded-lg px-3 py-1.5">
-                <span className="text-label-md text-primary">
-                  Tingkat {filterTingkat}
-                </span>
-                <button
-                  onClick={() => setFilterTingkat("")}
-                  className="ml-2 text-primary hover:text-danger"
-                >
-                  <span className="material-symbols-outlined text-[14px]">
-                    close
-                  </span>
-                </button>
-              </div>
-            )}
-
-            {hasActiveFilters && (
-              <button
-                onClick={resetFilters}
-                className="text-primary hover:text-on-primary-fixed-variant text-label-md underline ml-auto"
-              >
-                Reset Filters
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* ── Table ─────────────────────────────────────────── */}
-        <div className="flex-1 overflow-x-auto">
+      {/* ── Table ── */}
+      <div className="bg-white rounded-[2rem] border border-[#bfc9c4]/20 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
           {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-label-md text-text-secondary">
-                  Memuat data...
-                </p>
-              </div>
+            <div className="flex flex-col items-center justify-center py-24 gap-4">
+              <div className="w-10 h-10 border-2 border-[#006e2a] border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm font-medium text-[#3f4945]">
+                Memuat data...
+              </p>
             </div>
           ) : list.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 bg-secondary-container rounded-full flex items-center justify-center mb-4">
-                <span className="material-symbols-outlined text-[32px] text-primary">
+            <div className="flex flex-col items-center justify-center py-24 text-center px-8">
+              <div className="w-20 h-20 bg-[#006e2a]/5 rounded-full flex items-center justify-center mb-5">
+                <span className="material-symbols-outlined text-[36px] text-[#006e2a]">
                   auto_stories
                 </span>
               </div>
-              <p className="text-body-lg text-on-surface font-semibold mb-1">
-                {search || hasActiveFilters
+              <p className="text-lg font-extrabold text-[#00342b] mb-2">
+                {hasActiveFilters
                   ? "Tidak ada hasil ditemukan"
                   : "Belum ada mata pelajaran"}
               </p>
-              <p className="text-label-md text-text-secondary mb-5">
-                {search || hasActiveFilters
+              <p className="text-sm text-[#3f4945]/70 mb-8 max-w-sm">
+                {hasActiveFilters
                   ? "Coba ubah kata kunci atau filter pencarian"
-                  : "Mulai tambahkan mata pelajaran baru atau import dari CSV"}
+                  : "Mulai tambahkan mata pelajaran baru atau import dari Excel"}
               </p>
               {!hasActiveFilters && (
-                <div className="flex gap-2">
+                <div className="flex gap-3 flex-wrap justify-center">
                   <button
                     onClick={() => setImportOpen(true)}
-                    className="border border-[#DDD6FE] bg-[#EDE9FE] text-[#5B21B6] font-semibold py-2 px-4 rounded-lg flex items-center gap-2 hover:bg-[#DDD6FE] transition-colors text-label-md"
+                    className="px-6 py-3 rounded-full border border-[#bfc9c4]/30 text-[#00342b] font-bold text-sm hover:bg-[#f2f4f3] transition-colors flex items-center gap-2"
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       upload_file
                     </span>
-                    Import CSV
+                    Import Excel
                   </button>
                   <button
                     onClick={() => {
                       setEditData(null);
                       setModalOpen(true);
                     }}
-                    className="bg-primary text-white font-semibold py-2 px-5 rounded-lg flex items-center gap-2 hover:bg-on-primary-fixed-variant transition-colors text-label-md"
+                    className="px-6 py-3 rounded-full bg-[#006e2a] text-white font-black text-sm hover:bg-[#065043] transition-colors flex items-center gap-2 shadow-lg shadow-[#006e2a]/20 uppercase tracking-wider"
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       add
@@ -1098,169 +1133,101 @@ export default function MasterMapel() {
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-background-light border-b border-border-light text-text-secondary text-label-md">
-                  <th className="py-3 px-4 font-semibold whitespace-nowrap">
-                    Kode
-                  </th>
-                  <th className="py-3 px-4 font-semibold whitespace-nowrap">
-                    Nama Mata Pelajaran
-                  </th>
-                  <th className="py-3 px-4 font-semibold whitespace-nowrap">
-                    Kelompok
-                  </th>
-                  <th className="py-3 px-4 font-semibold text-center whitespace-nowrap">
-                    Tingkat
-                  </th>
-                  <th className="py-3 px-4 font-semibold text-center whitespace-nowrap">
-                    Jam/Minggu
-                  </th>
-                  <th className="py-3 px-4 font-semibold whitespace-nowrap">
-                    Kurikulum
-                  </th>
-                  <th className="py-3 px-4 font-semibold text-center whitespace-nowrap">
-                    Status
-                  </th>
-                  <th className="py-3 px-4 font-semibold text-right whitespace-nowrap">
-                    Aksi
-                  </th>
+                <tr className="bg-[#f2f4f3]/50 border-b border-[#bfc9c4]/20 text-[10px] text-[#3f4945] uppercase tracking-[0.2em] font-black">
+                  <th className="py-5 px-6">Kode</th>
+                  <th className="py-5 px-6">Mata Pelajaran</th>
+                  <th className="py-5 px-6">Kelompok</th>
+                  <th className="py-5 px-6">Kurikulum</th>
+                  <th className="py-5 px-6">Jenjang / Tingkat</th>
+                  <th className="py-5 px-6 text-center">Jam/Minggu</th>
+                  <th className="py-5 px-6">Status</th>
+                  <th className="py-5 px-6 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-light text-body-md text-on-surface">
+              <tbody className="text-sm text-[#191c1c] divide-y divide-[#bfc9c4]/10">
                 {list.map((m) => (
                   <tr
                     key={m.id}
-                    className={`hover:bg-background-light/60 transition-colors group ${!m.is_active ? "opacity-60" : ""}`}
+                    className={`hover:bg-[#f2f4f3]/30 transition-all duration-300 group ${!m.is_active ? "opacity-60" : ""}`}
                   >
-                    <td className="py-3 px-4">
-                      <span className="font-mono font-bold text-primary bg-primary/8 px-2.5 py-1 rounded-lg text-xs tracking-wide border border-primary/15">
-                        {m.kode}
-                      </span>
+                    <td className="py-5 px-6 font-mono text-sm text-[#006e2a] font-bold">
+                      {m.kode}
                     </td>
 
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2.5 min-w-[160px]">
-                        <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0">
-                          <span className="material-symbols-outlined text-[16px] text-text-secondary">
-                            {KELOMPOK_ICON[m.kelompok] ?? "book"}
-                          </span>
-                        </div>
-                        <span className="font-semibold text-on-surface group-hover:text-primary transition-colors">
-                          {m.nama_mapel}
-                        </span>
-                      </div>
+                    <td className="py-5 px-6 font-bold text-[#00342b]">
+                      {m.nama_mapel}
                     </td>
 
-                    <td className="py-3 px-4">
+                    <td className="py-5 px-6">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${KELOMPOK_BADGE[m.kelompok] ?? "bg-surface-container text-on-surface-variant border border-border-light"}`}
+                        className={`px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider whitespace-nowrap ${KELOMPOK_BADGE[m.kelompok] ?? "bg-[#f3f4f6] text-[#374151] border border-[#e5e7eb]"}`}
                       >
                         {m.kelompok}
                       </span>
                     </td>
 
-                    <td className="py-3 px-4">
-                      <div className="flex flex-wrap gap-1 justify-center">
-                        {(() => {
-                          // null/kosong = berlaku untuk semua tingkat
-                          const raw = m.tingkat ? String(m.tingkat).trim() : "";
-                          if (!raw || raw.toLowerCase() === "semua") {
-                            return (
-                              <span className="bg-[#DBEAFE] text-[#1D4ED8] text-xs font-semibold px-2.5 py-0.5 rounded-full border border-[#BFDBFE] whitespace-nowrap">
-                                Semua
-                              </span>
-                            );
-                          }
-                          return raw
-                            .split(",")
-                            .map((t) => t.trim())
-                            .filter(Boolean)
-                            .map((t) => (
-                              <span
-                                key={t}
-                                className="bg-[#EDE9FE] text-[#5B21B6] text-xs font-semibold px-2 py-0.5 rounded-full border border-[#DDD6FE] whitespace-nowrap"
-                              >
-                                Tk.{t}
-                              </span>
-                            ));
-                        })()}
+                    <td className="py-5 px-6">
+                      {renderKurikulum(m.kurikulum)}
+                    </td>
+
+                    <td className="py-5 px-6">
+                      <div className="flex flex-wrap gap-1">
+                        {renderTingkat(m.tingkat)}
                       </div>
                     </td>
 
-                    <td className="py-3 px-4 text-center">
-                      <span className="font-semibold text-on-surface">
+                    <td className="py-5 px-6 text-center">
+                      <span className="font-bold text-[#00342b]">
                         {m.jam_per_minggu}
                       </span>
-                      <span className="text-text-secondary text-xs"> jam</span>
+                      <span className="text-[#707975] text-xs"> jam</span>
                     </td>
 
-                    <td className="py-3 px-4">
-                      {m.kurikulum === "Keduanya" ? (
-                        <div className="flex flex-wrap gap-1">
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] whitespace-nowrap">
-                            K2013
-                          </span>
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0] whitespace-nowrap">
-                            Merdeka
-                          </span>
-                        </div>
-                      ) : m.kurikulum === "Kurikulum 2013" ? (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] whitespace-nowrap">
-                          K2013
-                        </span>
-                      ) : (
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#DCFCE7] text-[#166534] border border-[#BBF7D0] whitespace-nowrap">
-                          Merdeka
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-5 px-6">
                       {m.is_active ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-on-primary-container text-success border border-success/20">
-                          <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#006e2a]/10 text-[#006e2a] font-black text-[11px] uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#006e2a]" />
                           Aktif
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-surface-container text-text-secondary border border-border-light">
-                          <span className="w-1.5 h-1.5 rounded-full bg-text-secondary" />
-                          Non-aktif
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f2f4f3] text-[#707975] font-black text-[11px] uppercase tracking-wider">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#707975]" />
+                          Nonaktif
                         </span>
                       )}
                     </td>
 
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                    <td className="py-5 px-6 text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
                         <button
                           onClick={() => toggleActive.mutate(m.id)}
                           title={m.is_active ? "Non-aktifkan" : "Aktifkan"}
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                          className={`p-2 rounded-lg transition-colors ${
                             m.is_active
-                              ? "text-warning hover:bg-[#FEF3C7]"
-                              : "text-success hover:bg-on-primary-container"
+                              ? "text-[#3f4945] hover:text-[#92400e] hover:bg-[#fef3c7]"
+                              : "text-[#3f4945] hover:text-[#006e2a] hover:bg-[#d1fae5]"
                           }`}
                         >
-                          <span className="material-symbols-outlined text-[18px]">
+                          <span className="material-symbols-outlined text-[20px]">
                             {m.is_active ? "toggle_on" : "toggle_off"}
                           </span>
                         </button>
-
                         <button
                           onClick={() => {
                             setEditData({ ...m });
                             setModalOpen(true);
                           }}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors"
+                          className="p-2 text-[#3f4945] hover:text-[#00342b] hover:bg-[#afefdd]/30 rounded-lg transition-colors"
                         >
-                          <span className="material-symbols-outlined text-[18px]">
+                          <span className="material-symbols-outlined text-[20px]">
                             edit
                           </span>
                         </button>
-
                         <button
                           onClick={() => setDeleteTarget(m)}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-error-container hover:text-danger transition-colors"
+                          className="p-2 text-[#3f4945] hover:text-[#ba1a1a] hover:bg-[#ffdad6]/50 rounded-lg transition-colors"
                         >
-                          <span className="material-symbols-outlined text-[18px]">
+                          <span className="material-symbols-outlined text-[20px]">
                             delete
                           </span>
                         </button>
@@ -1273,81 +1240,69 @@ export default function MasterMapel() {
           )}
         </div>
 
-        {/* ── Pagination ────────────────────────────────────── */}
+        {/* ── Pagination ── */}
         {!isLoading && list.length > 0 && (
-          <div className="p-4 border-t border-border-light flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-text-secondary">
+          <div className="p-6 border-t border-[#bfc9c4]/20 flex flex-col md:flex-row items-center justify-between gap-4 bg-[#f2f4f3]/30">
+            <p className="text-sm font-medium text-[#3f4945]">
               Menampilkan{" "}
-              <span className="font-semibold text-on-surface">
+              <span className="text-[#00342b] font-bold">
                 {meta?.from ?? 1}
-              </span>
-              –
-              <span className="font-semibold text-on-surface">
+              </span>{" "}
+              sampai{" "}
+              <span className="text-[#00342b] font-bold">
                 {meta?.to ?? list.length}
               </span>{" "}
-              dari{" "}
-              <span className="font-semibold text-on-surface">{totalData}</span>{" "}
-              data
+              dari <span className="text-[#00342b] font-bold">{totalData}</span>{" "}
+              entri
             </p>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1.5 border border-border-light rounded-lg text-sm font-medium text-text-secondary bg-white hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#bfc9c4]/30 text-[#707975] hover:bg-white hover:text-[#006e2a] hover:border-[#006e2a]/50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                Previous
+                <span className="material-symbols-outlined text-[20px]">
+                  chevron_left
+                </span>
               </button>
-              <div className="hidden sm:flex gap-1">
-                {Array.from({ length: Math.min(lastPage, 5) }, (_, i) => {
-                  const p = i + 1;
-                  return (
+
+              <div className="flex items-center gap-1">
+                {renderPages().map((p, i) =>
+                  p === "..." ? (
+                    <span key={`dots-${i}`} className="px-1 text-[#bfc9c4]">
+                      ...
+                    </span>
+                  ) : (
                     <button
                       key={p}
                       onClick={() => setPage(p)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg font-bold text-sm transition-all ${
                         page === p
-                          ? "bg-primary text-white"
-                          : "text-text-secondary hover:bg-surface-container-low"
+                          ? "bg-[#006e2a] text-white shadow-sm shadow-[#006e2a]/20"
+                          : "border border-transparent text-[#3f4945] hover:bg-white hover:border-[#bfc9c4]/30"
                       }`}
                     >
                       {p}
                     </button>
-                  );
-                })}
-                {lastPage > 5 && (
-                  <>
-                    <span className="w-8 h-8 flex items-center justify-center text-text-secondary text-sm">
-                      ...
-                    </span>
-                    <button
-                      onClick={() => setPage(lastPage)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                        page === lastPage
-                          ? "bg-primary text-white"
-                          : "text-text-secondary hover:bg-surface-container-low"
-                      }`}
-                    >
-                      {lastPage}
-                    </button>
-                  </>
+                  ),
                 )}
               </div>
-              <span className="text-sm text-text-secondary sm:hidden">
-                Hal {page}/{lastPage}
-              </span>
+
               <button
                 onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
                 disabled={page === lastPage}
-                className="px-3 py-1.5 border border-border-light rounded-lg text-sm font-medium text-text-secondary bg-white hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-[#bfc9c4]/30 text-[#00342b] bg-white hover:bg-[#006e2a] hover:text-white hover:border-[#006e2a] transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
               >
-                Next
+                <span className="material-symbols-outlined text-[20px]">
+                  chevron_right
+                </span>
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* ── Modals ──────────────────────────────────────────── */}
+      {/* ── Modals ── */}
       <ModalMapel
         open={modalOpen}
         onClose={() => {
