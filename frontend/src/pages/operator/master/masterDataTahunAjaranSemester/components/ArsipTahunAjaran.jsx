@@ -434,7 +434,7 @@ export default function ArsipTahunAjaran() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8faf9] relative overflow-x-hidden">
+    <div className="min-h-screen relative w-full space-y-5 animate-fade-up">
       {/* Atmospheric blobs */}
       <div
         className="fixed pointer-events-none"
@@ -465,7 +465,7 @@ export default function ArsipTahunAjaran() {
         }}
       />
 
-      <div className="relative z-10 max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+      <div className="relative z-10 space-y-5">
         {/* ── 1. Header ── */}
         <section className="flex flex-col gap-2">
           {/* Breadcrumb row */}
