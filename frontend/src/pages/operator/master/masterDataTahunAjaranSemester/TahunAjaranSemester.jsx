@@ -4,7 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
-import { tahunAjaranKeys } from "../../../../hooks/api/useTahunAjaran";
+import {
+  tahunAjaranKeys,
+  useArsipkanTahunAjaran,
+} from "../../../../hooks/api/useTahunAjaran";
 import ModalTahunAjaranComp from "./components/ModalTahunAjaran";
 import ModalBuatSemesterComp from "./components/ModalBuatSemester";
 import SemesterCardComp from "./components/SemesterCard";
@@ -55,6 +58,17 @@ export default function TahunAjaran() {
     setConfirmModal({ open: true, title, message, onConfirm, isDanger });
   const closeConfirm = () =>
     setConfirmModal((s) => ({ ...s, open: false, onConfirm: null }));
+
+  // State modal arsip — tampilkan textarea catatan opsional
+  const [arsipModal, setArsipModal] = useState({
+    open: false,
+    item: null,
+    catatan: "",
+    isPending: false,
+  });
+
+  const closeArsipModal = () =>
+    setArsipModal({ open: false, item: null, catatan: "", isPending: false });
 
   // Fetch list of Tahun Ajaran
   const { data: listData = [], isLoading } = useQuery({
@@ -175,12 +189,13 @@ export default function TahunAjaran() {
       ),
   });
 
-  // Mutation: Delete year
+  // Mutation: Delete year (soft delete → recycle bin)
   const hapus = useMutation({
     mutationFn: (id) => api.delete(`/operator/master-data/tahun-ajaran/${id}`),
     onSuccess: () => {
-      toast.success("Tahun ajaran berhasil dihapus.");
+      toast.success("Tahun ajaran dipindahkan ke recycle bin.");
       queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
       queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
       setSelectedId(null);
     },
@@ -189,6 +204,9 @@ export default function TahunAjaran() {
         err.response?.data?.message ?? "Gagal menghapus tahun ajaran.",
       ),
   });
+
+  // Mutation: Arsipkan tahun ajaran (periode selesai → historis)
+  const arsipkanMut = useArsipkanTahunAjaran();
 
   // Computed summary stats
   const totalTahunAjaran = list.length;
@@ -1183,14 +1201,40 @@ export default function TahunAjaran() {
                 {/* DIVIDER */}
                 <div className="h-px bg-border-light mx-1 my-1" />
 
-                {/* DELETE */}
+                {/* SELESAI & ARSIPKAN — hanya muncul kalau TA tidak aktif */}
+                {!actionItem.is_active && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      close();
+                      setArsipModal({
+                        open: true,
+                        item: actionItem,
+                        catatan: "",
+                        isPending: false,
+                      });
+                    }}
+                    disabled={arsipkanMut.isPending}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-[#006e2a] hover:bg-[#006e2a]/8 transition-colors disabled:opacity-50"
+                  >
+                    <span
+                      className="material-symbols-outlined text-[18px] text-[#006e2a]"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      inventory_2
+                    </span>
+                    <span>Selesai &amp; Arsipkan</span>
+                  </button>
+                )}
+
+                {/* DELETE → recycle bin */}
                 <button
                   type="button"
                   onClick={() => {
                     close();
                     openConfirm({
-                      title: "Hapus Tahun Ajaran",
-                      message: `Periode "${actionItem.tahun}" beserta data semesternya akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.`,
+                      title: "Pindahkan ke Recycle Bin",
+                      message: `Periode "${actionItem.tahun}" akan dipindahkan ke recycle bin. Data dapat dipulihkan kembali.`,
                       onConfirm: () => hapus.mutate(actionItem.id),
                     });
                   }}
@@ -1200,14 +1244,14 @@ export default function TahunAjaran() {
                   <span className="material-symbols-outlined text-[18px] text-danger">
                     delete
                   </span>
-                  <span>Hapus Periode</span>
+                  <span>Pindah ke Recycle Bin</span>
                 </button>
 
                 {/* INFO UNTUK DATA AKTIF */}
                 {actionItem.is_active && (
                   <div className="px-3 pb-2">
                     <p className="text-[10px] text-text-secondary/70">
-                      Periode aktif tidak dapat dihapus.
+                      Nonaktifkan dulu sebelum mengarsipkan atau menghapus.
                     </p>
                   </div>
                 )}
@@ -1311,6 +1355,149 @@ export default function TahunAjaran() {
                     {confirmModal.isDanger ? "delete" : "check_circle"}
                   </span>
                   {confirmModal.isDanger ? "Ya, Hapus" : "Ya, Aktifkan"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* ── Modal Arsip ──────────────────────────────────────────────────── */}
+      {arsipModal.open &&
+        arsipModal.item &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={closeArsipModal}
+          >
+            <div
+              className="bg-white rounded-[20px] w-full max-w-md shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Icon */}
+              <div className="w-14 h-14 rounded-2xl bg-[#5cfd80]/20 border border-[#006e2a]/20 flex items-center justify-center mx-auto mb-5">
+                <span
+                  className="material-symbols-outlined text-[#006e2a] text-[30px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  inventory_2
+                </span>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-lg font-extrabold text-[#00342b] text-center mb-1">
+                Arsipkan Tahun Ajaran?
+              </h3>
+              <p className="text-sm text-[#3f4945]/70 text-center mb-5 leading-relaxed">
+                Periode{" "}
+                <strong className="text-[#00342b]">
+                  {arsipModal.item.tahun}
+                </strong>{" "}
+                akan ditandai sebagai selesai dan dipindahkan ke arsip historis.
+                Data tetap aman dan bisa dilihat kapan saja.
+              </p>
+
+              {/* Info chips */}
+              <div className="flex flex-wrap gap-2 justify-center mb-5">
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] text-[11px] font-bold">
+                  <span className="material-symbols-outlined text-[14px]">
+                    check
+                  </span>
+                  Data tetap tersimpan
+                </span>
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] text-[11px] font-bold">
+                  <span className="material-symbols-outlined text-[14px]">
+                    visibility
+                  </span>
+                  Bisa dilihat kapan saja
+                </span>
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ffdeac]/40 text-[#7a4f00] text-[11px] font-bold">
+                  <span className="material-symbols-outlined text-[14px]">
+                    restore
+                  </span>
+                  Bisa dibatalkan
+                </span>
+              </div>
+
+              {/* Catatan opsional */}
+              <div className="mb-5">
+                <label className="block text-xs font-bold text-[#3f4945] uppercase tracking-wider mb-2">
+                  Catatan{" "}
+                  <span className="font-normal text-[#707975] normal-case tracking-normal">
+                    (opsional)
+                  </span>
+                </label>
+                <textarea
+                  value={arsipModal.catatan}
+                  onChange={(e) =>
+                    setArsipModal((s) => ({ ...s, catatan: e.target.value }))
+                  }
+                  placeholder="Contoh: Tahun ajaran ini telah selesai pada Juli 2025..."
+                  rows={3}
+                  maxLength={500}
+                  className="w-full resize-none bg-[#f2f4f3]/60 border border-[#bfc9c4]/30 rounded-xl py-3 px-4 text-sm text-[#191c1c] placeholder:text-[#3f4945]/40 focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] outline-none transition-all"
+                />
+                <p className="text-[11px] text-[#707975] mt-1 text-right">
+                  {arsipModal.catatan.length}/500
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeArsipModal}
+                  disabled={arsipModal.isPending}
+                  className="flex-1 py-3 rounded-xl border border-[#bfc9c4]/50 text-[#3f4945] font-bold text-xs uppercase tracking-wider hover:bg-[#f2f4f3] transition disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={arsipModal.isPending || arsipkanMut.isPending}
+                  onClick={() => {
+                    setArsipModal((s) => ({ ...s, isPending: true }));
+                    arsipkanMut.mutate(
+                      {
+                        id: arsipModal.item.id,
+                        catatan: arsipModal.catatan.trim() || undefined,
+                      },
+                      {
+                        onSuccess: () => {
+                          toast.success(
+                            `Tahun ajaran "${arsipModal.item.tahun}" berhasil diarsipkan.`,
+                          );
+                          closeArsipModal();
+                          setSelectedId(null);
+                        },
+                        onError: (err) => {
+                          toast.error(
+                            err.response?.data?.message ??
+                              "Gagal mengarsipkan tahun ajaran.",
+                          );
+                          setArsipModal((s) => ({ ...s, isPending: false }));
+                        },
+                      },
+                    );
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-[#006e2a] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#00342b] transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {arsipModal.isPending || arsipkanMut.isPending ? (
+                    <>
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Mengarsipkan...
+                    </>
+                  ) : (
+                    <>
+                      <span
+                        className="material-symbols-outlined text-[16px]"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        inventory_2
+                      </span>
+                      Ya, Arsipkan
+                    </>
+                  )}
                 </button>
               </div>
             </div>

@@ -244,6 +244,7 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
             Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
             // Static routes BEFORE /{id} wildcard
             Route::get('/tahun-ajaran/trash', [TahunAjaranController::class, 'trash']);
+            Route::get('/tahun-ajaran/arsip', [TahunAjaranController::class, 'arsipList']);
             Route::get('/tahun-ajaran/{id}', [TahunAjaranController::class, 'show']);
         });
 
@@ -252,6 +253,10 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
             Route::put('/tahun-ajaran/{id}', [TahunAjaranController::class, 'update']);
             Route::patch('/tahun-ajaran/{id}/aktif', [TahunAjaranController::class, 'setAktif']);
             Route::patch('/tahun-ajaran/{id}/semester-aktif', [TahunAjaranController::class, 'setSemesterAktif']);
+            // Arsip — data historis (periode selesai), berbeda dengan recycle bin
+            Route::patch('/tahun-ajaran/{id}/arsip', [TahunAjaranController::class, 'arsip']);
+            Route::patch('/tahun-ajaran/{id}/unarsip', [TahunAjaranController::class, 'unarsip']);
+            // Recycle bin
             Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
             Route::patch('/tahun-ajaran/{id}/restore', [TahunAjaranController::class, 'restore']);
             Route::delete('/tahun-ajaran/{id}/force-delete', [TahunAjaranController::class, 'forceDelete']);

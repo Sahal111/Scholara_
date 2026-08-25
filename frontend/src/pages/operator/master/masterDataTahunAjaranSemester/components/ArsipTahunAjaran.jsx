@@ -1,39 +1,16 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import api from "../../../../../lib/axios";
-import { tahunAjaranKeys } from "../../../../../hooks/api/useTahunAjaran";
+import {
+  useArsipTahunAjaranList,
+  useUnarsipTahunAjaran,
+} from "../../../../../hooks/api/useTahunAjaran";
 import {
   fmt,
   fmtShortMonthYear,
   getTglMulai,
   getTglSelesai,
 } from "../utils/tahunAjaranHelpers";
-
-// ── Query & Mutations ─────────────────────────────────────────────────────────
-
-function useArsipList() {
-  return useQuery({
-    queryKey: [...tahunAjaranKeys.all, "arsip"],
-    queryFn: () =>
-      api.get("/operator/master-data/tahun-ajaran/arsip").then((r) => r.data),
-    retry: false,
-  });
-}
-
-function useUnarshipTahunAjaran(queryClient) {
-  return useMutation({
-    mutationFn: (id) =>
-      api.patch(`/operator/master-data/tahun-ajaran/${id}/unarsip`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [...tahunAjaranKeys.all, "arsip"],
-      });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-    },
-  });
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -42,16 +19,6 @@ function getSemesterLabel(item) {
   if (semesters.length === 0) return "—";
   if (semesters.length === 1) return semesters[0].nama;
   return "Tahun Penuh";
-}
-
-function getKurikulum(item) {
-  // Field kurikulum pada model — fallback ke "-" jika tidak ada
-  return item.kurikulum ?? item.semesters?.[0]?.kurikulum ?? "—";
-}
-
-function getTotalSiswa(item) {
-  if (item.total_siswa != null) return `${item.total_siswa} Siswa`;
-  return "—";
 }
 
 function getPeriodeLabel(item) {
@@ -105,16 +72,16 @@ function ConfirmDialog({
   );
 }
 
-// ── Skeleton Row ──────────────────────────────────────────────────────────────
+// ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function SkeletonRow() {
   return (
     <tr>
-      {[...Array(7)].map((_, i) => (
+      {[...Array(6)].map((_, i) => (
         <td key={i} className="py-8 px-4">
           <div
             className="h-4 bg-[#eceeed] rounded-full animate-pulse"
-            style={{ width: i === 6 ? "60px" : "80%" }}
+            style={{ width: i === 5 ? "60px" : "80%" }}
           />
         </td>
       ))}
@@ -124,29 +91,16 @@ function SkeletonRow() {
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
 
-function StatusBadge({ isPermanent }) {
-  if (isPermanent) {
-    return (
-      <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#e6e9e8] text-[#3f4945] font-bold text-[10px] tracking-widest border border-[#bfc9c4]/40 uppercase">
-        <span
-          className="material-symbols-outlined text-[14px]"
-          style={{ fontVariationSettings: "'FILL' 1" }}
-        >
-          archive
-        </span>
-        PERMANEN
-      </span>
-    );
-  }
+function StatusBadge({ archivedAt }) {
   return (
-    <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#e6e9e8] text-[#3f4945] font-bold text-[10px] tracking-widest border border-[#bfc9c4]/40 uppercase">
+    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#e6e9e8] text-[#3f4945] font-bold text-[10px] tracking-widest border border-[#bfc9c4]/40 uppercase">
       <span
         className="material-symbols-outlined text-[14px]"
         style={{ fontVariationSettings: "'FILL' 1" }}
       >
         inventory_2
       </span>
-      DIARSIPKAN
+      Arsip · {fmt(archivedAt)}
     </span>
   );
 }
@@ -154,47 +108,24 @@ function StatusBadge({ isPermanent }) {
 // ── Table Row ─────────────────────────────────────────────────────────────────
 
 function ArsipRow({ item, onUnarsip }) {
-  const isPermanent = item.is_permanent_archive ?? false;
-
   return (
     <tr className="hover:bg-[#006e2a]/5 transition-all duration-300 group">
-      {/* Tahun Ajaran */}
       <td className="py-8 px-4">
         <div className="font-bold text-[18px] text-[#00342b] leading-tight">
           {item.tahun}
         </div>
       </td>
-
-      {/* Semester */}
       <td className="py-8 px-4">
         <div className="text-sm text-[#191c1c] font-medium">
           {getSemesterLabel(item)}
         </div>
       </td>
-
-      {/* Periode */}
       <td className="py-8 px-4">
         <div className="text-sm text-[#3f4945]/70">{getPeriodeLabel(item)}</div>
       </td>
-
-      {/* Kurikulum */}
       <td className="py-8 px-4">
-        <div className="text-sm text-[#191c1c] font-semibold">
-          {getKurikulum(item)}
-        </div>
+        <StatusBadge archivedAt={item.archived_at} />
       </td>
-
-      {/* Total Siswa */}
-      <td className="py-8 px-4">
-        <div className="text-sm text-[#191c1c]">{getTotalSiswa(item)}</div>
-      </td>
-
-      {/* Status */}
-      <td className="py-8 px-4">
-        <StatusBadge isPermanent={isPermanent} />
-      </td>
-
-      {/* Aksi */}
       <td className="py-8 px-4 text-right">
         <div className="flex items-center justify-end gap-2">
           <Link
@@ -206,39 +137,24 @@ function ArsipRow({ item, onUnarsip }) {
               visibility
             </span>
           </Link>
-
-          {isPermanent ? (
-            <button
-              disabled
-              className="text-[#707975]/20 cursor-not-allowed p-2 rounded-full"
-              title="Arsip permanen tidak dapat dipulihkan"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                lock
-              </span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onUnarsip(item)}
-              className="text-[#707975]/40 hover:text-[#006e2a] transition-all p-2 rounded-full hover:bg-[#006e2a]/10"
-              title="Keluarkan dari Arsip"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                restore
-              </span>
-            </button>
-          )}
+          <button
+            onClick={() => onUnarsip(item)}
+            className="text-[#707975]/40 hover:text-[#006e2a] transition-all p-2 rounded-full hover:bg-[#006e2a]/10"
+            title="Keluarkan dari Arsip"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              restore
+            </span>
+          </button>
         </div>
       </td>
     </tr>
   );
 }
 
-// ── Mobile Card (responsive < lg) ────────────────────────────────────────────
+// ── Mobile Card ───────────────────────────────────────────────────────────────
 
 function ArsipCard({ item, onUnarsip }) {
-  const isPermanent = item.is_permanent_archive ?? false;
-
   return (
     <div className="bg-white/80 backdrop-blur-md border border-white/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300">
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -250,24 +166,7 @@ function ArsipCard({ item, onUnarsip }) {
             {getSemesterLabel(item)} · {getPeriodeLabel(item)}
           </div>
         </div>
-        <StatusBadge isPermanent={isPermanent} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
-        <div>
-          <span className="text-[#707975] uppercase tracking-wider font-bold text-[10px]">
-            Kurikulum
-          </span>
-          <div className="text-[#191c1c] font-semibold mt-0.5">
-            {getKurikulum(item)}
-          </div>
-        </div>
-        <div>
-          <span className="text-[#707975] uppercase tracking-wider font-bold text-[10px]">
-            Total Siswa
-          </span>
-          <div className="text-[#191c1c] mt-0.5">{getTotalSiswa(item)}</div>
-        </div>
+        <StatusBadge archivedAt={item.archived_at} />
       </div>
 
       <div className="flex items-center gap-2 border-t border-[#eceeed] pt-3">
@@ -280,57 +179,14 @@ function ArsipCard({ item, onUnarsip }) {
           </span>
           Lihat Detail
         </Link>
-
-        {isPermanent ? (
-          <button
-            disabled
-            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-[#f2f4f3] text-[#707975]/40 text-xs font-bold cursor-not-allowed"
-          >
-            <span className="material-symbols-outlined text-[15px]">lock</span>
-            Terkunci
-          </button>
-        ) : (
-          <button
-            onClick={() => onUnarsip(item)}
-            className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-[#006e2a]/10 text-[#006e2a] text-xs font-bold hover:bg-[#006e2a]/20 transition"
-          >
-            <span className="material-symbols-outlined text-[15px]">
-              restore
-            </span>
-            Pulihkan
-          </button>
-        )}
+        <button
+          onClick={() => onUnarsip(item)}
+          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-[#006e2a]/10 text-[#006e2a] text-xs font-bold hover:bg-[#006e2a]/20 transition"
+        >
+          <span className="material-symbols-outlined text-[15px]">restore</span>
+          Keluarkan
+        </button>
       </div>
-    </div>
-  );
-}
-
-// ── Backend Not Ready Notice ──────────────────────────────────────────────────
-
-function BackendPendingNotice() {
-  return (
-    <div className="bg-white/80 backdrop-blur-md border border-white/40 rounded-[2.5rem] shadow-lg p-12 text-center">
-      <span className="material-symbols-outlined text-[56px] text-[#bfc9c4] mb-4 block">
-        engineering
-      </span>
-      <h3 className="text-base font-extrabold text-[#00342b] mb-2">
-        Endpoint Arsip Belum Tersedia
-      </h3>
-      <p className="text-sm text-[#3f4945]/70 leading-relaxed max-w-sm mx-auto">
-        Fitur arsip membutuhkan field{" "}
-        <code className="bg-[#f2f4f3] px-1.5 py-0.5 rounded font-mono text-xs">
-          is_archived
-        </code>{" "}
-        pada tabel{" "}
-        <code className="bg-[#f2f4f3] px-1.5 py-0.5 rounded font-mono text-xs">
-          tahun_ajarans
-        </code>{" "}
-        dan endpoint{" "}
-        <code className="bg-[#f2f4f3] px-1.5 py-0.5 rounded font-mono text-xs">
-          PATCH /tahun-ajaran/:id/arsip
-        </code>
-        .
-      </p>
     </div>
   );
 }
@@ -348,16 +204,26 @@ function EmptyState() {
       </span>
       <h3 className="text-xl font-bold text-[#00342b] mb-2">Belum Ada Arsip</h3>
       <p className="text-sm text-[#3f4945]/70 max-w-md mx-auto leading-relaxed">
-        Saat ini tidak ada tahun ajaran atau semester yang diarsipkan. Data
-        akademik yang dinonaktifkan akan muncul di halaman ini.
+        Saat ini tidak ada tahun ajaran yang diarsipkan. Tandai periode yang
+        sudah selesai dengan tombol <strong>"Selesai &amp; Arsipkan"</strong>{" "}
+        pada daftar tahun ajaran.
       </p>
+      <Link
+        to="/operator/master/tahun-ajaran"
+        className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] text-sm font-bold hover:bg-[#006e2a]/20 transition"
+      >
+        <span className="material-symbols-outlined text-[18px]">
+          arrow_back
+        </span>
+        Kembali ke Daftar
+      </Link>
     </div>
   );
 }
 
 // ── Error State ───────────────────────────────────────────────────────────────
 
-function ErrorState() {
+function ErrorState({ onRetry }) {
   return (
     <div className="bg-white/80 backdrop-blur-md border border-white/40 rounded-[2.5rem] shadow-lg p-12 text-center">
       <span className="material-symbols-outlined text-[56px] text-red-400 mb-4 block">
@@ -366,9 +232,15 @@ function ErrorState() {
       <h3 className="text-base font-bold text-red-700 mb-1">
         Gagal Memuat Data
       </h3>
-      <p className="text-sm text-[#3f4945]/70">
-        Terjadi kesalahan saat mengambil data arsip. Coba muat ulang halaman.
+      <p className="text-sm text-[#3f4945]/70 mb-4">
+        Terjadi kesalahan saat mengambil data arsip.
       </p>
+      <button
+        onClick={onRetry}
+        className="px-5 py-2 rounded-xl bg-[#006e2a] text-white text-xs font-bold hover:bg-[#00342b] transition"
+      >
+        Coba Lagi
+      </button>
     </div>
   );
 }
@@ -376,38 +248,23 @@ function ErrorState() {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function ArsipTahunAjaran() {
-  const queryClient = useQueryClient();
-  const { data, isLoading, isError, error } = useArsipList();
-  const unarsipMut = useUnarshipTahunAjaran(queryClient);
+  const {
+    data: rawItems = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useArsipTahunAjaranList();
+  const unarsipMut = useUnarsipTahunAjaran();
 
   const [confirmUnarsip, setConfirmUnarsip] = useState(null);
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("semua");
-  const [filterKurikulum, setFilterKurikulum] = useState("semua");
 
-  const is404 =
-    error?.response?.status === 404 || error?.response?.status === 405;
-  const rawItems = data?.data ?? [];
-
-  // ── Client-side filter ────────────────────────────────────────────────────
   const items = useMemo(() => {
-    return rawItems.filter((item) => {
-      const matchSearch =
-        !search.trim() ||
-        item.tahun?.toLowerCase().includes(search.toLowerCase());
-
-      const matchStatus =
-        filterStatus === "semua" ||
-        (filterStatus === "permanen" && item.is_permanent_archive) ||
-        (filterStatus === "sementara" && !item.is_permanent_archive);
-
-      const matchKurikulum =
-        filterKurikulum === "semua" ||
-        getKurikulum(item).toLowerCase() === filterKurikulum.toLowerCase();
-
-      return matchSearch && matchStatus && matchKurikulum;
-    });
-  }, [rawItems, search, filterStatus, filterKurikulum]);
+    if (!search.trim()) return rawItems;
+    return rawItems.filter((item) =>
+      item.tahun?.toLowerCase().includes(search.toLowerCase()),
+    );
+  }, [rawItems, search]);
 
   const handleUnarsipConfirm = () => {
     if (!confirmUnarsip) return;
@@ -425,12 +282,6 @@ export default function ArsipTahunAjaran() {
         setConfirmUnarsip(null);
       },
     });
-  };
-
-  const handleReset = () => {
-    setSearch("");
-    setFilterStatus("semua");
-    setFilterKurikulum("semua");
   };
 
   return (
@@ -466,9 +317,8 @@ export default function ArsipTahunAjaran() {
       />
 
       <div className="relative z-10 space-y-5">
-        {/* ── 1. Header ── */}
+        {/* ── Header ── */}
         <section className="flex flex-col gap-2">
-          {/* Breadcrumb row */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
             <Link
               to="/operator/master/tahun-ajaran"
@@ -497,7 +347,6 @@ export default function ArsipTahunAjaran() {
             </nav>
           </div>
 
-          {/* Title block */}
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <div className="px-4 py-1.5 rounded-full bg-[#006e2a]/10 border border-[#006e2a]/20 flex items-center gap-2 shadow-sm w-fit">
@@ -520,15 +369,15 @@ export default function ArsipTahunAjaran() {
               &amp; Semester
             </h1>
             <p className="text-base sm:text-lg text-[#3f4945]/80 max-w-2xl leading-relaxed">
-              Melihat data historis dan riwayat periode akademik yang telah
-              berlalu atau dinonaktifkan secara terpusat.
+              Data historis periode akademik yang sudah selesai. Data tetap
+              tersimpan dan bisa dilihat, namun tidak aktif dalam sistem
+              operasional.
             </p>
           </div>
         </section>
 
-        {/* ── 2. Filter Bar ── */}
-        <div className="bg-white border border-[#bfc9c4]/20 p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center shadow-sm rounded-2xl">
-          {/* Search */}
+        {/* ── Filter Bar ── */}
+        <div className="bg-white border border-[#bfc9c4]/20 p-4 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center shadow-sm rounded-2xl">
           <div className="relative flex-1 group">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#707975] group-focus-within:text-[#006e2a] transition-colors text-[20px]">
               search
@@ -542,66 +391,39 @@ export default function ArsipTahunAjaran() {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 lg:w-auto">
-            {/* Filter Status */}
-            <div className="relative min-w-[160px]">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 pl-4 pr-10 text-[#191c1c] font-bold text-xs uppercase tracking-wider focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] appearance-none cursor-pointer transition-all outline-none"
-              >
-                <option value="semua">Status: Semua</option>
-                <option value="sementara">Diarsipkan Sementara</option>
-                <option value="permanen">Arsip Permanen</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[20px]">
-                expand_more
-              </span>
-            </div>
-
-            {/* Filter Kurikulum */}
-            <div className="relative min-w-[160px]">
-              <select
-                value={filterKurikulum}
-                onChange={(e) => setFilterKurikulum(e.target.value)}
-                className="w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 pl-4 pr-10 text-[#191c1c] font-bold text-xs uppercase tracking-wider focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] appearance-none cursor-pointer transition-all outline-none"
-              >
-                <option value="semua">Kurikulum: Semua</option>
-                <option value="Merdeka">Merdeka</option>
-                <option value="K-13">K-13</option>
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[20px]">
-                expand_more
-              </span>
-            </div>
-
-            <div className="hidden lg:block h-10 w-px bg-[#bfc9c4]/20 mx-1" />
-
-            {/* Reset */}
+          {search && (
             <button
-              onClick={handleReset}
+              onClick={() => setSearch("")}
               className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl border border-[#bfc9c4]/20 text-[#3f4945] hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all font-bold text-xs uppercase tracking-widest bg-white/50"
-              title="Reset Filter"
             >
               <span className="material-symbols-outlined text-[18px]">
                 refresh
               </span>
-              <span>Reset</span>
+              Reset
             </button>
-          </div>
+          )}
         </div>
 
-        {/* ── 3. Content ── */}
-        <section className="flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#3ce36a] animate-pulse" />
-            <span className="text-xs font-bold text-[#707975] tracking-widest uppercase">
-              Data Historis
-            </span>
+        {/* ── Stats bar ── */}
+        {!isLoading && !isError && rawItems.length > 0 && (
+          <div className="flex items-center gap-4 px-1">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#3ce36a] animate-pulse" />
+              <span className="text-xs font-bold text-[#707975] tracking-widest uppercase">
+                {rawItems.length} Periode Diarsipkan
+              </span>
+            </div>
+            {search && (
+              <span className="text-xs text-[#707975]/60">
+                · {items.length} hasil pencarian
+              </span>
+            )}
           </div>
+        )}
 
+        {/* ── Content ── */}
+        <section>
           {isLoading ? (
-            /* ── Skeleton ── */
             <div className="bg-white/80 backdrop-blur-md border border-white/40 rounded-[2.5rem] shadow-lg p-8 overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -611,8 +433,6 @@ export default function ArsipTahunAjaran() {
                         "Tahun Ajaran",
                         "Semester",
                         "Periode",
-                        "Kurikulum",
-                        "Total Siswa",
                         "Status",
                         "Aksi",
                       ].map((h) => (
@@ -634,10 +454,8 @@ export default function ArsipTahunAjaran() {
                 </table>
               </div>
             </div>
-          ) : is404 ? (
-            <BackendPendingNotice />
           ) : isError ? (
-            <ErrorState />
+            <ErrorState onRetry={refetch} />
           ) : rawItems.length === 0 ? (
             <EmptyState />
           ) : (
@@ -652,9 +470,7 @@ export default function ArsipTahunAjaran() {
                           "Tahun Ajaran",
                           "Semester",
                           "Periode",
-                          "Kurikulum",
-                          "Total Siswa",
-                          "Status",
+                          "Status Arsip",
                         ].map((h) => (
                           <th
                             key={h}
@@ -675,13 +491,14 @@ export default function ArsipTahunAjaran() {
                     <tbody className="divide-y divide-[#bfc9c4]/10">
                       {items.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="py-16 text-center">
+                          <td colSpan={5} className="py-16 text-center">
                             <div className="flex flex-col items-center gap-3">
                               <span className="material-symbols-outlined text-5xl text-[#bfc9c4]">
                                 search_off
                               </span>
                               <p className="text-sm text-[#3f4945]/60 font-medium">
-                                Tidak ada hasil untuk filter ini
+                                Tidak ada hasil untuk pencarian &ldquo;{search}
+                                &rdquo;
                               </p>
                             </div>
                           </td>
@@ -699,7 +516,6 @@ export default function ArsipTahunAjaran() {
                   </table>
                 </div>
 
-                {/* Row count */}
                 {items.length > 0 && (
                   <div className="mt-6 pt-4 border-t border-[#bfc9c4]/10 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-[#006e2a]/40" />
@@ -718,7 +534,7 @@ export default function ArsipTahunAjaran() {
                       search_off
                     </span>
                     <p className="text-sm text-[#3f4945]/60 font-medium">
-                      Tidak ada hasil untuk filter ini
+                      Tidak ada hasil untuk pencarian ini
                     </p>
                   </div>
                 ) : (
@@ -741,12 +557,12 @@ export default function ArsipTahunAjaran() {
         </section>
       </div>
 
-      {/* ── Confirm Dialog ── */}
+      {/* ── Confirm Unarsip Dialog ── */}
       <ConfirmDialog
         open={!!confirmUnarsip}
         title="Keluarkan dari Arsip?"
-        message={`Tahun ajaran "${confirmUnarsip?.tahun}" akan dipindahkan kembali ke daftar aktif.`}
-        confirmLabel="Ya, Pulihkan"
+        message={`Tahun ajaran "${confirmUnarsip?.tahun}" akan dipindahkan kembali ke daftar aktif. Data tidak akan langsung diaktifkan.`}
+        confirmLabel="Ya, Keluarkan"
         onConfirm={handleUnarsipConfirm}
         onCancel={() => setConfirmUnarsip(null)}
       />

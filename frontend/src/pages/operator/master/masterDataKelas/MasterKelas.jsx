@@ -5,7 +5,22 @@ import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-// ── Helpers ─────────────────────────────────────────────────────────────────────
+// ─── Template exact colors ───────────────────────────────────────────────────
+// primary   = #00342b  (deep dark green)
+// secondary = #006e2a  (medium green)  ← used for active nav, badges, buttons
+// surface-container-lowest = #ffffff
+// surface-container-low    = #f2f4f3
+// surface-container        = #eceeed
+// surface-card             = #f0f5ec
+// outline-variant          = #bfc9c4
+// outline                  = #707975
+// on-surface-variant / text-secondary = #3f4945
+// secondary-container      = #5cfd80
+// on-secondary-container   = #00732c
+// error                    = #ba1a1a
+// surface-variant          = #e1e3e2
+// ────────────────────────────────────────────────────────────────────────────
+
 function initials(name) {
   if (!name) return "?";
   return name
@@ -15,40 +30,10 @@ function initials(name) {
     .join("");
 }
 
-function kapasitasBarColor(siswa, kapasitas) {
-  if (!kapasitas) return "bg-madrasah-green";
-  const pct = siswa / kapasitas;
-  if (pct >= 1) return "bg-danger";
-  if (pct >= 0.8) return "bg-warning";
-  return "bg-madrasah-green";
-}
-
-function statusBadge(siswa, kapasitas, wali) {
-  if (!wali)
-    return {
-      text: "No Wali",
-      cls: "bg-surface-container-high text-text-secondary border-border-light",
-    };
-  if (!kapasitas)
-    return {
-      text: "Aktif",
-      cls: "bg-[#d3ffd5] text-[#006e2a] border-[#a8f0ae]",
-    };
-  const pct = siswa / kapasitas;
-  if (pct >= 1)
-    return { text: "Penuh", cls: "bg-danger/10 text-danger border-danger/20" };
-  if (pct >= 0.8)
-    return {
-      text: "Hampir Penuh",
-      cls: "bg-warning/10 text-warning border-warning/20",
-    };
-  return { text: "Aktif", cls: "bg-[#d3ffd5] text-[#006e2a] border-[#a8f0ae]" };
-}
-
-// ── Modal Tambah / Edit Kelas ──────────────────────────────────────────────────
+// ── Modal Tambah / Edit ───────────────────────────────────────────────────────
 function ModalKelas({ open, onClose, editData, queryClient }) {
   const isEdit = !!editData;
-  const emptyForm = {
+  const empty = {
     nama_kelas: "",
     tingkat: "1",
     kurikulum: "Merdeka",
@@ -56,7 +41,7 @@ function ModalKelas({ open, onClose, editData, queryClient }) {
     kapasitas: "30",
     is_active: true,
   };
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(empty);
 
   useEffect(() => {
     if (open)
@@ -70,7 +55,7 @@ function ModalKelas({ open, onClose, editData, queryClient }) {
               kapasitas: editData.kapasitas ?? "30",
               is_active: editData.is_active ?? true,
             }
-          : emptyForm,
+          : empty,
       );
   }, [open, editData]);
 
@@ -98,198 +83,155 @@ function ModalKelas({ open, onClose, editData, queryClient }) {
   if (!open) return null;
 
   const inputCls =
-    "w-full px-3.5 py-2.5 bg-surface-container-low border border-border-light rounded-xl text-sm text-on-surface focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-text-secondary/50";
-  const labelCls = "block text-xs font-semibold text-text-secondary mb-1.5";
-
-  const buildPayload = () => {
-    const payload = {
-      nama_kelas: form.nama_kelas,
-      tingkat: form.tingkat,
-      kurikulum: form.kurikulum,
-      ruangan: form.ruangan || null,
-      kapasitas: form.kapasitas,
-    };
-    if (isEdit) payload.is_active = form.is_active;
-    return payload;
-  };
+    "w-full px-4 py-2.5 bg-[#f2f4f3] border border-[#bfc9c4]/40 rounded-xl text-sm text-[#191c1c] focus:ring-2 focus:ring-[#006e2a]/30 focus:border-[#006e2a] outline-none transition-all placeholder:text-[#707975]";
+  const labelCls =
+    "block text-xs font-semibold text-[#3f4945] mb-1.5 uppercase tracking-wide";
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border border-border-light/80"
+        className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border border-[#bfc9c4]/30"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border-light bg-surface-container-lowest">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#bfc9c4]/30 bg-[#f2f4f3]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-madrasah-green/10 flex items-center justify-center text-madrasah-green border border-madrasah-green/10">
-              <span className="material-symbols-outlined text-[22px]">
+            <div className="w-10 h-10 rounded-xl bg-[#006e2a]/10 flex items-center justify-center border border-[#006e2a]/20">
+              <span className="material-symbols-outlined text-[22px] text-[#006e2a]">
                 {isEdit ? "edit_note" : "add_circle"}
               </span>
             </div>
             <div>
-              <h3 className="text-base font-bold text-text-primary">
+              <h3
+                className="text-base font-bold text-[#00342b]"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
                 {isEdit ? "Edit Kelas" : "Tambah Kelas Baru"}
               </h3>
-              <p className="text-xs text-text-secondary">
+              <p className="text-xs text-[#707975]">
                 Kelola data kelas dan ruangan belajar
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container hover:text-on-surface transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#707975] hover:bg-[#eceeed] transition-colors"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        {/* Body */}
-        <div className="px-6 py-5 space-y-5 overflow-y-auto flex-1">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
           <div>
-            <div className="flex items-center gap-2 mb-3 border-b border-border-light pb-2">
-              <span className="material-symbols-outlined text-madrasah-green text-[18px]">
-                meeting_room
-              </span>
-              <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-                Informasi Kelas
-              </h4>
-            </div>
-            <div className="space-y-3.5">
-              <div>
-                <label className={labelCls}>
-                  Nama Kelas <span className="text-danger">*</span>
-                </label>
-                <input
-                  value={form.nama_kelas}
-                  onChange={(e) => set("nama_kelas", e.target.value)}
-                  className={inputCls}
-                  placeholder="Contoh: 1A / Abu Bakar"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className={labelCls}>
-                    Tingkat <span className="text-danger">*</span>
-                  </label>
-                  <select
-                    value={form.tingkat}
-                    onChange={(e) => set("tingkat", e.target.value)}
-                    className={inputCls}
-                  >
-                    {[1, 2, 3, 4, 5, 6].map((t) => (
-                      <option key={t} value={t}>
-                        Kelas {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>
-                    Kurikulum <span className="text-danger">*</span>
-                  </label>
-                  <select
-                    value={form.kurikulum}
-                    onChange={(e) => set("kurikulum", e.target.value)}
-                    className={inputCls}
-                  >
-                    <option value="Merdeka">Kurikulum Merdeka</option>
-                    <option value="K13">Kurikulum 2013</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+            <label className={labelCls}>
+              Nama Kelas{" "}
+              <span className="text-[#ba1a1a] lowercase normal-case">*</span>
+            </label>
+            <input
+              value={form.nama_kelas}
+              onChange={(e) => set("nama_kelas", e.target.value)}
+              className={inputCls}
+              placeholder="Contoh: 1A / Abu Bakar"
+            />
           </div>
-
-          <div>
-            <div className="flex items-center gap-2 mb-3 border-b border-border-light pb-2">
-              <span className="material-symbols-outlined text-madrasah-green text-[18px]">
-                door_open
-              </span>
-              <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-                Detail Ruangan
-              </h4>
-            </div>
-            <div className="space-y-3.5">
-              <div>
-                <label className={labelCls}>Ruangan</label>
-                <input
-                  value={form.ruangan}
-                  onChange={(e) => set("ruangan", e.target.value)}
-                  className={inputCls}
-                  placeholder="Contoh: R-101"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Kapasitas Siswa</label>
-                <input
-                  type="number"
-                  value={form.kapasitas}
-                  onChange={(e) => set("kapasitas", e.target.value)}
-                  className={inputCls}
-                  placeholder="30"
-                />
-              </div>
-            </div>
-          </div>
-
-          {isEdit && (
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <div className="flex items-center gap-2 mb-3 border-b border-border-light pb-2">
-                <span className="material-symbols-outlined text-madrasah-green text-[18px]">
-                  toggle_on
-                </span>
-                <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-                  Status Kelas
-                </h4>
+              <label className={labelCls}>
+                Tingkat{" "}
+                <span className="text-[#ba1a1a] lowercase normal-case">*</span>
+              </label>
+              <select
+                value={form.tingkat}
+                onChange={(e) => set("tingkat", e.target.value)}
+                className={inputCls}
+              >
+                {[1, 2, 3, 4, 5, 6].map((t) => (
+                  <option key={t} value={t}>
+                    Kelas {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>
+                Kurikulum{" "}
+                <span className="text-[#ba1a1a] lowercase normal-case">*</span>
+              </label>
+              <select
+                value={form.kurikulum}
+                onChange={(e) => set("kurikulum", e.target.value)}
+                className={inputCls}
+              >
+                <option value="Merdeka">Kurikulum Merdeka</option>
+                <option value="K13">Kurikulum 2013</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}>Ruangan</label>
+            <input
+              value={form.ruangan}
+              onChange={(e) => set("ruangan", e.target.value)}
+              className={inputCls}
+              placeholder="Contoh: R-101"
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Kapasitas Siswa</label>
+            <input
+              type="number"
+              value={form.kapasitas}
+              onChange={(e) => set("kapasitas", e.target.value)}
+              className={inputCls}
+              placeholder="30"
+            />
+          </div>
+          {isEdit && (
+            <div className="flex items-center justify-between p-3.5 bg-[#f2f4f3] rounded-xl border border-[#bfc9c4]/30">
+              <div>
+                <p className="text-sm font-semibold text-[#191c1c]">
+                  Kelas Aktif
+                </p>
+                <p className="text-xs text-[#707975] mt-0.5">
+                  Kelas nonaktif tidak muncul di filter default
+                </p>
               </div>
-              <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl border border-border-light">
-                <div>
-                  <p className="text-sm font-semibold text-on-surface">
-                    Kelas Aktif
-                  </p>
-                  <p className="text-xs text-text-secondary mt-0.5">
-                    Kelas nonaktif tidak muncul di filter default
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => set("is_active", !form.is_active)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.is_active ? "bg-success" : "bg-surface-container-high"}`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.is_active ? "translate-x-6" : "translate-x-1"}`}
-                  />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => set("is_active", !form.is_active)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.is_active ? "bg-[#006e2a]" : "bg-[#e1e3e2]"}`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${form.is_active ? "translate-x-6" : "translate-x-1"}`}
+                />
+              </button>
             </div>
           )}
-
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5">
-            <span className="material-symbols-outlined text-[18px] text-amber-600 shrink-0 mt-0.5">
-              info
-            </span>
-            <p className="text-xs leading-relaxed text-amber-800 font-medium">
-              Tahun ajaran dan semester otomatis mengikuti yang sedang aktif.
-            </p>
-          </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex gap-3 px-6 py-4 border-t border-border-light bg-surface-container-lowest">
+        <div className="flex gap-3 px-6 py-4 border-t border-[#bfc9c4]/30 bg-white">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-border-light text-text-secondary hover:bg-surface-container text-sm font-semibold transition-colors"
+            className="flex-1 py-2.5 rounded-xl border border-[#bfc9c4]/50 text-[#3f4945] hover:bg-[#f2f4f3] text-sm font-semibold transition-colors"
           >
             Batal
           </button>
           <button
-            onClick={() => mutation.mutate(buildPayload())}
+            onClick={() =>
+              mutation.mutate({
+                nama_kelas: form.nama_kelas,
+                tingkat: form.tingkat,
+                kurikulum: form.kurikulum,
+                ruangan: form.ruangan || null,
+                kapasitas: form.kapasitas,
+                ...(isEdit && { is_active: form.is_active }),
+              })
+            }
             disabled={mutation.isPending}
-            className="flex-1 py-2.5 rounded-xl bg-primary-container text-on-primary text-sm font-semibold hover:bg-on-primary-fixed-variant shadow-sm transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg"
+            style={{ background: "#006e2a" }}
           >
             {mutation.isPending ? (
               <>
@@ -311,14 +253,14 @@ function ModalKelas({ open, onClose, editData, queryClient }) {
   );
 }
 
-// ── Skeleton Row ──────────────────────────────────────────────────────────────
+// ── Skeleton ──────────────────────────────────────────────────────────────────
 function SkeletonRow() {
   return (
-    <tr className="border-b border-border-light">
+    <tr className="border-b border-[#bfc9c4]/10">
       {[4, 14, 18, 14, 22, 16, 14, 10].map((w, i) => (
-        <td key={i} className="px-5 py-4">
+        <td key={i} className="px-6 py-4">
           <div
-            className="h-3 bg-surface-container rounded-full animate-pulse"
+            className="h-3 bg-[#eceeed] rounded-full animate-pulse"
             style={{ width: `${w * 5}px` }}
           />
         </td>
@@ -327,339 +269,7 @@ function SkeletonRow() {
   );
 }
 
-// ── Stat Card ─────────────────────────────────────────────────────────────────
-function StatCard({
-  icon,
-  iconColor = "text-on-surface-variant",
-  label,
-  value,
-  badge,
-  sub,
-  bar,
-  barPct,
-  barColor = "bg-madrasah-green",
-}) {
-  return (
-    <div className="bg-white border border-border-light rounded-2xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 group relative overflow-hidden">
-      {/* Ghost icon */}
-      <div className="absolute top-2 right-3 opacity-[0.07] group-hover:opacity-[0.12] transition-opacity pointer-events-none select-none">
-        <span className={`material-symbols-outlined text-[72px] ${iconColor}`}>
-          {icon}
-        </span>
-      </div>
-      <div className="relative z-10">
-        <p className="text-[10px] font-black text-text-secondary uppercase tracking-[0.18em] mb-2">
-          {label}
-        </p>
-        <div className="flex items-baseline gap-2">
-          <span
-            className="text-3xl font-black text-text-primary"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
-            {value ?? "—"}
-          </span>
-          {badge && (
-            <span className="text-xs text-success font-semibold flex items-center gap-0.5">
-              <span className="material-symbols-outlined text-[13px]">
-                trending_up
-              </span>
-              {badge}
-            </span>
-          )}
-        </div>
-        {sub && <p className="text-xs text-text-secondary mt-1">{sub}</p>}
-        {bar && (
-          <div className="w-full bg-surface-container h-1.5 rounded-full mt-3 overflow-hidden">
-            <div
-              className={`h-1.5 rounded-full transition-all duration-700 ${barColor}`}
-              style={{ width: `${Math.min(barPct ?? 0, 100)}%` }}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Side Drawer ───────────────────────────────────────────────────────────────
-function DrawerDetail({ kelas, open, onClose, onEdit, onDelete }) {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("info");
-
-  useEffect(() => {
-    if (open) setActiveTab("info");
-  }, [open, kelas?.id]);
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
-
-  if (!kelas) return null;
-
-  const siswa = kelas.total_siswa ?? 0;
-  const kap = kelas.kapasitas ?? 0;
-  const pct = kap ? Math.round((siswa / kap) * 100) : 0;
-  const { text: stText, cls: stCls } = statusBadge(
-    siswa,
-    kap,
-    kelas.wali?.nama ?? kelas.nama_wali,
-  );
-
-  return (
-    <>
-      <div
-        className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300 ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-        onClick={onClose}
-      />
-      <div
-        className={`fixed inset-y-0 right-0 w-full md:w-[460px] bg-white shadow-2xl border-l border-border-light z-50 flex flex-col transition-transform duration-300 ${open ? "translate-x-0" : "translate-x-full"}`}
-      >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-border-light bg-surface-container-low/40 shrink-0">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3
-                className="font-bold text-text-primary text-base"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                {kelas.nama_kelas}
-              </h3>
-              <p className="text-xs text-text-secondary mt-0.5">
-                Kode:{" "}
-                <span className="font-mono font-semibold">{kelas.id}</span>
-                {kelas.tahun_ajaran?.tahun
-                  ? ` • TA ${kelas.tahun_ajaran.tahun}`
-                  : ""}
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-surface-container rounded-lg transition-colors ml-3"
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                close
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-border-light shrink-0 px-6 gap-5">
-          {[
-            { id: "info", label: "Informasi" },
-            { id: "siswa", label: "Daftar Siswa" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={`py-3 text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${activeTab === t.id ? "border-madrasah-green text-madrasah-green" : "border-transparent text-text-secondary hover:text-text-primary"}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
-          {activeTab === "info" && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-surface p-4 rounded-xl border border-border-light">
-                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-2">
-                    Wali Kelas
-                  </p>
-                  {(kelas.wali?.nama ?? kelas.nama_wali) ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-madrasah-green/10 text-madrasah-green flex items-center justify-center text-[11px] font-bold shrink-0">
-                        {initials(kelas.wali?.nama ?? kelas.nama_wali)}
-                      </div>
-                      <span className="text-sm font-medium text-text-primary leading-tight">
-                        {kelas.wali?.nama ?? kelas.nama_wali}
-                      </span>
-                    </div>
-                  ) : (
-                    <p className="text-sm italic text-text-secondary">
-                      Belum ditugaskan
-                    </p>
-                  )}
-                </div>
-                <div className="bg-surface p-4 rounded-xl border border-border-light">
-                  <p className="text-[10px] font-bold text-text-secondary uppercase tracking-wider mb-2">
-                    Ruangan
-                  </p>
-                  <p className="text-sm font-semibold text-text-primary">
-                    {kelas.ruangan || "-"}
-                  </p>
-                  <p className="text-[10px] text-text-secondary mt-1">
-                    Kapasitas: {kap} kursi
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-surface-container-low p-4 rounded-xl border border-border-light">
-                <h4
-                  className="text-sm font-semibold text-text-primary mb-4"
-                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                >
-                  Statistik Siswa
-                </h4>
-                <div className="flex items-center gap-5">
-                  <div
-                    className="relative w-20 h-20 rounded-full shrink-0 flex items-center justify-center"
-                    style={{
-                      background: kap
-                        ? `conic-gradient(#004d40 0% ${pct}%, #eaefe6 ${pct}% 100%)`
-                        : "#eaefe6",
-                    }}
-                  >
-                    <div className="w-14 h-14 bg-surface-container-low rounded-full flex items-center justify-center flex-col">
-                      <span
-                        className="font-bold text-base text-text-primary"
-                        style={{
-                          fontFamily: "'Plus Jakarta Sans', sans-serif",
-                        }}
-                      >
-                        {siswa}
-                      </span>
-                      <span className="text-[9px] text-text-secondary uppercase tracking-wide">
-                        Siswa
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex-1 space-y-2.5">
-                    <div>
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-text-secondary">Terisi</span>
-                        <span className="font-semibold text-text-primary">
-                          {siswa}/{kap} ({pct}%)
-                        </span>
-                      </div>
-                      <div className="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-700 ${kapasitasBarColor(siswa, kap)}`}
-                          style={{ width: `${Math.min(pct, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${stCls}`}
-                    >
-                      {stText}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <h4
-                  className="text-sm font-semibold text-text-primary pb-2 border-b border-border-light"
-                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                >
-                  Detail Akademik
-                </h4>
-                {[
-                  { label: "Tingkat", value: `Kelas ${kelas.tingkat}` },
-                  {
-                    label: "Semester",
-                    value: kelas.semester?.nama
-                      ? `Semester ${kelas.semester.nama}`
-                      : "-",
-                  },
-                  { label: "Kurikulum", value: kelas.kurikulum || "-" },
-                  {
-                    label: "Tahun Ajaran",
-                    value: kelas.tahun_ajaran?.tahun || "-",
-                  },
-                  { label: "Status", badge: stText, badgeCls: stCls },
-                ].map((row) => (
-                  <div
-                    key={row.label}
-                    className="grid grid-cols-3 py-2.5 border-b border-border-light border-dashed last:border-0 gap-2"
-                  >
-                    <span className="text-xs text-text-secondary col-span-1">
-                      {row.label}
-                    </span>
-                    <span className="text-sm font-medium text-text-primary col-span-2">
-                      {row.badge ? (
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${row.badgeCls}`}
-                        >
-                          {row.badge}
-                        </span>
-                      ) : (
-                        row.value
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {activeTab === "siswa" && (
-            <div className="text-center py-10 text-text-secondary">
-              <span className="material-symbols-outlined text-[48px] text-border-light block mb-3">
-                group
-              </span>
-              <p className="text-sm font-medium">
-                Lihat detail lengkap daftar siswa
-              </p>
-              <button
-                onClick={() => navigate(`/operator/master/kelas/${kelas.id}`)}
-                className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 bg-primary-container text-on-primary rounded-xl text-sm font-semibold hover:bg-on-primary-fixed-variant transition-colors"
-              >
-                <span className="material-symbols-outlined text-[16px]">
-                  open_in_new
-                </span>
-                Buka Halaman Detail
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-border-light bg-surface flex items-center justify-between gap-3 shrink-0">
-          <button
-            onClick={() => {
-              onDelete(kelas);
-              onClose();
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-danger border border-danger/20 bg-danger/5 hover:bg-danger/10 text-sm font-semibold transition-colors"
-          >
-            <span className="material-symbols-outlined text-[16px]">
-              delete
-            </span>
-            Hapus
-          </button>
-          <div className="flex gap-2">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 border border-border-light text-text-secondary rounded-xl text-sm font-medium hover:bg-surface-container transition-colors"
-            >
-              Tutup
-            </button>
-            <button
-              onClick={() => {
-                onEdit(kelas);
-                onClose();
-              }}
-              className="px-4 py-2 bg-primary-container text-on-primary rounded-xl text-sm font-semibold hover:bg-on-primary-fixed-variant transition-colors flex items-center gap-1.5"
-            >
-              <span className="material-symbols-outlined text-[16px]">
-                edit
-              </span>
-              Edit Kelas
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-// ── Main Page ──────────────────────────────────────────────────────────────────
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function MasterKelas() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -671,8 +281,6 @@ export default function MasterKelas() {
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
-  const [drawerKelas, setDrawerKelas] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [selected, setSelected] = useState(new Set());
 
   const { data, isLoading } = useQuery({
@@ -711,7 +319,6 @@ export default function MasterKelas() {
     onSuccess: () => {
       toast.success("Data kelas dihapus.");
       queryClient.invalidateQueries(["master-kelas"]);
-      setDrawerOpen(false);
     },
     onError: (err) =>
       toast.error(err.response?.data?.message ?? "Gagal menghapus."),
@@ -721,19 +328,14 @@ export default function MasterKelas() {
   const total = data?.total ?? 0;
   const lastPage = data?.last_page ?? 1;
 
-  const totalKelas = total;
   const totalSiswa = kelasList.reduce((s, k) => s + (k.total_siswa ?? 0), 0);
-  const totalWali = kelasList.filter((k) => k.wali || k.nama_wali).length;
+  const totalWali = kelasList.filter((k) => k.wali?.nama || k.nama_wali).length;
   const totalKap = kelasList.reduce((s, k) => s + (k.kapasitas ?? 0), 0);
-  const waliPct =
-    kelasList.length > 0 ? Math.round((totalWali / kelasList.length) * 100) : 0;
   const rataSiswa =
     kelasList.length > 0 ? Math.round(totalSiswa / kelasList.length) : 0;
+  const waliPct =
+    kelasList.length > 0 ? Math.round((totalWali / kelasList.length) * 100) : 0;
 
-  const openDrawer = (k) => {
-    setDrawerKelas(k);
-    setDrawerOpen(true);
-  };
   const toggleSelect = (id) => {
     setSelected((prev) => {
       const n = new Set(prev);
@@ -745,144 +347,470 @@ export default function MasterKelas() {
     if (selected.size === kelasList.length) setSelected(new Set());
     else setSelected(new Set(kelasList.map((k) => k.id)));
   };
+
   const hasFilter = search || tingkat || semester || tahunAjaranFilter;
 
-  // Select styling shared
+  // Shared select style — matches template rounded-2xl dropdowns
   const selectCls =
-    "w-full bg-white border border-border-light rounded-xl py-3 pl-4 pr-9 text-text-primary font-bold text-xs uppercase tracking-wider focus:ring-2 focus:ring-madrasah-green/20 focus:border-madrasah-green appearance-none cursor-pointer transition-all outline-none";
+    "w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 pl-4 pr-10 text-[#191c1c] font-bold text-xs uppercase tracking-wider focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] appearance-none cursor-pointer transition-all outline-none";
 
   return (
-    <div className="w-full space-y-6 pb-10">
-      {/* ── Header ── */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5">
+    <div className="w-full space-y-10 pb-12">
+      {/* ── Decorative blobs (subtle, behind content) ── */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div
+          className="absolute w-96 h-96 rounded-full blur-[100px] opacity-[0.04] top-0 left-0"
+          style={{ background: "#006e2a" }}
+        />
+        <div
+          className="absolute w-[30rem] h-[30rem] rounded-full blur-[100px] opacity-[0.04] bottom-0 right-0"
+          style={{ background: "#ffba3b" }}
+        />
+      </div>
+
+      {/* ── Header Section — exact match to template ── */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative">
         {/* Left */}
-        <div className="flex-1 min-w-0">
-          {/* LIVE DATA badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-border-light shadow-sm mb-4">
-            <span className="w-2 h-2 rounded-full bg-success animate-pulse shrink-0"></span>
-            <span className="text-[10px] font-black text-success uppercase tracking-[0.2em]">
-              LIVE DATA
-            </span>
+        <div className="relative flex-1">
+          {/* LIVE DATA badge + line */}
+          <div className="flex items-center gap-3 mb-4">
+            <div
+              className="px-4 py-1.5 rounded-full flex items-center gap-2 shadow-sm border"
+              style={{
+                background: "rgba(0,110,42,0.1)",
+                borderColor: "rgba(0,110,42,0.2)",
+              }}
+            >
+              <span
+                className="w-2 h-2 rounded-full animate-pulse"
+                style={{ background: "#006e2a" }}
+              ></span>
+              <span
+                className="text-[10px] tracking-[0.2em] uppercase font-black"
+                style={{ color: "#006e2a", fontFamily: "'Inter', sans-serif" }}
+              >
+                LIVE DATA
+              </span>
+            </div>
+            <div
+              className="h-px w-32 hidden sm:block"
+              style={{
+                background:
+                  "linear-gradient(to right, rgba(0,110,42,0.2), transparent)",
+              }}
+            ></div>
           </div>
 
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-xs text-text-secondary mb-2">
-            <span>Dashboard</span>
-            <span className="material-symbols-outlined text-[13px]">
-              chevron_right
-            </span>
-            <span>Master Data</span>
-            <span className="material-symbols-outlined text-[13px]">
-              chevron_right
-            </span>
-            <span className="text-madrasah-green font-semibold">Kelas</span>
-          </nav>
-
+          {/* Heading — same as template: text-headline-section = 48px */}
           <h1
-            className="text-[28px] sm:text-[34px] font-black text-text-primary leading-tight tracking-tight mb-2"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            className="leading-tight tracking-tighter mb-3"
+            style={{
+              fontFamily: "'Plus Jakarta Sans', sans-serif",
+              fontSize: "48px",
+              fontWeight: 800,
+              color: "#00342b",
+              lineHeight: 1.2,
+            }}
           >
             Data Kelas{" "}
-            <em
-              className="font-normal not-italic text-madrasah-green"
+            <span
               style={{
-                fontFamily: "'Georgia', 'Times New Roman', serif",
+                fontFamily: "'EB Garamond', Georgia, serif",
                 fontStyle: "italic",
+                fontWeight: 400,
+                color: "#006e2a",
+                fontSize: "1em",
               }}
             >
               &amp; Rombongan Belajar
-            </em>
+            </span>
           </h1>
-          <p className="text-sm text-text-secondary leading-relaxed max-w-lg">
+
+          {/* Subtitle */}
+          <p
+            className="max-w-2xl leading-relaxed opacity-80"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "18px",
+              lineHeight: 1.6,
+              color: "#3f4945",
+            }}
+          >
             Kelola data kelas, kapasitas, dan penempatan wali kelas tahun ajaran
             aktif dengan sistem manajemen terpadu.
           </p>
         </div>
 
-        {/* Right: Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-          <button
-            onClick={() => queryClient.invalidateQueries(["master-kelas"])}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-light text-text-secondary bg-white hover:bg-surface-container text-sm font-semibold transition-colors shadow-sm"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              refresh
-            </span>
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-light text-text-secondary bg-white hover:bg-surface-container text-sm font-semibold transition-colors shadow-sm">
-            <span className="material-symbols-outlined text-[18px]">
-              upload
-            </span>
-            Import
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border-light text-text-secondary bg-white hover:bg-surface-container text-sm font-semibold transition-colors shadow-sm">
-            <span className="material-symbols-outlined text-[18px]">
-              download
-            </span>
-            Export
-          </button>
+        {/* Right — buttons */}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <button
+              className="px-5 py-2.5 rounded-full border flex items-center gap-2 font-bold text-sm transition-all"
+              style={{
+                borderColor: "rgba(191,201,196,0.3)",
+                color: "#00342b",
+                background: "rgba(255,255,255,0.5)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "rgba(225,227,226,0.5)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "rgba(255,255,255,0.5)")
+              }
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                upload
+              </span>
+              Import
+            </button>
+            <button
+              className="px-5 py-2.5 rounded-full border flex items-center gap-2 font-bold text-sm transition-all"
+              style={{
+                borderColor: "rgba(191,201,196,0.3)",
+                color: "#00342b",
+                background: "rgba(255,255,255,0.5)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "rgba(225,227,226,0.5)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "rgba(255,255,255,0.5)")
+              }
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                download
+              </span>
+              Export
+            </button>
+          </div>
+
+          {/* Tambah Kelas — exact template: bg-secondary=006e2a, rounded-full, shadow */}
           <button
             onClick={() => {
               setEditData(null);
               setModalOpen(true);
             }}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-container text-on-primary text-sm font-black hover:bg-on-primary-fixed-variant transition-colors shadow-md shadow-madrasah-green/20 uppercase tracking-wider"
+            className="flex items-center gap-3 rounded-full border border-white/20 transition-all duration-500 group"
+            style={{
+              background: "#006e2a",
+              color: "#ffffff",
+              padding: "16px 32px",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "12px",
+              fontWeight: 900,
+              letterSpacing: "0.2em",
+              boxShadow: "0 8px 16px rgba(0,110,42,0.15)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-4px) scale(1.05)";
+              e.currentTarget.style.boxShadow =
+                "0 16px 24px rgba(0,110,42,0.3)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "";
+              e.currentTarget.style.boxShadow =
+                "0 8px 16px rgba(0,110,42,0.15)";
+            }}
           >
-            <span className="material-symbols-outlined text-[20px]">add</span>
-            Tambah Kelas
+            <div
+              className="rounded-full p-1 group-hover:rotate-90 transition-transform duration-500"
+              style={{ background: "rgba(255,255,255,0.2)" }}
+            >
+              <span className="material-symbols-outlined text-[20px] block">
+                add
+              </span>
+            </div>
+            <span className="tracking-[0.2em] font-black uppercase">
+              Tambah Kelas
+            </span>
           </button>
         </div>
       </div>
 
-      {/* ── Stats Cards ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard
-          icon="meeting_room"
-          iconColor="text-madrasah-green"
-          label="Total Kelas"
-          value={isLoading ? "—" : totalKelas}
-          badge="+2"
-        />
-        <StatCard
-          icon="layers"
-          iconColor="text-amber-500"
-          label="Tingkat MI"
-          value={6}
-          sub="Kelas 1 – 6"
-        />
-        <StatCard
-          icon="person_check"
-          iconColor="text-madrasah-green"
-          label="Wali Kelas Terplot"
-          value={isLoading ? "—" : `${totalWali} / ${kelasList.length}`}
-          bar
-          barPct={waliPct}
-          barColor="bg-madrasah-green"
-        />
-        <StatCard
-          icon="groups"
-          iconColor="text-madrasah-green"
-          label="Rata-rata Siswa"
-          value={isLoading ? "—" : rataSiswa}
-          sub="/ kelas"
-        />
-        <StatCard
-          icon="inventory_2"
-          iconColor="text-madrasah-green"
-          label="Total Kapasitas"
-          value={isLoading ? "—" : totalKap}
-          sub={`Tersedia: ${Math.max(0, totalKap - totalSiswa)} slot`}
-        />
+      {/* ── Stats Bento — 5 cols, exact template ── */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {/* Stat 1 — Total Kelas */}
+        <div
+          className="border rounded-[1.5rem] p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 group relative overflow-hidden"
+          style={{
+            background: "#ffffff",
+            borderColor: "rgba(191,201,196,0.3)",
+          }}
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+            <span
+              className="material-symbols-outlined text-[#00342b]"
+              style={{ fontSize: "80px" }}
+            >
+              meeting_room
+            </span>
+          </div>
+          <div className="relative z-10">
+            <p
+              className="mb-2 uppercase"
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "12px",
+                letterSpacing: "0.2em",
+                fontWeight: 700,
+                color: "#3f4945",
+              }}
+            >
+              Total Kelas
+            </p>
+            <div className="flex items-baseline gap-2">
+              <h3
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: "36px",
+                  fontWeight: 800,
+                  lineHeight: 1.15,
+                  color: "#00342b",
+                }}
+              >
+                {isLoading ? "—" : total}
+              </h3>
+              <span
+                className="text-sm font-medium flex items-center"
+                style={{ color: "#006e2a" }}
+              >
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: "14px" }}
+                >
+                  trending_up
+                </span>{" "}
+                +2
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stat 2 — Tingkat MI */}
+        <div
+          className="border rounded-[1.5rem] p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 group relative overflow-hidden"
+          style={{
+            background: "#ffffff",
+            borderColor: "rgba(191,201,196,0.3)",
+          }}
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: "80px", color: "#ffba3b" }}
+            >
+              layers
+            </span>
+          </div>
+          <div className="relative z-10">
+            <p
+              className="mb-2 uppercase"
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "12px",
+                letterSpacing: "0.2em",
+                fontWeight: 700,
+                color: "#3f4945",
+              }}
+            >
+              Tingkat MI
+            </p>
+            <div className="flex items-baseline gap-2">
+              <h3
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: "36px",
+                  fontWeight: 800,
+                  lineHeight: 1.15,
+                  color: "#00342b",
+                }}
+              >
+                6
+              </h3>
+            </div>
+            <p className="text-xs mt-1" style={{ color: "#3f4945" }}>
+              Kelas 1 - 6
+            </p>
+          </div>
+        </div>
+
+        {/* Stat 3 — Wali Kelas Terplot */}
+        <div
+          className="border rounded-[1.5rem] p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 group relative overflow-hidden"
+          style={{
+            background: "#ffffff",
+            borderColor: "rgba(191,201,196,0.3)",
+          }}
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: "80px", color: "#006e2a" }}
+            >
+              person_check
+            </span>
+          </div>
+          <div className="relative z-10">
+            <p
+              className="mb-2 uppercase"
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "12px",
+                letterSpacing: "0.2em",
+                fontWeight: 700,
+                color: "#3f4945",
+              }}
+            >
+              Wali Kelas Terplot
+            </p>
+            <div className="flex items-baseline gap-2">
+              <h3
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: "36px",
+                  fontWeight: 800,
+                  lineHeight: 1.15,
+                  color: "#00342b",
+                }}
+              >
+                {isLoading ? "—" : totalWali}
+              </h3>
+              <span className="text-sm" style={{ color: "#707975" }}>
+                / {kelasList.length}
+              </span>
+            </div>
+            <div
+              className="w-full h-1.5 rounded-full mt-3"
+              style={{ background: "#e1e3e2" }}
+            >
+              <div
+                className="h-1.5 rounded-full transition-all duration-700"
+                style={{ width: `${waliPct}%`, background: "#006e2a" }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Stat 4 — Rata-rata Siswa */}
+        <div
+          className="border rounded-[1.5rem] p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 group relative overflow-hidden"
+          style={{
+            background: "#ffffff",
+            borderColor: "rgba(191,201,196,0.3)",
+          }}
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: "80px", color: "#00342b" }}
+            >
+              groups
+            </span>
+          </div>
+          <div className="relative z-10">
+            <p
+              className="mb-2 uppercase"
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "12px",
+                letterSpacing: "0.2em",
+                fontWeight: 700,
+                color: "#3f4945",
+              }}
+            >
+              Rata-rata Siswa
+            </p>
+            <div className="flex items-baseline gap-2">
+              <h3
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: "36px",
+                  fontWeight: 800,
+                  lineHeight: 1.15,
+                  color: "#00342b",
+                }}
+              >
+                {isLoading ? "—" : rataSiswa}
+              </h3>
+              <span className="text-sm" style={{ color: "#3f4945" }}>
+                / kelas
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stat 5 — Total Kapasitas */}
+        <div
+          className="border rounded-[1.5rem] p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 group relative overflow-hidden"
+          style={{
+            background: "#ffffff",
+            borderColor: "rgba(191,201,196,0.3)",
+          }}
+        >
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
+            <span
+              className="material-symbols-outlined"
+              style={{ fontSize: "80px", color: "#006e2a" }}
+            >
+              inventory_2
+            </span>
+          </div>
+          <div className="relative z-10">
+            <p
+              className="mb-2 uppercase"
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "12px",
+                letterSpacing: "0.2em",
+                fontWeight: 700,
+                color: "#3f4945",
+              }}
+            >
+              Total Kapasitas
+            </p>
+            <div className="flex items-baseline gap-2">
+              <h3
+                style={{
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontSize: "36px",
+                  fontWeight: 800,
+                  lineHeight: 1.15,
+                  color: "#00342b",
+                }}
+              >
+                {isLoading ? "—" : totalKap}
+              </h3>
+            </div>
+            <p className="text-xs mt-1" style={{ color: "#3f4945" }}>
+              Tersedia: {Math.max(0, totalKap - totalSiswa)} slot
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* ── Table Card ── */}
-      <div className="bg-white rounded-2xl shadow-sm border border-border-light overflow-hidden">
+      <div
+        className="rounded-[2rem] overflow-hidden border"
+        style={{
+          background: "#ffffff",
+          borderColor: "rgba(191,201,196,0.2)",
+          boxShadow: "0 8px 30px rgba(0,52,43,0.04)",
+        }}
+      >
         {/* Toolbar */}
-        <div className="border-b border-border-light p-4 flex flex-col lg:flex-row gap-3 items-stretch lg:items-center bg-white">
+        <div
+          className="border-b p-4 flex flex-col lg:flex-row gap-4 items-center shadow-sm"
+          style={{
+            background: "#ffffff",
+            borderColor: "rgba(191,201,196,0.2)",
+          }}
+        >
           {/* Search */}
-          <div className="relative flex-1 group">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-madrasah-green transition-colors text-[20px] pointer-events-none">
+          <div className="relative flex-1 w-full group">
+            <span
+              className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 transition-colors text-[20px] pointer-events-none"
+              style={{ color: "#707975" }}
+            >
               search
             </span>
             <input
@@ -892,15 +820,28 @@ export default function MasterKelas() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="w-full bg-surface-container-low border border-border-light rounded-xl py-3 pl-12 pr-4 text-text-primary placeholder:text-text-secondary/60 focus:ring-2 focus:ring-madrasah-green/20 focus:border-madrasah-green transition-all text-sm font-medium outline-none"
+              className="w-full rounded-2xl py-3.5 pl-12 pr-4 font-medium text-sm outline-none transition-all"
+              style={{
+                background: "rgba(242,244,243,0.5)",
+                border: "1px solid rgba(191,201,196,0.2)",
+                color: "#191c1c",
+              }}
               placeholder="Cari nama kelas, kode, atau wali kelas..."
+              onFocus={(e) => {
+                e.target.style.borderColor = "#006e2a";
+                e.target.style.boxShadow = "0 0 0 2px rgba(0,110,42,0.2)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "rgba(191,201,196,0.2)";
+                e.target.style.boxShadow = "";
+              }}
             />
           </div>
 
           {/* Filters */}
-          <div className="flex flex-wrap lg:flex-nowrap items-center gap-2.5">
+          <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full lg:w-auto">
             {/* Tingkat */}
-            <div className="relative flex-1 min-w-[130px] lg:flex-none lg:w-[148px]">
+            <div className="relative min-w-[160px] flex-1 lg:flex-none">
               <select
                 value={tingkat}
                 onChange={(e) => {
@@ -916,13 +857,16 @@ export default function MasterKelas() {
                   </option>
                 ))}
               </select>
-              <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary text-[18px]">
+              <span
+                className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[20px]"
+                style={{ color: "#707975" }}
+              >
                 expand_more
               </span>
             </div>
 
-            {/* Status/Semester */}
-            <div className="relative flex-1 min-w-[130px] lg:flex-none lg:w-[148px]">
+            {/* Status */}
+            <div className="relative min-w-[160px] flex-1 lg:flex-none">
               <select
                 value={semester}
                 onChange={(e) => {
@@ -932,39 +876,22 @@ export default function MasterKelas() {
                 className={selectCls}
               >
                 <option value="">Status: Semua</option>
-                <option value="Ganjil">Semester Ganjil</option>
-                <option value="Genap">Semester Genap</option>
+                <option value="Ganjil">Aktif</option>
+                <option value="nonaktif">Nonaktif</option>
               </select>
-              <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary text-[18px]">
-                expand_more
-              </span>
-            </div>
-
-            {/* Tahun Ajaran */}
-            <div className="relative flex-1 min-w-[150px] lg:flex-none lg:w-[168px]">
-              <select
-                value={tahunAjaranFilter}
-                onChange={(e) => {
-                  setTahunAjaranFilter(e.target.value);
-                  setPage(1);
-                }}
-                className={selectCls}
+              <span
+                className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[20px]"
+                style={{ color: "#707975" }}
               >
-                <option value="">Tahun Ajaran: Semua</option>
-                {(tahunAjaranList ?? []).map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.tahun}
-                    {t.is_active ? " ★" : ""}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary text-[18px]">
                 expand_more
               </span>
             </div>
 
             {/* Divider */}
-            <div className="h-9 w-px bg-border-light hidden lg:block" />
+            <div
+              className="h-10 w-px hidden lg:block mx-1"
+              style={{ background: "rgba(191,201,196,0.2)" }}
+            ></div>
 
             {/* Reset */}
             <button
@@ -975,57 +902,107 @@ export default function MasterKelas() {
                 setTahunAjaranFilter("");
                 setPage(1);
               }}
-              className={`flex items-center gap-1.5 px-4 py-3 rounded-xl border text-sm font-bold uppercase tracking-wider transition-all shrink-0 ${hasFilter ? "border-danger/30 text-danger bg-danger/5 hover:bg-danger/10" : "border-border-light text-text-secondary bg-white hover:bg-danger/5 hover:text-danger hover:border-danger/30"}`}
+              className="flex items-center gap-2 px-5 py-3.5 rounded-2xl border font-bold text-xs uppercase tracking-widest transition-all"
+              style={{
+                background: "rgba(255,255,255,0.5)",
+                borderColor: "rgba(191,201,196,0.2)",
+                color: "#3f4945",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,218,214,0.1)";
+                e.currentTarget.style.color = "#ba1a1a";
+                e.currentTarget.style.borderColor = "rgba(186,26,26,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.5)";
+                e.currentTarget.style.color = "#3f4945";
+                e.currentTarget.style.borderColor = "rgba(191,201,196,0.2)";
+              }}
+              title="Reset Filter"
             >
               <span className="material-symbols-outlined text-[18px]">
                 refresh
               </span>
-              Reset
+              <span>Reset</span>
             </button>
           </div>
         </div>
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-surface-container-low border-b border-border-light text-[11px] uppercase tracking-wider text-text-secondary font-bold">
+          <table
+            className="w-full text-left text-sm"
+            style={{ fontFamily: "'Inter', sans-serif", color: "#3f4945" }}
+          >
+            <thead
+              className="border-b text-xs uppercase tracking-wider font-semibold"
+              style={{
+                background: "#f2f4f3",
+                borderColor: "rgba(191,201,196,0.3)",
+                color: "#3f4945",
+              }}
+            >
               <tr>
-                <th className="px-5 py-3.5 w-10">
+                <th className="p-4 w-4" scope="col">
                   <input
                     type="checkbox"
                     checked={
                       kelasList.length > 0 && selected.size === kelasList.length
                     }
                     onChange={toggleAll}
-                    className="w-4 h-4 text-madrasah-green border-border-light rounded focus:ring-madrasah-green focus:ring-2"
+                    className="w-4 h-4 rounded"
+                    style={{ accentColor: "#006e2a" }}
                   />
                 </th>
-                <th className="px-5 py-3.5">Kode</th>
-                <th className="px-5 py-3.5">Nama Kelas</th>
-                <th className="px-5 py-3.5 hidden md:table-cell">Tingkat</th>
-                <th className="px-5 py-3.5 hidden lg:table-cell">Wali Kelas</th>
-                <th className="px-5 py-3.5 hidden lg:table-cell">Kapasitas</th>
-                <th className="px-5 py-3.5">Status</th>
-                <th className="px-5 py-3.5 text-right">Aksi</th>
+                <th className="px-6 py-4 font-bold tracking-wider" scope="col">
+                  Kode
+                </th>
+                <th className="px-6 py-4 font-bold tracking-wider" scope="col">
+                  Nama Kelas
+                </th>
+                <th className="px-6 py-4 font-bold tracking-wider" scope="col">
+                  Tingkat
+                </th>
+                <th className="px-6 py-4 font-bold tracking-wider" scope="col">
+                  Wali Kelas
+                </th>
+                <th className="px-6 py-4 font-bold tracking-wider" scope="col">
+                  Kapasitas
+                </th>
+                <th className="px-6 py-4 font-bold tracking-wider" scope="col">
+                  Status
+                </th>
+                <th
+                  className="px-6 py-4 font-bold tracking-wider text-right"
+                  scope="col"
+                >
+                  Aksi
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-light">
+            <tbody
+              className="divide-y"
+              style={{ borderColor: "rgba(191,201,196,0.1)" }}
+            >
               {isLoading ? (
                 [...Array(6)].map((_, i) => <SkeletonRow key={i} />)
               ) : kelasList.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={8}
-                    className="py-20 text-center text-text-secondary"
-                  >
+                  <td colSpan={8} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <span className="material-symbols-outlined text-[52px] text-border-light">
+                      <span
+                        className="material-symbols-outlined"
+                        style={{ fontSize: "52px", color: "#bfc9c4" }}
+                      >
                         meeting_room
                       </span>
-                      <p className="font-semibold text-text-primary">
+                      <p className="font-semibold" style={{ color: "#191c1c" }}>
                         Belum ada data kelas
                       </p>
-                      <p className="text-xs opacity-70">
+                      <p
+                        className="text-xs opacity-70"
+                        style={{ color: "#3f4945" }}
+                      >
                         {hasFilter
                           ? "Coba ubah filter pencarian"
                           : "Mulai dengan menambahkan kelas pertama"}
@@ -1036,7 +1013,8 @@ export default function MasterKelas() {
                             setEditData(null);
                             setModalOpen(true);
                           }}
-                          className="mt-1 inline-flex items-center gap-2 px-5 py-2.5 bg-primary-container text-on-primary rounded-xl text-sm font-bold hover:bg-on-primary-fixed-variant transition-colors shadow-sm"
+                          className="mt-1 inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-white text-sm font-bold transition-all"
+                          style={{ background: "#006e2a" }}
                         >
                           <span className="material-symbols-outlined text-[18px]">
                             add
@@ -1051,23 +1029,35 @@ export default function MasterKelas() {
                 kelasList.map((k) => {
                   const s = k.total_siswa ?? 0;
                   const kap = k.kapasitas ?? 0;
-                  const { text: stText, cls: stCls } = statusBadge(
-                    s,
-                    kap,
-                    k.wali?.nama ?? k.nama_wali,
-                  );
                   const waliName = k.wali?.nama ?? k.nama_wali;
                   const isSelected = selected.has(k.id);
 
                   return (
                     <tr
                       key={k.id}
-                      className={`group cursor-pointer transition-colors duration-150 ${isSelected ? "bg-madrasah-green/5" : "bg-white hover:bg-surface-container-low"}`}
-                      onClick={() => openDrawer(k)}
+                      className="transition-all duration-300 cursor-pointer"
+                      style={{
+                        background: isSelected
+                          ? "rgba(0,110,42,0.03)"
+                          : "#ffffff",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#f0f5ec";
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(0,52,43,0.05)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = isSelected
+                          ? "rgba(0,110,42,0.03)"
+                          : "#ffffff";
+                        e.currentTarget.style.transform = "";
+                        e.currentTarget.style.boxShadow = "";
+                      }}
                     >
                       {/* Checkbox */}
                       <td
-                        className="px-5 py-4"
+                        className="p-4"
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleSelect(k.id);
@@ -1077,137 +1067,162 @@ export default function MasterKelas() {
                           type="checkbox"
                           checked={isSelected}
                           readOnly
-                          className="w-4 h-4 text-madrasah-green border-border-light rounded focus:ring-madrasah-green focus:ring-2"
+                          className="w-4 h-4 rounded"
+                          style={{ accentColor: "#006e2a" }}
                         />
                       </td>
 
-                      {/* Kode */}
-                      <td className="px-5 py-4">
-                        <span className="font-mono font-black text-madrasah-green text-sm">
-                          {k.id}
-                        </span>
+                      {/* Kode — font-mono, color secondary=#006e2a */}
+                      <td
+                        className="px-6 py-4 font-mono font-bold"
+                        style={{ color: "#006e2a" }}
+                      >
+                        {k.id}
                       </td>
 
                       {/* Nama Kelas */}
-                      <td className="px-5 py-4">
-                        <p
-                          className="font-semibold text-text-primary"
-                          style={{
-                            fontFamily: "'Plus Jakarta Sans', sans-serif",
-                          }}
-                        >
-                          {k.nama_kelas}
-                        </p>
-                        {k.kurikulum && (
-                          <p className="text-[10px] text-text-secondary mt-0.5">
-                            {k.kurikulum}
-                          </p>
-                        )}
+                      <td
+                        className="px-6 py-4 font-semibold"
+                        style={{
+                          color: "#00342b",
+                          fontFamily: "'Plus Jakarta Sans', sans-serif",
+                        }}
+                      >
+                        {k.nama_kelas}
                       </td>
 
                       {/* Tingkat */}
-                      <td className="px-5 py-4 hidden md:table-cell">
-                        <span className="bg-surface-container-high px-2.5 py-1 rounded-lg text-xs font-semibold text-text-secondary">
+                      <td className="px-6 py-4">
+                        <span
+                          className="px-2.5 py-1 rounded-md text-xs font-medium"
+                          style={{ background: "#eceeed", color: "#3f4945" }}
+                        >
                           Tingkat {k.tingkat}
                         </span>
                       </td>
 
                       {/* Wali Kelas */}
-                      <td className="px-5 py-4 hidden lg:table-cell">
+                      <td className="px-6 py-4">
                         {waliName ? (
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full overflow-hidden border border-border-light bg-surface-container-high flex items-center justify-center shrink-0 text-xs font-bold text-madrasah-green">
+                          <div className="flex items-center gap-3">
+                            {/* Avatar with initials, circular */}
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 border"
+                              style={{
+                                background: "#eceeed",
+                                color: "#3f4945",
+                                borderColor: "#bfc9c4",
+                              }}
+                            >
                               {initials(waliName)}
                             </div>
-                            <span className="text-sm text-text-secondary truncate max-w-[140px]">
+                            <div
+                              className="font-medium"
+                              style={{ color: "#3f4945" }}
+                            >
                               {waliName}
-                            </span>
+                            </div>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-xs font-bold text-text-secondary border border-dashed border-border-light shrink-0">
+                          <div className="flex items-center gap-3">
+                            {/* "?" avatar with dashed border */}
+                            <div
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border border-dashed shrink-0"
+                              style={{
+                                background: "#e1e3e2",
+                                color: "#707975",
+                                borderColor: "#bfc9c4",
+                              }}
+                            >
                               ?
                             </div>
-                            <span className="italic text-xs text-text-secondary">
+                            <div
+                              className="font-medium italic text-xs"
+                              style={{ color: "#707975" }}
+                            >
                               Belum diplot
-                            </span>
+                            </div>
                           </div>
                         )}
                       </td>
 
                       {/* Kapasitas */}
-                      <td className="px-5 py-4 hidden lg:table-cell">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-semibold text-text-primary">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="font-medium"
+                            style={{ color: "#00342b" }}
+                          >
                             {s}
                           </span>
-                          <span className="text-text-secondary text-xs">
+                          <span
+                            className="text-xs"
+                            style={{ color: "#707975" }}
+                          >
                             / {kap || "—"}
                           </span>
                         </div>
-                        {kap > 0 && (
-                          <div className="w-20 bg-surface-container h-1.5 rounded-full mt-1.5 overflow-hidden">
-                            <div
-                              className={`h-1.5 rounded-full ${kapasitasBarColor(s, kap)}`}
-                              style={{
-                                width: `${Math.min((s / kap) * 100, 100)}%`,
-                              }}
-                            />
-                          </div>
-                        )}
                       </td>
 
-                      {/* Status */}
-                      <td className="px-5 py-4">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-black text-[10px] uppercase tracking-wider border ${stCls}`}
-                        >
-                          {stText}
-                        </span>
+                      {/* Status badge — same as template: bg-secondary-container/20 */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-[11px] uppercase tracking-wider border"
+                            style={{
+                              background: "rgba(92,253,128,0.2)",
+                              color: "#00732c",
+                              borderColor: "rgba(92,253,128,0.3)",
+                            }}
+                          >
+                            Aktif
+                          </span>
+                        </div>
                       </td>
 
                       {/* Aksi */}
                       <td
-                        className="px-5 py-4 text-right"
+                        className="px-6 py-4 text-right"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <div className="flex items-center justify-end gap-0.5">
-                          <button
-                            onClick={() =>
-                              navigate(`/operator/master/kelas/${k.id}`)
-                            }
-                            title="Detail"
-                            className="p-2 rounded-lg text-text-secondary hover:text-madrasah-green hover:bg-madrasah-green/5 transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">
-                              visibility
-                            </span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditData(k);
-                              setModalOpen(true);
-                            }}
-                            title="Edit"
-                            className="p-2 rounded-lg text-text-secondary hover:text-madrasah-green hover:bg-madrasah-green/5 transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">
-                              edit
-                            </span>
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`Hapus kelas ${k.nama_kelas}?`))
-                                hapus.mutate(k.id);
-                            }}
-                            title="Hapus"
-                            className="p-2 rounded-lg text-text-secondary hover:text-danger hover:bg-danger/5 transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">
-                              delete
-                            </span>
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => {
+                            setEditData(k);
+                            setModalOpen(true);
+                          }}
+                          title="Edit"
+                          className="p-1 transition-colors"
+                          style={{ color: "#707975" }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.color = "#00342b")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.color = "#707975")
+                          }
+                        >
+                          <span className="material-symbols-outlined text-[20px]">
+                            edit
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Hapus kelas ${k.nama_kelas}?`))
+                              hapus.mutate(k.id);
+                          }}
+                          title="Hapus"
+                          className="p-1 ml-2 transition-colors"
+                          style={{ color: "#707975" }}
+                          onMouseEnter={(e) =>
+                            (e.currentTarget.style.color = "#ba1a1a")
+                          }
+                          onMouseLeave={(e) =>
+                            (e.currentTarget.style.color = "#707975")
+                          }
+                        >
+                          <span className="material-symbols-outlined text-[20px]">
+                            delete
+                          </span>
+                        </button>
                       </td>
                     </tr>
                   );
@@ -1218,76 +1233,164 @@ export default function MasterKelas() {
         </div>
 
         {/* Pagination */}
-        <div className="px-5 py-4 border-t border-border-light bg-surface-container-low/30 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div
+          className="p-6 border-t flex flex-col md:flex-row items-center justify-between gap-4"
+          style={{
+            borderColor: "rgba(191,201,196,0.2)",
+            background: "rgba(242,244,243,0.3)",
+          }}
+        >
+          {/* Left: count + rows per page */}
           <div className="flex items-center gap-4">
-            <p className="text-sm text-text-secondary">
+            <p className="text-sm font-medium" style={{ color: "#3f4945" }}>
               Menampilkan{" "}
-              <span className="text-madrasah-green font-bold">
+              <span className="font-bold" style={{ color: "#00342b" }}>
                 {total === 0 ? 0 : (page - 1) * 10 + 1}
               </span>{" "}
               sampai{" "}
-              <span className="text-madrasah-green font-bold">
+              <span className="font-bold" style={{ color: "#00342b" }}>
                 {Math.min(page * 10, total)}
               </span>{" "}
               dari{" "}
-              <span className="text-madrasah-green font-bold">{total}</span>{" "}
+              <span className="font-bold" style={{ color: "#00342b" }}>
+                {total}
+              </span>{" "}
               entri
             </p>
-            <div className="hidden md:flex items-center gap-2">
-              <span className="text-xs text-text-secondary">
+            <div
+              className="h-4 w-px hidden md:block"
+              style={{ background: "rgba(191,201,196,0.3)" }}
+            ></div>
+            <div className="flex items-center gap-2">
+              <span
+                className="text-xs font-medium"
+                style={{ color: "#3f4945" }}
+              >
                 Baris per halaman:
               </span>
               <div className="relative">
-                <select className="appearance-none bg-white border border-border-light rounded-lg py-1 pl-3 pr-7 text-xs font-bold text-madrasah-green focus:ring-2 focus:ring-madrasah-green/20 focus:border-madrasah-green cursor-pointer outline-none">
+                <select
+                  className="appearance-none bg-white rounded-lg py-1 pl-3 pr-8 text-xs font-bold cursor-pointer transition-all outline-none border"
+                  style={{
+                    color: "#00342b",
+                    borderColor: "rgba(191,201,196,0.3)",
+                  }}
+                >
                   <option>10</option>
                   <option>20</option>
                   <option>50</option>
                 </select>
-                <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[15px] text-text-secondary">
+                <span
+                  className="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-[16px]"
+                  style={{ color: "#707975" }}
+                >
                   expand_more
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          {/* Right: page buttons */}
+          <div className="flex items-center gap-2">
+            {/* Prev */}
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="w-9 h-9 flex items-center justify-center rounded-xl border border-border-light text-text-secondary bg-white hover:text-madrasah-green hover:border-madrasah-green/40 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-9 h-9 flex items-center justify-center rounded-lg border transition-all disabled:opacity-30"
+              style={{
+                borderColor: "rgba(191,201,196,0.3)",
+                color: "#707975",
+                background: "transparent",
+              }}
+              onMouseEnter={(e) => {
+                if (page > 1) {
+                  e.currentTarget.style.background = "#ffffff";
+                  e.currentTarget.style.color = "#006e2a";
+                  e.currentTarget.style.borderColor = "rgba(0,110,42,0.5)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "#707975";
+                e.currentTarget.style.borderColor = "rgba(191,201,196,0.3)";
+              }}
             >
               <span className="material-symbols-outlined text-[20px]">
                 chevron_left
               </span>
             </button>
 
-            {[...Array(Math.min(lastPage, 5))].map((_, i) => {
-              const pg = i + 1;
-              return (
-                <button
-                  key={pg}
-                  onClick={() => setPage(pg)}
-                  className={`w-9 h-9 flex items-center justify-center rounded-xl text-sm font-bold transition-all border ${
-                    page === pg
-                      ? "bg-primary-container text-on-primary border-primary-container shadow-sm shadow-madrasah-green/20"
-                      : "border-transparent text-text-secondary hover:bg-white hover:border-border-light"
-                  }`}
-                >
-                  {pg}
-                </button>
-              );
-            })}
+            {/* Page numbers */}
+            <div className="flex items-center gap-1">
+              {[...Array(Math.min(lastPage, 5))].map((_, i) => {
+                const pg = i + 1;
+                return (
+                  <button
+                    key={pg}
+                    onClick={() => setPage(pg)}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg font-medium text-sm transition-all border"
+                    style={
+                      page === pg
+                        ? {
+                            background: "#006e2a",
+                            color: "#ffffff",
+                            borderColor: "transparent",
+                            fontWeight: 700,
+                            boxShadow: "0 2px 4px rgba(0,110,42,0.2)",
+                          }
+                        : {
+                            background: "transparent",
+                            color: "#3f4945",
+                            borderColor: "transparent",
+                          }
+                    }
+                    onMouseEnter={(e) => {
+                      if (page !== pg) {
+                        e.currentTarget.style.background = "#ffffff";
+                        e.currentTarget.style.borderColor =
+                          "rgba(191,201,196,0.3)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (page !== pg) {
+                        e.currentTarget.style.background = "transparent";
+                        e.currentTarget.style.borderColor = "transparent";
+                      }
+                    }}
+                  >
+                    {pg}
+                  </button>
+                );
+              })}
+              {lastPage > 5 && (
+                <span className="text-xs px-1" style={{ color: "#3f4945" }}>
+                  …{lastPage}
+                </span>
+              )}
+            </div>
 
-            {lastPage > 5 && (
-              <span className="text-text-secondary text-xs px-1">
-                …{lastPage}
-              </span>
-            )}
-
+            {/* Next */}
             <button
               onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
               disabled={page >= lastPage}
-              className="w-9 h-9 flex items-center justify-center rounded-xl border border-border-light text-madrasah-green bg-white hover:bg-primary-container hover:text-on-primary hover:border-primary-container transition-all shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-9 h-9 flex items-center justify-center rounded-lg border transition-all shadow-sm disabled:opacity-30"
+              style={{
+                borderColor: "rgba(191,201,196,0.3)",
+                color: "#00342b",
+                background: "#ffffff",
+              }}
+              onMouseEnter={(e) => {
+                if (page < lastPage) {
+                  e.currentTarget.style.background = "#006e2a";
+                  e.currentTarget.style.color = "#ffffff";
+                  e.currentTarget.style.borderColor = "#006e2a";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#ffffff";
+                e.currentTarget.style.color = "#00342b";
+                e.currentTarget.style.borderColor = "rgba(191,201,196,0.3)";
+              }}
             >
               <span className="material-symbols-outlined text-[20px]">
                 chevron_right
@@ -1297,21 +1400,7 @@ export default function MasterKelas() {
         </div>
       </div>
 
-      {/* ── Side Drawer ── */}
-      <DrawerDetail
-        kelas={drawerKelas}
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        onEdit={(k) => {
-          setEditData(k);
-          setModalOpen(true);
-        }}
-        onDelete={(k) => {
-          if (confirm(`Hapus kelas ${k.nama_kelas}?`)) hapus.mutate(k.id);
-        }}
-      />
-
-      {/* ── Modal Tambah/Edit ── */}
+      {/* ── Modal ── */}
       <ModalKelas
         open={modalOpen}
         onClose={() => {

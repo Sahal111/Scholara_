@@ -4,6 +4,7 @@ namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TahunAjaran\AktifkanSemesterRequest as SetSemesterAktifRequest;
+use App\Http\Requests\TahunAjaran\ArsipTahunAjaranRequest;
 use App\Http\Requests\TahunAjaran\StoreTahunAjaranRequest;
 use App\Http\Requests\TahunAjaran\UpdateTahunAjaranRequest;
 use App\Models\Absensi;
@@ -26,9 +27,15 @@ class TahunAjaranController extends Controller
     {
     }
 
+    /**
+     * List semua tahun ajaran yang aktif (belum diarsipkan, belum dihapus).
+     */
     public function index(): JsonResponse
     {
-        $data = TahunAjaran::with('semesters')->orderByDesc('tahun')->get();
+        $data = TahunAjaran::with('semesters')
+            ->where('is_archived', false)
+            ->orderByDesc('tahun')
+            ->get();
 
         return $this->success($data);
     }
@@ -236,6 +243,119 @@ class TahunAjaranController extends Controller
         );
     }
 
+    /**
+     * Arsipkan tahun ajaran (periode selesai → arsip historis).
+     * Berbeda dengan delete: data tetap ada, hanya ditandai selesai.
+     */
+    public function arsip(ArsipTahunAjaranRequest $request, int $id): JsonResponse
+    {
+        $tahunAjaran = TahunAjaran::findOrFail($id);
+        Gate::authorize('manage', $tahunAjaran);
+
+        if ($tahunAjaran->is_active) {
+            return $this->error(
+                'Tahun ajaran aktif tidak dapat diarsipkan. Nonaktifkan terlebih dahulu.',
+                'CONFLICT',
+                422
+            );
+        }
+
+        if ($tahunAjaran->is_archived) {
+            return $this->error(
+                'Tahun ajaran ini sudah diarsipkan.',
+                'CONFLICT',
+                422
+            );
+        }
+
+        DB::beginTransaction();
+        try {
+            // Nonaktifkan semua semester milik TA ini
+            Semester::where('tahun_ajaran_id', $id)->update(['is_active' => false]);
+
+            $tahunAjaran->update([
+                'is_archived' => true,
+                'archived_at' => now(),
+            ]);
+
+            $catatan = $request->catatan
+                ? " Catatan: {$request->catatan}"
+                : '';
+
+            ActivityLog::log(
+                'arsip',
+                'tahun_ajaran',
+                $id,
+                "Mengarsipkan tahun ajaran {$tahunAjaran->tahun}.{$catatan}",
+            );
+
+            DB::commit();
+
+            return $this->success(
+                $tahunAjaran->load('semesters'),
+                'Tahun ajaran berhasil diarsipkan.'
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error('Gagal mengarsipkan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
+        }
+    }
+
+    /**
+     * Keluarkan tahun ajaran dari arsip → kembali ke daftar aktif (tidak otomatis aktif).
+     */
+    public function unarsip(int $id): JsonResponse
+    {
+        $tahunAjaran = TahunAjaran::findOrFail($id);
+        Gate::authorize('manage', $tahunAjaran);
+
+        if (!$tahunAjaran->is_archived) {
+            return $this->error(
+                'Tahun ajaran ini tidak sedang diarsipkan.',
+                'CONFLICT',
+                422
+            );
+        }
+
+        DB::beginTransaction();
+        try {
+            $tahunAjaran->update([
+                'is_archived' => false,
+                'archived_at' => null,
+            ]);
+
+            ActivityLog::log(
+                'unarsip',
+                'tahun_ajaran',
+                $id,
+                "Mengeluarkan tahun ajaran {$tahunAjaran->tahun} dari arsip.",
+            );
+
+            DB::commit();
+
+            return $this->success(
+                $tahunAjaran->load('semesters'),
+                'Tahun ajaran berhasil dikeluarkan dari arsip.'
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error('Gagal mengeluarkan dari arsip: ' . $e->getMessage(), 'SERVER_ERROR', 500);
+        }
+    }
+
+    /**
+     * Daftar tahun ajaran yang diarsipkan (historis).
+     */
+    public function arsipList(): JsonResponse
+    {
+        $data = TahunAjaran::with('semesters')
+            ->where('is_archived', true)
+            ->orderByDesc('archived_at')
+            ->get();
+
+        return $this->success($data);
+    }
+
     public function destroy(int $id): JsonResponse
     {
         $tahunAjaran = TahunAjaran::findOrFail($id);
@@ -249,10 +369,18 @@ class TahunAjaranController extends Controller
             );
         }
 
+        if ($tahunAjaran->is_archived) {
+            return $this->error(
+                'Tahun ajaran yang diarsipkan tidak dapat dihapus langsung. Keluarkan dari arsip terlebih dahulu jika ingin menghapus.',
+                'CONFLICT',
+                422
+            );
+        }
+
         DB::beginTransaction();
         try {
-            $tahunAjaran->semesters()->delete(); // soft delete semester juga
-            $tahunAjaran->delete();              // soft delete
+            $tahunAjaran->semesters()->delete();
+            $tahunAjaran->delete();
 
             ActivityLog::log('delete', 'tahun_ajaran', $id, "Memindahkan tahun ajaran {$tahunAjaran->tahun} ke recycle bin.");
 

@@ -13,6 +13,7 @@ export const tahunAjaranKeys = {
   detail: (id) => [...tahunAjaranKeys.details(), id],
   dropdown: () => [...tahunAjaranKeys.all, "dropdown"],
   trash: () => [...tahunAjaranKeys.all, "trash"],
+  arsip: () => [...tahunAjaranKeys.all, "arsip"],
 };
 
 // ── Queries ──────────────────────────────────────────────────────────────────
@@ -245,6 +246,66 @@ export function useForceDeleteTahunAjaran() {
     },
     onError: (err) => {
       toast.error(err.response?.data?.message ?? "Gagal menghapus permanen.");
+    },
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ARSIP — Data historis (periode selesai), BUKAN recycle bin
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Ambil semua tahun ajaran yang diarsipkan */
+export function useArsipTahunAjaranList() {
+  return useQuery({
+    queryKey: tahunAjaranKeys.arsip(),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/arsip`);
+      return data.data ?? [];
+    },
+    staleTime: 30_000,
+  });
+}
+
+/**
+ * Arsipkan tahun ajaran (periode selesai → historis).
+ * @param {object} options.onSuccess - callback setelah berhasil
+ */
+export function useArsipkanTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, catatan }) =>
+      api.patch(`${BASE}/${id}/arsip`, { catatan }),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.arsip() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
+      toast.success("Tahun ajaran berhasil diarsipkan.");
+    },
+    onError: (err) => {
+      toast.error(
+        err.response?.data?.message ?? "Gagal mengarsipkan tahun ajaran.",
+      );
+    },
+  });
+}
+
+/** Keluarkan tahun ajaran dari arsip → kembali ke daftar aktif */
+export function useUnarsipTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.patch(`${BASE}/${id}/unarsip`),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.arsip() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
+      toast.success("Tahun ajaran berhasil dikeluarkan dari arsip.");
+    },
+    onError: (err) => {
+      toast.error(
+        err.response?.data?.message ?? "Gagal mengeluarkan dari arsip.",
+      );
     },
   });
 }

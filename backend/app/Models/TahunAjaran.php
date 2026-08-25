@@ -1,4 +1,4 @@
-<?php
+?php
 
 namespace App\Models;
 
@@ -16,10 +16,14 @@ class TahunAjaran extends Model
         'school_id',
         'tahun',
         'is_active',
+        'is_archived',
+        'archived_at',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'is_active'   => 'boolean',
+        'is_archived' => 'boolean',
+        'archived_at' => 'datetime',
     ];
 
     // ── Relasi ──────────────────────────────────────────────
@@ -39,5 +43,15 @@ class TahunAjaran extends Model
     public function scopeAktif($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeArsip($query)
+    {
+        return $query->where('is_archived', true);
+    }
+
+    public function scopeAktifDanBelumArsip($query)
+    {
+        return $query->where('is_archived', false)->whereNull('deleted_at');
     }
 }
