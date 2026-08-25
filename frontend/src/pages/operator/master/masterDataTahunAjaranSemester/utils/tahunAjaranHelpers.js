@@ -76,20 +76,34 @@ export function getTglSelesai(t) {
 
 export function getStatusTahunAjaran(t) {
   if (t.is_active) return "AKTIF";
+
   const now = new Date();
   const mulai = getTglMulai(t);
   const selesai = getTglSelesai(t);
 
-  // Belum ada tanggal → belum bisa ditentukan
-  if (!mulai) return "AKAN DATANG";
+  // Kasus 1: ada tanggal mulai & selesai → bisa kalkulasi presisi
+  if (mulai && selesai) {
+    if (new Date(mulai) > now) return "AKAN DATANG";
+    if (new Date(selesai) < now) return "SELESAI";
+    // mulai ≤ now ≤ selesai → sedang berjalan tapi tidak aktif (is_active=false)
+    return "SELESAI";
+  }
 
-  // Periode belum mulai
-  if (new Date(mulai) > now) return "AKAN DATANG";
+  // Kasus 2: hanya ada tanggal mulai
+  if (mulai) {
+    return new Date(mulai) > now ? "AKAN DATANG" : "SELESAI";
+  }
 
-  // Periode sudah selesai
-  if (selesai && new Date(selesai) < now) return "SELESAI";
+  // Kasus 3: tidak ada tanggal sama sekali → fallback ke nama tahun
+  // "2028/2029" → tahunMulai=2028, sekarang=2026 → AKAN DATANG
+  // "2025/2026" → tahunMulai=2025, sekarang=2026 → SELESAI
+  const tahunMulai = t.tahun ? parseInt(t.tahun.split("/")[0]) : null;
+  if (tahunMulai) {
+    const tahunSelesai = t.tahun ? parseInt(t.tahun.split("/")[1]) : null;
+    const tahunSekarang = now.getFullYear();
+    if (tahunMulai > tahunSekarang) return "AKAN DATANG";
+    if (tahunSelesai && tahunSelesai <= tahunSekarang) return "SELESAI";
+  }
 
-  // Periode sedang berjalan tapi TA tidak aktif
-  // (is_active=false, tapi tanggal mulai sudah lewat dan belum selesai)
-  return "MENDATANG"; // atau bisa "TIDAK AKTIF"
+  return "SELESAI";
 }
