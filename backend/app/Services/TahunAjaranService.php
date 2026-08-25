@@ -55,16 +55,19 @@ class TahunAjaranService
             ->exists();
 
         // ── Daftar kelas + total siswa aktif ─────────────────────────────────
+        // Ambil semua siswa count dalam 1 query (hindari N+1)
+        $siswaPerKelas = RiwayatKelas::where('tahun_ajaran_id', $id)
+            ->aktif()
+            ->selectRaw('kelas_id, COUNT(*) as jumlah')
+            ->groupBy('kelas_id')
+            ->pluck('jumlah', 'kelas_id');
+
         $kelasList = Kelas::with(['wali:id,nuptk,nama', 'semester:id,nama'])
             ->where('tahun_ajaran_id', $id)
             ->orderBy('tingkat')
             ->orderBy('nama_kelas')
             ->get()
-            ->map(function ($k) {
-                $totalSiswa = RiwayatKelas::where('kelas_id', $k->id)
-                    ->aktif()
-                    ->count();
-
+            ->map(function ($k) use ($siswaPerKelas) {
                 return [
                     'id' => $k->id,
                     'nama_kelas' => $k->nama_kelas,
@@ -75,7 +78,7 @@ class TahunAjaranService
                     'ruangan' => $k->ruangan,
                     'is_active' => $k->is_active,
                     'nama_wali' => $k->wali?->nama ?? '-',
-                    'total_siswa' => $totalSiswa,
+                    'total_siswa' => $siswaPerKelas[$k->id] ?? 0,
                 ];
             });
 

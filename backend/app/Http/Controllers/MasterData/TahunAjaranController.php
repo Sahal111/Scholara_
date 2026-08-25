@@ -86,14 +86,14 @@ class TahunAjaranController extends Controller
                 ]);
             }
 
-            DB::commit();
-
             ActivityLog::log(
                 'create',
                 'tahun_ajaran',
                 $tahunAjaran->id,
                 "Membuat tahun ajaran {$tahunAjaran->tahun}" . ($request->buat_semester ? ' beserta semester.' : '.'),
             );
+
+            DB::commit();
 
             return $this->created(
                 $tahunAjaran->load('semesters'),
@@ -171,14 +171,14 @@ class TahunAjaranController extends Controller
                 }
             }
 
-            DB::commit();
-
             ActivityLog::log(
                 'update',
                 'tahun_ajaran',
                 $tahunAjaran->id,
                 "Memperbarui tahun ajaran {$tahunAjaran->tahun}" . ($request->buat_semester ? ' dan semester.' : '.'),
             );
+
+            DB::commit();
 
             return $this->success(
                 $tahunAjaran->load('semesters'),
@@ -195,9 +195,8 @@ class TahunAjaranController extends Controller
         $tahunAjaran = TahunAjaran::findOrFail($id);
         Gate::authorize('manage', $tahunAjaran);
 
-        $taIds = TahunAjaran::pluck('id');
-        TahunAjaran::whereIn('id', $taIds)->update(['is_active' => false]);
-        Semester::whereIn('tahun_ajaran_id', $taIds)->update(['is_active' => false]);
+        TahunAjaran::query()->update(['is_active' => false]);
+        Semester::query()->update(['is_active' => false]);
         $tahunAjaran->update(['is_active' => true]);
 
         Semester::where('tahun_ajaran_id', $id)

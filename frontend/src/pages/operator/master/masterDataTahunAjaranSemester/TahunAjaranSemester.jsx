@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, Link } from "react-router-dom";
-import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
 import {
   tahunAjaranKeys,
+  useTahunAjaranList,
+  useTahunAjaranDetail,
+  useSetTahunAjaranAktif,
+  useSetSemesterAktif,
+  useDeleteTahunAjaran,
   useArsipkanTahunAjaran,
 } from "../../../../hooks/api/useTahunAjaran";
 import ModalTahunAjaranComp from "./components/ModalTahunAjaran";
@@ -27,7 +31,6 @@ const ModalTahunAjaran = ModalTahunAjaranComp;
 const ModalBuatSemester = ModalBuatSemesterComp;
 const SemesterCard = SemesterCardComp;
 
-// ── (DEAD CODE — akan dihapus setelah migrasi selesai) ────────────────────────
 // ── Main Page Component ────────────────────────────────────────────────────────
 export default function TahunAjaran() {
   const queryClient = useQueryClient();
@@ -71,14 +74,9 @@ export default function TahunAjaran() {
     setArsipModal({ open: false, item: null, catatan: "", isPending: false });
 
   // Fetch list of Tahun Ajaran
-  const { data: listData = [], isLoading } = useQuery({
-    queryKey: tahunAjaranKeys.lists(),
-    queryFn: () =>
-      api.get("/operator/master-data/tahun-ajaran").then((r) => r.data.data),
-    staleTime: 30_000,
-  });
+  const { data: listData = [], isLoading } = useTahunAjaranList();
 
-  const list = listData ?? [];
+  const list = listData?.data ?? listData ?? [];
   const aktif = list.find((t) => t.is_active);
 
   // Set default selected ID when data is loaded
@@ -134,79 +132,21 @@ export default function TahunAjaran() {
   };
 
   // Fetch detail data for the selected academic year (used in sidebar stats)
-  const { data: selectedDetailData, isLoading: loadingDetail } = useQuery({
-    queryKey: tahunAjaranKeys.detail(selectedTA?.id),
-    queryFn: () =>
-      api
-        .get(`/operator/master-data/tahun-ajaran/${selectedTA.id}`)
-        .then((r) => r.data),
-    enabled: !!selectedTA?.id,
-    staleTime: 60_000,
-  });
+  const { data: selectedDetailData, isLoading: loadingDetail } =
+    useTahunAjaranDetail(selectedTA?.id);
 
-  // Mutation: Set active year
-  const setAktif = useMutation({
-    mutationFn: (id) =>
-      api.patch(`/operator/master-data/tahun-ajaran/${id}/aktif`),
-    onSuccess: () => {
-      toast.success("Tahun ajaran aktif berhasil diperbarui.");
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
-      if (selectedTA?.id) {
-        queryClient.invalidateQueries({
-          queryKey: tahunAjaranKeys.detail(selectedTA.id),
-        });
-      }
-    },
-    onError: (err) =>
-      toast.error(
-        err.response?.data?.message ?? "Gagal mengubah status aktif.",
-      ),
-  });
-
-  // Mutation: Set active semester
-  const setSemesterAktif = useMutation({
-    mutationFn: ({ taId, semesterNama }) =>
-      api.patch(`/operator/master-data/tahun-ajaran/${taId}/semester-aktif`, {
-        semester_nama: semesterNama,
-      }),
-    onSuccess: (_, vars) => {
-      toast.success(`Semester ${vars.semesterNama} berhasil diaktifkan.`);
-      // Invalidate list DAN detail dari TA yang baru saja diubah (bukan cuma selectedTA)
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      queryClient.invalidateQueries({
-        queryKey: tahunAjaranKeys.detail(vars.taId),
-      });
-      if (selectedTA?.id && selectedTA.id !== vars.taId) {
-        queryClient.invalidateQueries({
-          queryKey: tahunAjaranKeys.detail(selectedTA.id),
-        });
-      }
-    },
-    onError: (err) =>
-      toast.error(
-        err.response?.data?.message ?? "Gagal mengaktifkan semester.",
-      ),
-  });
-
-  // Mutation: Delete year (soft delete → recycle bin)
-  const hapus = useMutation({
-    mutationFn: (id) => api.delete(`/operator/master-data/tahun-ajaran/${id}`),
-    onSuccess: () => {
-      toast.success("Tahun ajaran dipindahkan ke recycle bin.");
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
-      setSelectedId(null);
-    },
-    onError: (err) =>
-      toast.error(
-        err.response?.data?.message ?? "Gagal menghapus tahun ajaran.",
-      ),
-  });
-
-  // Mutation: Arsipkan tahun ajaran (periode selesai → historis)
+  // Mutations — pakai hooks yang sudah ada (tidak duplikasi logic)
+  const setAktif = useSetTahunAjaranAktif();
+  const setSemesterAktif = useSetSemesterAktif();
+  const hapusMut = useDeleteTahunAjaran();
   const arsipkanMut = useArsipkanTahunAjaran();
+
+  // Wrapper untuk hapus: set selectedId null setelah berhasil
+  const hapus = {
+    mutate: (id) =>
+      hapusMut.mutate(id, { onSuccess: () => setSelectedId(null) }),
+    isPending: hapusMut.isPending,
+  };
 
   // Computed summary stats
   const totalTahunAjaran = list.length;
@@ -243,7 +183,7 @@ export default function TahunAjaran() {
   const metricMapel = selectedDetailData?.total_mapel ?? null;
   const metricJadwal = selectedDetailData?.total_jadwal ?? null;
   const metricSiswa = selectedDetailData?.total_siswa ?? null;
-  const metricRombel = selectedDetailData?.total_kelas ?? null;
+  const metricWaliKelas = selectedDetailData?.total_wali_kelas ?? null;
 
   // Active semester name for selected TA
   const selectedActiveSemester =
@@ -916,21 +856,21 @@ export default function TahunAjaran() {
                     )}
                   </div>
 
-                  {/* Rombel */}
+                  {/* Wali Kelas */}
                   <div className="bg-surface-container p-3 rounded-xl border border-border-light flex flex-col items-start">
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mb-2 text-primary">
                       <span className="material-symbols-outlined text-[20px]">
-                        grid_view
+                        manage_accounts
                       </span>
                     </div>
                     <p className="font-label-badge text-[10px] text-[#3f4945]/70 uppercase tracking-wider font-bold mb-1">
-                      Rombel
+                      Wali Kelas
                     </p>
                     {loadingDetail ? (
                       <span className="inline-block w-10 h-6 bg-[#bfc9c4]/40 rounded-lg animate-pulse mt-1" />
                     ) : (
                       <p className="text-xl font-bold text-text-primary">
-                        {metricRombel ?? "—"}
+                        {metricWaliKelas ?? "—"}
                       </p>
                     )}
                   </div>
