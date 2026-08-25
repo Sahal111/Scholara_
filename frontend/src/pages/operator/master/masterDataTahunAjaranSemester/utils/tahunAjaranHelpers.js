@@ -79,7 +79,17 @@ export function getStatusTahunAjaran(t) {
   const now = new Date();
   const mulai = getTglMulai(t);
   const selesai = getTglSelesai(t);
+
+  // Belum ada tanggal → belum bisa ditentukan
+  if (!mulai) return "AKAN DATANG";
+
+  // Periode belum mulai
+  if (new Date(mulai) > now) return "AKAN DATANG";
+
+  // Periode sudah selesai
   if (selesai && new Date(selesai) < now) return "SELESAI";
-  if (!mulai || new Date(mulai) > now) return "AKAN DATANG";
-  return "SELESAI";
+
+  // Periode sedang berjalan tapi TA tidak aktif
+  // (is_active=false, tapi tanggal mulai sudah lewat dan belum selesai)
+  return "MENDATANG"; // atau bisa "TIDAK AKTIF"
 }
