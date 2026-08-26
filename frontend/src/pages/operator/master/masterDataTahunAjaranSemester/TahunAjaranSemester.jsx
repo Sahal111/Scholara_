@@ -571,11 +571,11 @@ export default function TahunAjaran() {
                                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#eceeed] text-[#3f4945] font-label-badge text-[10px] font-bold tracking-widest">
                                       SELESAI
                                     </span>
-                                  ) : (
+                                  ) : status === "AKAN DATANG" ? (
                                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] font-label-badge text-[10px] font-bold tracking-widest border border-[#006e2a]/20">
                                       AKAN DATANG
                                     </span>
-                                  )}
+                                  ) : null}
                                 </td>
 
                                 {/* Data Akademik Column */}
