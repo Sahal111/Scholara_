@@ -81,11 +81,20 @@ export function getStatusTahunAjaran(t) {
   const mulai = getTglMulai(t);
   const selesai = getTglSelesai(t);
 
-  // Kasus 1: ada tanggal mulai & selesai → bisa kalkulasi presisi
+  // DEBUG — hapus setelah selesai debug
+  console.log(`[${t.tahun}]`, {
+    is_active: t.is_active,
+    semesters: t.semesters,
+    mulai,
+    selesai,
+    now: now.toISOString(),
+  });
+
+  // Kasus 1: ada tanggal mulai & selesai → kalkulasi presisi
   if (mulai && selesai) {
     if (new Date(mulai) > now) return "AKAN DATANG";
     if (new Date(selesai) < now) return "SELESAI";
-    // mulai ≤ now ≤ selesai → sedang berjalan tapi tidak aktif (is_active=false)
+    // mulai ≤ now ≤ selesai, tapi is_active=false → TA lama, anggap SELESAI
     return "SELESAI";
   }
 
@@ -94,9 +103,7 @@ export function getStatusTahunAjaran(t) {
     return new Date(mulai) > now ? "AKAN DATANG" : "SELESAI";
   }
 
-  // Kasus 3: tidak ada tanggal sama sekali → fallback ke nama tahun
-  // "2028/2029" → tahunMulai=2028, sekarang=2026 → AKAN DATANG
-  // "2025/2026" → tahunMulai=2025, sekarang=2026 → SELESAI
+  // Kasus 3: tidak ada tanggal → fallback ke nama tahun
   const tahunMulai = t.tahun ? parseInt(t.tahun.split("/")[0]) : null;
   if (tahunMulai) {
     const tahunSelesai = t.tahun ? parseInt(t.tahun.split("/")[1]) : null;
