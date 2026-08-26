@@ -44,6 +44,22 @@ export default function TahunAjaran() {
   const [buatSemesterTA, setBuatSemesterTA] = useState(null);
   const [openActionId, setOpenActionId] = useState(null);
   const [actionMenuPosition, setActionMenuPosition] = useState(null);
+
+  // Auto-close action menu ketika klik di luar, scroll, atau tekan Escape
+  useEffect(() => {
+    if (!openActionId) return;
+    const close = () => {
+      setOpenActionId(null);
+      setActionMenuPosition(null);
+    };
+    document.addEventListener("click", close);
+    document.addEventListener("scroll", close, true);
+    document.addEventListener("keydown", (e) => e.key === "Escape" && close());
+    return () => {
+      document.removeEventListener("click", close);
+      document.removeEventListener("scroll", close, true);
+    };
+  }, [openActionId]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("semua"); // "semua" | "aktif" | "selesai" | "mendatang"
 
@@ -659,7 +675,8 @@ export default function TahunAjaran() {
                                           taId={t.id}
                                           taIsActive={t.is_active}
                                           taStatus={status}
-                                          onAktifkan={() =>                                         setSemesterAktif.mutate({
+                                          onAktifkan={() =>
+                                            setSemesterAktif.mutate({
                                               taId: t.id,
                                               semesterNama: "Ganjil",
                                             })
@@ -924,19 +941,37 @@ export default function TahunAjaran() {
                         Arsip Tahun Ajaran
                       </h4>
                       <p className="font-body-md text-xs text-[#3f4945]/80 leading-relaxed mb-4">
-                        Lihat dan kelola tahun ajaran yang telah diarsipkan.
-                        Data arsip tidak aktif namun tetap tersimpan untuk
+                        Arsipkan tahun ajaran yang sudah selesai agar tidak
+                        tampil di daftar aktif namun tetap tersimpan untuk
                         referensi.
                       </p>
-                      <Link
-                        to="/operator/master/tahun-ajaran/arsip"
-                        className="w-full bg-[#006e2a] hover:bg-[#004d1a] text-white px-5 py-3 rounded-xl font-label-badge text-[11px] font-black tracking-widest uppercase shadow-md hover:shadow-lg shadow-[#006e2a]/20 flex items-center justify-center gap-2 transition-all"
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const target = selectedTA;
+                          if (!target) return;
+                          if (target.is_active) return;
+                          setArsipModal({
+                            open: true,
+                            item: target,
+                            catatan: "",
+                            isPending: false,
+                          });
+                        }}
+                        disabled={
+                          !selectedTA ||
+                          selectedTA.is_active ||
+                          arsipkanMut.isPending
+                        }
+                        className="w-full bg-[#006e2a] hover:bg-[#004d1a] text-white px-5 py-3 rounded-xl font-label-badge text-[11px] font-black tracking-widest uppercase shadow-md hover:shadow-lg shadow-[#006e2a]/20 flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <span className="material-symbols-outlined text-[16px]">
                           inventory_2
                         </span>
-                        Buka Arsip
-                      </Link>
+                        {selectedTA?.is_active
+                          ? "TA Aktif Tidak Bisa Diarsip"
+                          : `Arsipkan ${selectedTA?.tahun ?? "TA"}`}
+                      </button>
                     </div>
                   </div>
 
