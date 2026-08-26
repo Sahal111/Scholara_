@@ -556,9 +556,8 @@ export default function DetailSemester() {
                 {
                   label: "Guru Mengajar",
                   value: payload.total_guru ?? "-",
-                  sub: "100% Aktif",
-                  subColor: "text-[#006e2a]",
-                  icon: "check_circle",
+                  sub: "Semester ini",
+                  subColor: "text-[#3f4945]/60",
                 },
                 {
                   label: "Total Kelas",
@@ -575,9 +574,8 @@ export default function DetailSemester() {
                 {
                   label: "Total Jadwal",
                   value: payload.total_jadwal ?? "-",
-                  sub: "95% Terset",
-                  subColor: "text-[#006e2a]",
-                  icon: "verified",
+                  sub: "Terjadwal",
+                  subColor: "text-[#3f4945]/60",
                 },
               ].map((s) => (
                 <div
@@ -962,12 +960,9 @@ export default function DetailSemester() {
               ];
               const cs = colorSets[i % colorSets.length];
               const initials =
-                mp.koordinator
-                  ?.split(" ")
-                  .map((w) => w[0])
-                  .join("")
+                (mp.kode || mp.nama_mapel || "??")
                   .slice(0, 2)
-                  .toUpperCase() ?? "??";
+                  .toUpperCase();
               return (
                 <div
                   key={mp.id}
@@ -993,7 +988,7 @@ export default function DetailSemester() {
                     </div>
                   </div>
                   <h4 className="text-xl font-bold text-[#00342b] font-headline-card mb-6 group-hover:text-[#006e2a] transition-colors">
-                    {mp.nama}
+                    {mp.nama_mapel}
                   </h4>
                   <div className="flex items-center gap-3 p-3 bg-[#f2f4f3]/50 rounded-2xl border border-[#bfc9c4]/10 group-hover:border-[#006e2a]/20 transition-colors">
                     <div className="w-10 h-10 rounded-full bg-[#004d40] flex items-center justify-center text-xs font-bold text-[#7ebdac] border-2 border-white shadow-sm">
@@ -1001,10 +996,10 @@ export default function DetailSemester() {
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-[#3f4945]/50 uppercase tracking-wider">
-                        Koordinator
+                        {mp.kelompok ? `Kelompok ${mp.kelompok}` : "Mapel"}
                       </span>
                       <span className="text-sm font-bold text-[#00342b]">
-                        {mp.koordinator ?? "-"}
+                        {mp.jam_per_minggu ? `${mp.jam_per_minggu} jam/minggu` : "-"}
                       </span>
                     </div>
                   </div>
@@ -1068,8 +1063,8 @@ export default function DetailSemester() {
                       door_front
                     </span>
                   </div>
-                  <span className="text-[10px] font-bold text-[#006e2a] bg-[#006e2a]/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    Aktif
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${k.is_active !== false ? "text-[#006e2a] bg-[#006e2a]/10" : "text-[#3f4945]/60 bg-[#eceeed]"}`}>
+                    {k.is_active !== false ? "Aktif" : "Nonaktif"}
                   </span>
                 </div>
                 <h4 className="text-lg font-extrabold text-[#00342b] font-headline-card mb-4">
@@ -1249,14 +1244,17 @@ export default function DetailSemester() {
                       : "Pengaturan jadwal pelajaran belum selesai.",
                   },
                   {
-                    icon: "verified",
-                    badge: "Verified",
-                    badgeCls:
-                      "bg-[#006e2a]/10 text-[#006e2a] border-[#006e2a]/20",
-                    iconBg: "bg-[#006e2a]/10",
-                    iconColor: "text-[#006e2a]",
+                    icon: checklist.mapel_lengkap ? "verified" : "pending_actions",
+                    badge: checklist.mapel_lengkap ? "Verified" : "Pending",
+                    badgeCls: checklist.mapel_lengkap
+                      ? "bg-[#006e2a]/10 text-[#006e2a] border-[#006e2a]/20"
+                      : "bg-[#eaa300]/10 text-[#eaa300] border-[#eaa300]/20",
+                    iconBg: checklist.mapel_lengkap ? "bg-[#006e2a]/10" : "bg-[#eaa300]/10",
+                    iconColor: checklist.mapel_lengkap ? "text-[#006e2a]" : "text-[#eaa300]",
                     title: "Kurikulum Inti",
-                    desc: "Semua mata pelajaran inti telah dikonfigurasi untuk semester ini.",
+                    desc: checklist.mapel_lengkap
+                      ? "Semua mata pelajaran inti telah dikonfigurasi untuk semester ini."
+                      : "Mata pelajaran inti belum lengkap dikonfigurasi.",
                   },
                   {
                     icon: "group_add",
@@ -2355,44 +2353,89 @@ export default function DetailSemester() {
 
         {/* ── SECTION: Navigasi Semester ── */}
         <section className="relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {semLain ? (
-              <Link
-                to={`/operator/master/tahun-ajaran/${taId}/semester/${semLain.nama}`}
-                className="group flex items-center gap-5 p-6 bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-3xl hover:border-[#006e2a]/30 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-500"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-[#3f4945] group-hover:text-[#006e2a] group-hover:scale-110 transition-all duration-500 shadow-sm">
-                  <span className="material-symbols-outlined">arrow_back</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-[#3f4945]/50 uppercase tracking-[0.2em] mb-1">
-                    Semester Lainnya
-                  </span>
-                  <span className="text-lg font-extrabold text-[#00342b] font-headline-card group-hover:text-[#006e2a] transition-colors">
-                    {ta.tahun} — {semLain.nama}
-                  </span>
-                </div>
-              </Link>
-            ) : (
-              <div />
-            )}
-            <Link
-              to={`/operator/master/tahun-ajaran/${taId}`}
-              className="group flex items-center justify-end gap-5 p-6 bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-3xl hover:border-[#006e2a]/30 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-right"
-            >
-              <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-[#3f4945]/50 uppercase tracking-[0.2em] mb-1">
-                  Kembali ke
-                </span>
-                <span className="text-lg font-extrabold text-[#00342b] font-headline-card group-hover:text-[#006e2a] transition-colors">
-                  Tahun Ajaran {ta.tahun}
-                </span>
+          {(() => {
+            const isGanjil = semester.nama?.toLowerCase() === "ganjil";
+            const taPrev = payload.ta_prev ?? null;
+            const taNext = payload.ta_next ?? null;
+
+            // Ganjil: ← TA sebelumnya (Genap) | Genap →
+            // Genap:  ← Ganjil             | TA selanjutnya (Ganjil) →
+            const leftLink = isGanjil
+              ? taPrev
+                ? {
+                    to: `/operator/master/tahun-ajaran/${taPrev.id}/semester/Genap`,
+                    label: "Semester Sebelumnya",
+                    title: `${taPrev.tahun} — Genap`,
+                  }
+                : null
+              : {
+                  to: `/operator/master/tahun-ajaran/${taId}/semester/Ganjil`,
+                  label: "Semester Sebelumnya",
+                  title: `${ta.tahun} — Ganjil`,
+                };
+
+            const rightLink = isGanjil
+              ? {
+                  to: `/operator/master/tahun-ajaran/${taId}/semester/Genap`,
+                  label: "Semester Selanjutnya",
+                  title: `${ta.tahun} — Genap`,
+                }
+              : taNext
+                ? {
+                    to: `/operator/master/tahun-ajaran/${taNext.id}/semester/Ganjil`,
+                    label: "Semester Selanjutnya",
+                    title: `${taNext.tahun} — Ganjil`,
+                  }
+                : null;
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Left arrow */}
+                {leftLink ? (
+                  <Link
+                    to={leftLink.to}
+                    className="group flex items-center gap-5 p-6 bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-3xl hover:border-[#006e2a]/30 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-500"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-[#3f4945] group-hover:text-[#006e2a] group-hover:scale-110 transition-all duration-500 shadow-sm">
+                      <span className="material-symbols-outlined">arrow_back</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-[#3f4945]/50 uppercase tracking-[0.2em] mb-1">
+                        {leftLink.label}
+                      </span>
+                      <span className="text-lg font-extrabold text-[#00342b] font-headline-card group-hover:text-[#006e2a] transition-colors">
+                        {leftLink.title}
+                      </span>
+                    </div>
+                  </Link>
+                ) : (
+                  <div />
+                )}
+
+                {/* Right arrow */}
+                {rightLink ? (
+                  <Link
+                    to={rightLink.to}
+                    className="group flex items-center justify-end gap-5 p-6 bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-3xl hover:border-[#006e2a]/30 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-500 text-right"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold text-[#3f4945]/50 uppercase tracking-[0.2em] mb-1">
+                        {rightLink.label}
+                      </span>
+                      <span className="text-lg font-extrabold text-[#00342b] font-headline-card group-hover:text-[#006e2a] transition-colors">
+                        {rightLink.title}
+                      </span>
+                    </div>
+                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-[#3f4945] group-hover:text-[#006e2a] group-hover:scale-110 transition-all duration-500 shadow-sm">
+                      <span className="material-symbols-outlined">arrow_forward</span>
+                    </div>
+                  </Link>
+                ) : (
+                  <div />
+                )}
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-[#3f4945] group-hover:text-[#006e2a] group-hover:scale-110 transition-all duration-500 shadow-sm">
-                <span className="material-symbols-outlined">arrow_forward</span>
-              </div>
-            </Link>
-          </div>
+            );
+          })()}
         </section>
       </div>
     </>

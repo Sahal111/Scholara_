@@ -69,7 +69,8 @@ export default function DetailTahunAjaran() {
   });
 
   const arsipkanTA = useMutation({
-    mutationFn: () => api.delete(`/operator/master-data/tahun-ajaran/${id}`),
+    mutationFn: () =>
+      api.patch(`/operator/master-data/tahun-ajaran/${id}/arsip`),
     onSuccess: () => {
       toast.success("Tahun ajaran berhasil diarsipkan.");
       navigate("/operator/master/tahun-ajaran");
@@ -154,8 +155,23 @@ export default function DetailTahunAjaran() {
   const genap = semesters.find((s) => s.nama === "Genap");
   const semAktif = semesters.find((s) => s.is_active);
 
-  // Label badge semester berdasarkan lifecycle TA, bukan hanya is_active semester
-  const semBadgeLabel = ta.is_active ? "STANDBY" : "SELESAI";
+  // Label badge semester berdasarkan lifecycle TA + is_active per semester (BUG 6 fix)
+  const semBadgeFor = (sem) => {
+    if (sem?.is_active) return "AKTIF";
+    if (ta.is_active) return "STANDBY";
+    return "SELESAI";
+  };
+
+  // Kurikulum mayoritas dari kelasList (BUG 5 fix)
+  const kurikulumMayoritas = (() => {
+    if (!kelasList.length) return "—";
+    const counts = {};
+    kelasList.forEach((k) => {
+      const kur = k.kurikulum || "Merdeka";
+      counts[kur] = (counts[kur] || 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "—";
+  })();
 
   // Year parsing (e.g. 2026/2027 => 2026 and 2027)
   const tahunParts = (ta.tahun || "").split(/[/ -]/).filter(Boolean);
@@ -651,77 +667,55 @@ export default function DetailTahunAjaran() {
               </div>
             </div>
 
-            <div className="flex-1 relative h-40 sm:h-48 w-full group-hover:drop-shadow-[0_0_15px_rgba(0,200,83,0.3)] transition-all duration-500">
-              <svg
-                className="absolute inset-0 w-full h-full"
-                preserveAspectRatio="none"
-                viewBox="0 0 800 200"
-              >
-                <defs>
-                  <linearGradient
-                    id="academicGradient"
-                    x1="0"
-                    x2="0"
-                    y1="0"
-                    y2="1"
-                  >
-                    <stop
-                      offset="0%"
-                      stopColor="#00c853"
-                      stopOpacity="0.25"
-                    ></stop>
-                    <stop
-                      offset="100%"
-                      stopColor="#00c853"
-                      stopOpacity="0"
-                    ></stop>
-                  </linearGradient>
-                </defs>
-                <path
-                  d="M0,160 Q133,120 266,140 T533,80 T800,100 L800,200 L0,200 Z"
-                  fill="url(#academicGradient)"
-                ></path>
-                <path
-                  d="M0,160 Q133,120 266,140 T533,80 T800,100"
-                  fill="none"
-                  stroke="#00c853"
-                  strokeLinecap="round"
-                  strokeWidth="4"
-                ></path>
-                <circle
-                  cx="266"
-                  cy="140"
-                  fill="#00c853"
-                  r="5"
-                  stroke="white"
-                  strokeWidth="2"
-                ></circle>
-                <circle
-                  cx="533"
-                  cy="80"
-                  fill="#00c853"
-                  r="5"
-                  stroke="white"
-                  strokeWidth="2"
-                ></circle>
-                <circle
-                  cx="800"
-                  cy="100"
-                  fill="#00c853"
-                  r="5"
-                  stroke="white"
-                  strokeWidth="2"
-                ></circle>
-              </svg>
-              <div className="absolute bottom-0 left-0 w-full flex justify-between text-[10px] font-bold text-[#3f4945]/50 uppercase tracking-widest px-1">
-                <span>Jul</span>
-                <span>Agu</span>
-                <span>Sep</span>
-                <span>Okt</span>
-                <span>Nov</span>
-                <span>Des</span>
-              </div>
-            </div>
+            {(() => {
+              const rekap = data.absensi_rekap;
+              if (!rekap) {
+                return (
+                  <div className="flex-1 flex flex-col items-center justify-center h-40 sm:h-48 text-[#3f4945]/40 gap-2">
+                    <span className="material-symbols-outlined text-4xl text-[#bfc9c4]">bar_chart_off</span>
+                    <p className="text-xs font-medium">Belum ada data absensi</p>
+                  </div>
+                );
+              }
+              const bars = [
+                { label: "Hadir", value: rekap.hadir, color: "#006e2a" },
+                { label: "Sakit", value: rekap.sakit, color: "#eaa300" },
+                { label: "Izin", value: rekap.izin, color: "#3f4945" },
+                { label: "Alpa", value: rekap.alpa, color: "#ba1a1a" },
+              ];
+              const maxVal = Math.max(...bars.map((b) => b.value), 1);
+              return (
+                <div className="flex-1 flex flex-col gap-3 justify-center h-40 sm:h-48">
+                  {bars.map((b) => (
+                    <div key={b.label} className="flex items-center gap-3">
+                      <span className="text-[10px] font-bold text-[#3f4945]/60 uppercase tracking-wider w-12 text-right shrink-0">
+                        {b.label}
+                      </span>
+                      <div className="flex-1 bg-[#e1e3e2]/50 rounded-full h-5 overflow-hidden relative">
+                        <div
+                          className="h-full rounded-full transition-all duration-700 ease-out"
+                          style={{
+                            width: `${Math.max(2, (b.value / maxVal) * 100)}%`,
+                            backgroundColor: b.color,
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs font-black text-[#00342b] w-14 text-right shrink-0">
+                        {b.value.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-3 mt-1 text-[10px] text-[#3f4945]/50 font-medium">
+                    <span className="w-12" />
+                    <span>
+                      {rekap.total_siswa > 0
+                        ? `${rekap.siswa_ada_data} dari ${rekap.total_siswa} siswa memiliki data absensi`
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Right: KPI Cards & Capacity */}
@@ -823,14 +817,8 @@ export default function DetailTahunAjaran() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ─ A. Ringkasan Siswa ─ */}
           {(() => {
-            const totalL = kelasList.reduce(
-              (s, k) => s + (k.total_siswa_laki ?? 0),
-              0,
-            );
-            const totalP = kelasList.reduce(
-              (s, k) => s + (k.total_siswa_perempuan ?? 0),
-              0,
-            );
+            const totalL = data.total_siswa_laki ?? 0;
+            const totalP = data.total_siswa_perempuan ?? 0;
             const pctL =
               totalSiswa > 0 ? Math.round((totalL / totalSiswa) * 100) : 0;
             const pctP =
@@ -1520,7 +1508,7 @@ export default function DetailTahunAjaran() {
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-gray-100 text-[#3f4945]/60 text-[10px] font-black uppercase tracking-widest border border-gray-200">
-                    {semBadgeLabel}
+                    {semBadgeFor(ganjil)}
                   </span>
                 )}
               </div>
@@ -1668,7 +1656,7 @@ export default function DetailTahunAjaran() {
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-gray-100 text-[#3f4945]/60 text-[10px] font-black uppercase tracking-widest border border-gray-200">
-                    {semBadgeLabel}
+                    {semBadgeFor(genap)}
                   </span>
                 )}
               </div>
@@ -1806,9 +1794,15 @@ export default function DetailTahunAjaran() {
               <h3 className="text-xl sm:text-2xl font-headline-card font-extrabold text-[#00342b]">
                 Semester Ganjil
               </h3>
-              <span className="px-4 py-1.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] text-[10px] font-black uppercase tracking-widest border border-[#006e2a]/20">
-                Aktif
-              </span>
+              {ganjil?.is_active ? (
+                <span className="px-4 py-1.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] text-[10px] font-black uppercase tracking-widest border border-[#006e2a]/20">
+                  Aktif
+                </span>
+              ) : (
+                <span className="px-4 py-1.5 rounded-full bg-gray-100 text-[#3f4945]/50 text-[10px] font-black uppercase tracking-widest border border-gray-200">
+                  {semBadgeFor(ganjil)}
+                </span>
+              )}
             </div>
             <div className="space-y-4 sm:space-y-6 relative z-10">
               <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-[#f2f4f3]/50">
@@ -1881,9 +1875,15 @@ export default function DetailTahunAjaran() {
               <h3 className="text-xl sm:text-2xl font-headline-card font-extrabold text-[#3f4945]/70">
                 Semester Genap
               </h3>
-              <span className="px-4 py-1.5 rounded-full bg-gray-100 text-[#3f4945]/50 text-[10px] font-black uppercase tracking-widest border border-gray-200">
-                Standby
-              </span>
+              {genap?.is_active ? (
+                <span className="px-4 py-1.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] text-[10px] font-black uppercase tracking-widest border border-[#006e2a]/20">
+                  Aktif
+                </span>
+              ) : (
+                <span className="px-4 py-1.5 rounded-full bg-gray-100 text-[#3f4945]/50 text-[10px] font-black uppercase tracking-widest border border-gray-200">
+                  {semBadgeFor(genap)}
+                </span>
+              )}
             </div>
             <div className="space-y-4 sm:space-y-6 relative z-10 opacity-70">
               <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white/50">
@@ -2284,7 +2284,7 @@ export default function DetailTahunAjaran() {
                   Kurikulum
                 </span>
                 <span className="text-base font-bold text-[#00342b]">
-                  Merdeka
+                  {kurikulumMayoritas}
                 </span>
               </div>
             </div>

@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Absensi;
+use App\Models\Guru;
+use App\Models\GuruMutasi;
 use App\Models\JadwalPelajaran;
 use App\Models\KalenderAkademik;
 use App\Models\Kelas;
@@ -10,6 +12,7 @@ use App\Models\Pengaturan;
 use App\Models\MataPelajaran;
 use App\Models\PlotGuruMapel;
 use App\Models\RiwayatKelas;
+use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\ActivityLog;
 use Carbon\Carbon;
@@ -114,12 +117,93 @@ class TahunAjaranService
             ->whereIn('jenis_perubahan', ['nonaktif', 'meninggal'])
             ->count();
 
-        // ── Mata pelajaran list (max 8 untuk preview) ─────────────────────────
+        // ── Ringkasan Siswa: gender breakdown ─────────────────────────────────
+        $siswaAktifIds = RiwayatKelas::where('tahun_ajaran_id', $id)
+            ->aktif()
+            ->distinct('siswa_id')
+            ->pluck('siswa_id');
+
+        $genderCounts = Siswa::whereIn('id', $siswaAktifIds)
+            ->selectRaw("jenis_kelamin, COUNT(*) as jumlah")
+            ->groupBy('jenis_kelamin')
+            ->pluck('jumlah', 'jenis_kelamin');
+
+        $totalSiswaLaki = (int) ($genderCounts->get('L', 0) + $genderCounts->get('Laki-laki', 0));
+        $totalSiswaPerempuan = (int) ($genderCounts->get('P', 0) + $genderCounts->get('Perempuan', 0));
+
+        // ── Ringkasan Siswa: masuk / keluar / naik / tidak naik ───────────────
+        $totalSiswaMasuk = RiwayatKelas::where('tahun_ajaran_id', $id)
+            ->whereIn('jenis_perubahan', ['masuk_baru', 'pindahan', 'awal'])
+            ->distinct('siswa_id')
+            ->count('siswa_id');
+
+        $totalSiswaKeluar = $totalSiswaTransfer + $totalSiswaNonaktif;
+
+        $totalSiswaNaik = RiwayatKelas::where('tahun_ajaran_id', $id)
+            ->where('jenis_perubahan', 'naik_kelas')
+            ->count();
+
+        $totalSiswaTidakNaik = RiwayatKelas::where('tahun_ajaran_id', $id)
+            ->where('jenis_perubahan', 'tinggal_kelas')
+            ->count();
+
+        // ── Ringkasan Guru: tetap / honorer / tanpa tugas ─────────────────────
+        $guruMengajarIds = PlotGuruMapel::where('tahun_ajaran_id', $id)
+            ->where('is_active', true)
+            ->distinct('guru_id')
+            ->pluck('guru_id');
+
+        $guruStatusCounts = Guru::whereIn('id', $guruMengajarIds)
+            ->selectRaw("status_kepegawaian, COUNT(*) as jumlah")
+            ->groupBy('status_kepegawaian')
+            ->pluck('jumlah', 'status_kepegawaian');
+
+        // PNS, PPPK = tetap; GTY, Honorer, Kontrak, dll = honorer
+        $statusTetap = ['PNS', 'PPPK', 'ASN'];
+        $totalGuruTetap = $guruStatusCounts->filter(
+            fn($v, $k) => in_array($k, $statusTetap)
+        )->sum();
+        $totalGuruHonorer = $guruStatusCounts->filter(
+            fn($v, $k) => !in_array($k, $statusTetap)
+        )->sum();
+
+        // Guru aktif (status_aktif = true) tapi tidak mengajar di TA ini
+        $totalGuruTanpaTugas = Guru::where('status_aktif', true)
+            ->whereNotIn('id', $guruMengajarIds)
+            ->count();
+
+        // ── Ringkasan Guru: mutasi masuk ──────────────────────────────────────
+        $totalGuruMutasiMasuk = 0;
+        $periodeStart = $ganjil?->tgl_mulai;
+        $periodeEnd = $genap?->tgl_selesai ?? $ganjil?->tgl_selesai;
+        if ($periodeStart && $periodeEnd) {
+            $totalGuruMutasiMasuk = GuruMutasi::where('jenis_mutasi', 'masuk')
+                ->whereBetween('tanggal_mutasi', [
+                    Carbon::parse($periodeStart),
+                    Carbon::parse($periodeEnd),
+                ])
+                ->count();
+        }
+
+        // ── Mata pelajaran: list + wajib/lokal ────────────────────────────────
         $mapelList = MataPelajaran::select(['id', 'kode', 'nama_mapel', 'kelompok', 'tingkat', 'kurikulum', 'jam_per_minggu'])
             ->where('is_active', true)
             ->orderBy('nama_mapel')
             ->take(8)
             ->get();
+
+        $mapelKelompokCounts = MataPelajaran::where('is_active', true)
+            ->selectRaw("kelompok, COUNT(*) as jumlah")
+            ->groupBy('kelompok')
+            ->pluck('jumlah', 'kelompok');
+
+        // kelompok: A/B = wajib, C = muatan lokal (konvensi umum)
+        $totalMapelWajib = (int) ($mapelKelompokCounts->filter(
+            fn($v, $k) => in_array(strtoupper($k), ['A', 'B', 'WAJIB'])
+        )->sum());
+        $totalMapelLokal = (int) ($mapelKelompokCounts->filter(
+            fn($v, $k) => in_array(strtoupper($k), ['C', 'LOKAL', 'MUATAN LOKAL'])
+        )->sum());
 
         $totalWaliKelas = $kelasList->filter(fn($k) => $k['nama_wali'] !== '-')->count();
         $totalRuangan = $kelasList->filter(fn($k) => !empty($k['ruangan']))->pluck('ruangan')->unique()->count();
@@ -202,6 +286,19 @@ class TahunAjaranService
             'total_siswa_transfer' => $totalSiswaTransfer,
             'total_siswa_nonaktif' => $totalSiswaNonaktif,
             'mapel_list' => $mapelList,
+            // ── Ringkasan Tahunan (BUG 3 fix) ─────────────────────────────
+            'total_siswa_laki' => $totalSiswaLaki,
+            'total_siswa_perempuan' => $totalSiswaPerempuan,
+            'total_siswa_masuk' => $totalSiswaMasuk,
+            'total_siswa_keluar' => $totalSiswaKeluar,
+            'total_siswa_naik' => $totalSiswaNaik,
+            'total_siswa_tidak_naik' => $totalSiswaTidakNaik,
+            'total_guru_tetap' => $totalGuruTetap,
+            'total_guru_honorer' => $totalGuruHonorer,
+            'total_guru_tanpa_tugas' => $totalGuruTanpaTugas,
+            'total_guru_mutasi_masuk' => $totalGuruMutasiMasuk,
+            'total_mapel_wajib' => $totalMapelWajib,
+            'total_mapel_lokal' => $totalMapelLokal,
             // Penilaian & Rapor belum diimplementasi (Phase 3) — null agar
             // frontend menampilkan empty state yang sudah tersedia.
             'penilaian_rekap' => null,
