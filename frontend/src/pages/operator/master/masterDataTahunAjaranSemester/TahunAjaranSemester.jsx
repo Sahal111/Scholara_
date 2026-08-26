@@ -78,6 +78,8 @@ export default function TahunAjaran() {
 
   const list = listData?.data ?? listData ?? [];
   const aktif = list.find((t) => t.is_active);
+  // Source of truth untuk lifecycle status — diturunkan dari TA yang is_active=true
+  const activeTahun = aktif?.tahun ?? null;
 
   // Set default selected ID when data is loaded
   useEffect(() => {
@@ -156,7 +158,7 @@ export default function TahunAjaran() {
   let totalMendatang = 0;
 
   list.forEach((t) => {
-    const st = getStatusTahunAjaran(t);
+    const st = getStatusTahunAjaran(t, activeTahun);
     if (st === "SELESAI") totalSemesterSelesai += t.semesters?.length || 2;
     if (st === "AKAN DATANG") totalMendatang += 1;
     t.semesters?.forEach((s) => {
@@ -169,7 +171,7 @@ export default function TahunAjaran() {
   const filtered = list.filter((t) => {
     const matchSearch =
       !search || t.tahun?.toLowerCase().includes(search.toLowerCase());
-    const status = getStatusTahunAjaran(t);
+    const status = getStatusTahunAjaran(t, activeTahun);
     if (!matchSearch) return false;
     if (statusFilter === "aktif") return status === "AKTIF";
     if (statusFilter === "selesai") return status === "SELESAI";
@@ -203,7 +205,7 @@ export default function TahunAjaran() {
       return Math.round((done / checks.length) * 100);
     }
     // Fallback dari status saja (tanpa angka palsu)
-    const st = getStatusTahunAjaran(t);
+    const st = getStatusTahunAjaran(t, activeTahun);
     if (st === "AKTIF") return null; // render skeleton
     if (st === "SELESAI") return 100;
     if (st === "AKAN DATANG") return 0;
@@ -478,7 +480,7 @@ export default function TahunAjaran() {
                         </tr>
                       ) : (
                         filtered.map((t) => {
-                          const status = getStatusTahunAjaran(t);
+                          const status = getStatusTahunAjaran(t, activeTahun);
                           const isRowSelected = selectedId === t.id;
                           const isExpanded = expandedId === t.id;
                           const academicProg = getAcademicProgress(t);
@@ -656,8 +658,8 @@ export default function TahunAjaran() {
                                           nomor="1"
                                           taId={t.id}
                                           taIsActive={t.is_active}
-                                          onAktifkan={() =>
-                                            setSemesterAktif.mutate({
+                                          taStatus={status}
+                                          onAktifkan={() =>                                         setSemesterAktif.mutate({
                                               taId: t.id,
                                               semesterNama: "Ganjil",
                                             })
@@ -680,6 +682,7 @@ export default function TahunAjaran() {
                                           nomor="2"
                                           taId={t.id}
                                           taIsActive={t.is_active}
+                                          taStatus={status}
                                           onAktifkan={() =>
                                             setSemesterAktif.mutate({
                                               taId: t.id,

@@ -74,43 +74,42 @@ export function getTglSelesai(t) {
   return genap ? genap.tgl_selesai : ganjil ? ganjil.tgl_selesai : null;
 }
 
-export function getStatusTahunAjaran(t) {
+/**
+ * Tentukan status lifecycle Tahun Ajaran berdasarkan posisi relatif
+ * terhadap Tahun Ajaran yang sedang aktif.
+ *
+ * Prinsip:
+ *   - is_active=true         → AKTIF
+ *   - tahun < tahun aktif    → SELESAI
+ *   - tahun > tahun aktif    → AKAN DATANG
+ *   - fallback (tanpa aktif) → gunakan posisi tahun vs tahun sekarang
+ *
+ * Tanggal semester TIDAK dipakai sebagai penentu status lifecycle.
+ * Status periode dan progress data akademik adalah dua hal yang independen.
+ *
+ * @param {object}      t           - objek TahunAjaran
+ * @param {string|null} activeTahun - nilai `tahun` dari TA yang is_active=true,
+ *                                    e.g. "2025/2026". Pass null jika tidak ada.
+ */
+export function getStatusTahunAjaran(t, activeTahun = null) {
   if (t.is_active) return "AKTIF";
 
-  const now = new Date();
-  const mulai = getTglMulai(t);
-  const selesai = getTglSelesai(t);
+  const yearStart = (tahun) => parseInt(tahun?.split("/")[0] ?? "0", 10);
 
-  // DEBUG — hapus setelah selesai debug
-  console.log(`[${t.tahun}]`, {
-    is_active: t.is_active,
-    semesters: t.semesters,
-    mulai,
-    selesai,
-    now: now.toISOString(),
-  });
-
-  // Kasus 1: ada tanggal mulai & selesai → kalkulasi presisi
-  if (mulai && selesai) {
-    if (new Date(mulai) > now) return "AKAN DATANG";
-    if (new Date(selesai) < now) return "SELESAI";
-    // mulai ≤ now ≤ selesai, tapi is_active=false → TA lama, anggap SELESAI
-    return "SELESAI";
+  if (activeTahun) {
+    const tStart = yearStart(t.tahun);
+    const activeStart = yearStart(activeTahun);
+    if (tStart < activeStart) return "SELESAI";
+    if (tStart > activeStart) return "AKAN DATANG";
   }
 
-  // Kasus 2: hanya ada tanggal mulai
-  if (mulai) {
-    return new Date(mulai) > now ? "AKAN DATANG" : "SELESAI";
-  }
+  // Fallback: tidak ada TA aktif → posisi relatif vs tahun kalender sekarang
+  const tahunMulai = yearStart(t.tahun);
+  const tahunSelesai = t.tahun ? parseInt(t.tahun.split("/")[1], 10) : null;
+  const tahunSekarang = new Date().getFullYear();
 
-  // Kasus 3: tidak ada tanggal → fallback ke nama tahun
-  const tahunMulai = t.tahun ? parseInt(t.tahun.split("/")[0]) : null;
-  if (tahunMulai) {
-    const tahunSelesai = t.tahun ? parseInt(t.tahun.split("/")[1]) : null;
-    const tahunSekarang = now.getFullYear();
-    if (tahunMulai > tahunSekarang) return "AKAN DATANG";
-    if (tahunSelesai && tahunSelesai <= tahunSekarang) return "SELESAI";
-  }
-
+  if (!tahunMulai) return "SELESAI";
+  if (tahunMulai > tahunSekarang) return "AKAN DATANG";
+  if (tahunSelesai && tahunSelesai <= tahunSekarang) return "SELESAI";
   return "SELESAI";
 }

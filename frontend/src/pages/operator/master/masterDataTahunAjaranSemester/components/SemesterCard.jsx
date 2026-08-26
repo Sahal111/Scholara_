@@ -6,12 +6,39 @@ export default function SemesterCard({
   nomor,
   taId,
   taIsActive,
+  taStatus, // "AKTIF" | "SELESAI" | "AKAN DATANG"
   onAktifkan,
   onDetail,
   onBuat,
 }) {
   const isAktif = semester?.is_active;
   const belumDibuat = !semester;
+
+  // Tentukan label & style badge berdasarkan lifecycle TA, bukan hanya is_active
+  const getSemesterBadge = () => {
+    if (isAktif) {
+      return { label: "AKTIF", className: "bg-success/15 text-success" };
+    }
+    if (taStatus === "SELESAI") {
+      return {
+        label: "SELESAI",
+        className: "bg-surface-container text-text-secondary",
+      };
+    }
+    if (taStatus === "AKAN DATANG") {
+      return {
+        label: "MENUNGGU",
+        className: "bg-surface-container text-text-secondary",
+      };
+    }
+    // TA AKTIF tapi semester ini belum aktif
+    return {
+      label: "STANDBY",
+      className: "bg-surface-container text-text-secondary",
+    };
+  };
+
+  const badge = getSemesterBadge();
 
   return (
     <div
@@ -46,8 +73,10 @@ export default function SemesterCard({
                 AKTIF
               </span>
             ) : (
-              <span className="px-1.5 py-0.5 rounded-full bg-surface-container text-text-secondary text-[9px] font-bold tracking-wide">
-                STANDBY
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-[9px] font-bold tracking-wide ${badge.className}`}
+              >
+                {badge.label}
               </span>
             )}
           </div>
