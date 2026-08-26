@@ -277,7 +277,7 @@ export default function RecycleBinTahunAjaran() {
   const [confirmForceDelete, setConfirmForceDelete] = useState(null);
   const [forceDeleteRelations, setForceDeleteRelations] = useState(null);
 
-  const rawItems = trashData?.data ?? [];
+  const rawItems = trashData ?? [];
 
   const items = useMemo(() => {
     return rawItems.filter((item) => {

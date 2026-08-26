@@ -14,6 +14,13 @@ export default function ModalBuatSemester({
   const tahun = tahunAjaran?.tahun ?? "";
   const [y1, y2] = tahun.split("/");
 
+  // Edit mode: TA sudah punya semester → pre-fill dari data existing
+  const existingGanjil = tahunAjaran?.semesters?.find(
+    (s) => s.nama === "Ganjil",
+  );
+  const existingGenap = tahunAjaran?.semesters?.find((s) => s.nama === "Genap");
+  const isEditMode = !!(existingGanjil || existingGenap);
+
   const [form, setForm] = useState({
     semester_ganjil_mulai: "",
     semester_ganjil_selesai: "",
@@ -22,7 +29,18 @@ export default function ModalBuatSemester({
   });
 
   useEffect(() => {
-    if (open && y1 && y2) {
+    if (!open) return;
+    if (isEditMode) {
+      // Pre-fill dari data existing
+      setForm({
+        semester_ganjil_mulai: existingGanjil?.tgl_mulai?.slice(0, 10) ?? "",
+        semester_ganjil_selesai:
+          existingGanjil?.tgl_selesai?.slice(0, 10) ?? "",
+        semester_genap_mulai: existingGenap?.tgl_mulai?.slice(0, 10) ?? "",
+        semester_genap_selesai: existingGenap?.tgl_selesai?.slice(0, 10) ?? "",
+      });
+    } else if (y1 && y2) {
+      // Default untuk buat baru
       setForm({
         semester_ganjil_mulai: `${y1}-07-14`,
         semester_ganjil_selesai: `${y1}-12-31`,
@@ -30,7 +48,7 @@ export default function ModalBuatSemester({
         semester_genap_selesai: `${y2}-06-30`,
       });
     }
-  }, [open, y1, y2]);
+  }, [open, tahunAjaran?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
@@ -42,7 +60,11 @@ export default function ModalBuatSemester({
         ...form,
       }),
     onSuccess: () => {
-      toast.success("Semester berhasil dibuat.");
+      toast.success(
+        isEditMode
+          ? "Semester berhasil diperbarui."
+          : "Semester berhasil dibuat.",
+      );
       queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
       queryClient.invalidateQueries({
         queryKey: tahunAjaranKeys.detail(tahunAjaran.id),
@@ -81,7 +103,7 @@ export default function ModalBuatSemester({
           <div className="absolute top-0 right-0 w-24 h-24 rounded-bl-[80px] bg-[#00c853]/20 pointer-events-none" />
           <div className="flex flex-col gap-3">
             <h2 className="font-extrabold text-3xl md:text-4xl tracking-tighter leading-none text-[#004d40]">
-              Buat{" "}
+              {isEditMode ? "Edit" : "Buat"}{" "}
               <em className="font-serif not-italic text-[#006e2a]">Semester</em>
             </h2>
             <p className="text-sm text-[#3f4945]/80 leading-relaxed">
@@ -246,7 +268,7 @@ export default function ModalBuatSemester({
                 <span className="material-symbols-outlined text-sm">
                   check_circle
                 </span>
-                Buat Semester
+                {isEditMode ? "Simpan Perubahan" : "Buat Semester"}
               </>
             )}
           </button>

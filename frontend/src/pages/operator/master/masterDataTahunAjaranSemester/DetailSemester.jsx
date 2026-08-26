@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
 import { tahunAjaranKeys } from "../../../../hooks/api/useTahunAjaran";
-import ModalEditSemesterComp from "./components/ModalEditSemester";
+import ModalBuatSemesterComp from "./components/ModalBuatSemester";
 import MetricCardComp from "./components/MetricCard";
 import KalenderItemComp from "./components/KalenderItem";
 import {
@@ -17,7 +17,7 @@ import {
 } from "./utils/tahunAjaranHelpers";
 
 // ── Alias — komponen dipindah ke ./components/ ────────────────────────────────
-const ModalEditSemester = ModalEditSemesterComp;
+const ModalEditSemester = ModalBuatSemesterComp;
 const MetricCard = MetricCardComp;
 const KalenderItem = KalenderItemComp;
 
@@ -238,9 +238,7 @@ export default function DetailSemester() {
     <>
       <ModalEditSemester
         open={showEditModal}
-        semester={semester}
         tahunAjaran={ta}
-        tahunAjaranId={taId}
         onClose={() => setShowEditModal(false)}
         queryClient={queryClient}
       />

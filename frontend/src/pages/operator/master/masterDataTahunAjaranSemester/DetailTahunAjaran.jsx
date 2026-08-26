@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
 import { tahunAjaranKeys } from "../../../../hooks/api/useTahunAjaran";
-import ModalEditTahunAjaranComp from "./components/ModalEditTahunAjaran";
+import ModalTahunAjaranComp from "./components/ModalTahunAjaran";
 import ModalChecklistKesiapanComp from "./components/ModalChecklistKesiapan";
 import {
   fmt,
@@ -15,7 +15,7 @@ import {
 } from "./utils/tahunAjaranHelpers";
 
 // ── Alias — komponen dipindah ke ./components/ ────────────────────────────────
-const ModalEditTahunAjaran = ModalEditTahunAjaranComp;
+const ModalEditTahunAjaran = ModalTahunAjaranComp;
 const ModalChecklistKesiapan = ModalChecklistKesiapanComp;
 
 // ── Main Page Component ──────────────────────────────────────────────────────
@@ -153,6 +153,9 @@ export default function DetailTahunAjaran() {
   const ganjil = semesters.find((s) => s.nama === "Ganjil");
   const genap = semesters.find((s) => s.nama === "Genap");
   const semAktif = semesters.find((s) => s.is_active);
+
+  // Label badge semester berdasarkan lifecycle TA, bukan hanya is_active semester
+  const semBadgeLabel = ta.is_active ? "STANDBY" : "SELESAI";
 
   // Year parsing (e.g. 2026/2027 => 2026 and 2027)
   const tahunParts = (ta.tahun || "").split(/[/ -]/).filter(Boolean);
@@ -1517,7 +1520,7 @@ export default function DetailTahunAjaran() {
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-gray-100 text-[#3f4945]/60 text-[10px] font-black uppercase tracking-widest border border-gray-200">
-                    STANDBY
+                    {semBadgeLabel}
                   </span>
                 )}
               </div>
@@ -1665,7 +1668,7 @@ export default function DetailTahunAjaran() {
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-3.5 py-1 rounded-full bg-gray-100 text-[#3f4945]/60 text-[10px] font-black uppercase tracking-widest border border-gray-200">
-                    STANDBY
+                    {semBadgeLabel}
                   </span>
                 )}
               </div>
@@ -2808,16 +2811,8 @@ export default function DetailTahunAjaran() {
       <ModalEditTahunAjaran
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
-        ta={ta}
-        onUpdated={() => {
-          queryClient.invalidateQueries({
-            queryKey: tahunAjaranKeys.detail(id),
-          });
-          queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-          queryClient.invalidateQueries({
-            queryKey: tahunAjaranKeys.dropdown(),
-          });
-        }}
+        editData={ta}
+        queryClient={queryClient}
       />
 
       <ModalChecklistKesiapan
