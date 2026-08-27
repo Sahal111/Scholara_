@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Mapel;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateMapelRequest extends FormRequest
 {
@@ -19,7 +20,14 @@ class UpdateMapelRequest extends FormRequest
         $id = $this->route('id') ?? $this->route('mapel');
 
         return [
-            'kode' => "required|string|max:20|unique:mapels,kode,{$id}",
+            'kode' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('mapels', 'kode')
+                    ->where('school_id', app('current_school_id'))
+                    ->ignore($id),
+            ],
             'nama_mapel' => 'required|string|max:150',
             'kelompok' => 'required|in:' . implode(',', self::KELOMPOK_VALID),
             'tingkat' => 'nullable|array',

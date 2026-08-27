@@ -269,11 +269,11 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
         });
 
         // ── MATA PELAJARAN ────────────────────────────────────────────────────────
+        // PENTING: static routes (dropdown, export, template) HARUS sebelum wildcard {id}
     
         Route::middleware('permission:master_data.mapel.view')->group(function () {
             Route::get('/mapel/dropdown', [MasterDataMapelController::class, 'dropdown']);
             Route::get('/mapel', [MasterDataMapelController::class, 'index']);
-            Route::get('/mapel/{id}', [MasterDataMapelController::class, 'show']);
         });
 
         Route::middleware('permission:master_data.mapel.manage')->group(function () {
@@ -284,6 +284,11 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
             Route::put('/mapel/{id}', [MasterDataMapelController::class, 'update']);
             Route::patch('/mapel/{id}/toggle-active', [MasterDataMapelController::class, 'toggleActive']);
             Route::delete('/mapel/{id}', [MasterDataMapelController::class, 'destroy']);
+        });
+
+        // Wildcard TERAKHIR — setelah semua static GET routes
+        Route::middleware('permission:master_data.mapel.view')->group(function () {
+            Route::get('/mapel/{id}', [MasterDataMapelController::class, 'show']);
         });
 
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────

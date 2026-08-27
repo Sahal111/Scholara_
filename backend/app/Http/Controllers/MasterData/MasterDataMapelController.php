@@ -300,7 +300,7 @@ class MasterDataMapelController extends Controller
                 $tingkatValue = count($valid) === 6 ? null : implode(',', array_values($valid));
             }
 
-            MataPelajaran::updateOrCreate(['kode' => $kode], [
+            MataPelajaran::updateOrCreate(['kode' => $kode, 'school_id' => app('current_school_id')], [
                 'nama_mapel' => $namaMapel,
                 'kelompok' => $kelompok,
                 'tingkat' => $tingkatValue,
