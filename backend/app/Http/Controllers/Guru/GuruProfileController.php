@@ -196,7 +196,7 @@ class GuruProfileController extends Controller
     public function tanpaPenugasan(Request $request): JsonResponse
     {
         $gurus = Guru::where('status_aktif', true)
-            ->doesntHave('jadwalPelajaran')
+            ->doesntHave('jadwals')
             ->select('id', 'nuptk', 'nama', 'jenis_ptk')
             ->orderBy('nama')
             ->paginate((int) $request->get('per_page', 15));

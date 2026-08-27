@@ -702,7 +702,7 @@ export default function MasterMapel() {
             page,
           },
         })
-        .then((r) => r.data.data),
+        .then((r) => r.data),
     keepPreviousData: true,
   });
 
@@ -758,7 +758,7 @@ export default function MasterMapel() {
   };
 
   const list = data?.data ?? [];
-  const meta = data;
+  const meta = data?.meta ?? {};
   const totalData = meta?.total ?? 0;
   const lastPage = meta?.last_page ?? 1;
   const totalAktif = list.filter((m) => m.is_active).length;
