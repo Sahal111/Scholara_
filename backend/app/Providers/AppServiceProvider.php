@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Guru;
 use App\Models\Kelas;
+use App\Models\MataPelajaran;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\Scopes\SchoolScope;
@@ -12,6 +13,7 @@ use App\Observers\KelasObserver;
 use App\Observers\SiswaObserver;
 use App\Policies\GuruPolicy;
 use App\Policies\KelasPolicy;
+use App\Policies\MataPelajaranPolicy;
 use App\Policies\SiswaPolicy;
 use App\Policies\TahunAjaranPolicy;
 use Illuminate\Support\Facades\Gate;
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
         Siswa::class => SiswaPolicy::class,
         Kelas::class => KelasPolicy::class,
         TahunAjaran::class => TahunAjaranPolicy::class,
+        MataPelajaran::class => MataPelajaranPolicy::class,
     ];
 
     public function register(): void

@@ -6,23 +6,23 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Mapel\ImportMapelRequest;
 use App\Http\Requests\Mapel\StoreMapelRequest;
 use App\Http\Requests\Mapel\UpdateMapelRequest;
+use App\Jobs\ProcessMapelImport;
 use App\Models\MataPelajaran;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MasterDataMapelController extends Controller
 {
-    private const KELOMPOK_VALID = ['A - Wajib', 'B - Wajib', 'C - Muatan Lokal', 'Pengembangan Diri', 'Ekstrakurikuler', 'Lainnya'];
-    private const KURIKULUM_VALID = ['Kurikulum 2013', 'Kurikulum Merdeka', 'Keduanya'];
-
     /* ── INDEX ───────────────────────────────────────────────── */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $query = MataPelajaran::query()
             ->when($request->search, fn($q) => $q
                 ->where('nama_mapel', 'like', "%{$request->search}%")
                 ->orWhere('kode', 'like', "%{$request->search}%"))
             ->when($request->kelompok, fn($q) => $q->where('kelompok', $request->kelompok))
-            ->when($request->tingkat, fn($q) => $q->where('tingkat', $request->tingkat))
+            // FIX #1: tingkat disimpan sebagai "1,3,5" — harus LIKE, bukan = (exact match)
+            ->when($request->tingkat, fn($q) => $q->where('tingkat', 'LIKE', "%{$request->tingkat}%"))
             ->when(
                 $request->is_active !== null && $request->is_active !== '',
                 fn($q) => $q->where('is_active', (bool) $request->is_active)
@@ -34,16 +34,18 @@ class MasterDataMapelController extends Controller
     }
 
     /* ── STORE ───────────────────────────────────────────────── */
-    public function store(StoreMapelRequest $request)
+    public function store(StoreMapelRequest $request): JsonResponse
     {
+        // FIX #2: pakai $request->validated() bukan $request->field langsung
+        $validated = $request->validated();
 
         $mapel = MataPelajaran::create([
-            'kode' => strtoupper($request->kode),
-            'nama_mapel' => $request->nama_mapel,
-            'kelompok' => $request->kelompok,
-            'tingkat' => $this->parseTingkat($request->tingkat),
-            'jam_per_minggu' => (int) $request->jam_per_minggu,
-            'kurikulum' => $request->kurikulum,
+            'kode' => strtoupper($validated['kode']),
+            'nama_mapel' => $validated['nama_mapel'],
+            'kelompok' => $validated['kelompok'],
+            'tingkat' => $this->parseTingkat($validated['tingkat'] ?? null),
+            'jam_per_minggu' => (int) $validated['jam_per_minggu'],
+            'kurikulum' => $validated['kurikulum'],
             'is_active' => true,
         ]);
 
@@ -51,59 +53,84 @@ class MasterDataMapelController extends Controller
     }
 
     /* ── SHOW ────────────────────────────────────────────────── */
-    public function show($id)
+    public function show($id): JsonResponse
     {
-        return $this->success(MataPelajaran::findOrFail($id));
+        $mapel = MataPelajaran::findOrFail($id);
+
+        // FIX #3: layer 2 auth — pastikan resource milik sekolah yang sama
+        $this->authorize('view', $mapel);
+
+        return $this->success($mapel);
     }
 
     /* ── UPDATE ──────────────────────────────────────────────── */
-    public function update(UpdateMapelRequest $request, $id)
+    public function update(UpdateMapelRequest $request, $id): JsonResponse
     {
         $mapel = MataPelajaran::findOrFail($id);
+
+        // FIX #3: layer 2 auth
+        $this->authorize('update', $mapel);
+
+        // FIX #2: pakai $request->validated()
+        $validated = $request->validated();
+
         $mapel->update([
-            'kode' => strtoupper($request->kode),
-            'nama_mapel' => $request->nama_mapel,
-            'kelompok' => $request->kelompok,
-            'tingkat' => $this->parseTingkat($request->tingkat),
-            'jam_per_minggu' => (int) $request->jam_per_minggu,
-            'kurikulum' => $request->kurikulum,
+            'kode' => strtoupper($validated['kode']),
+            'nama_mapel' => $validated['nama_mapel'],
+            'kelompok' => $validated['kelompok'],
+            'tingkat' => $this->parseTingkat($validated['tingkat'] ?? null),
+            'jam_per_minggu' => (int) $validated['jam_per_minggu'],
+            'kurikulum' => $validated['kurikulum'],
             'is_active' => $request->boolean('is_active', $mapel->is_active),
         ]);
+
         return $this->success($mapel->fresh(), 'Mata pelajaran berhasil diperbarui.');
     }
 
     /* ── TOGGLE ACTIVE ───────────────────────────────────────── */
-    public function toggleActive($id)
+    public function toggleActive($id): JsonResponse
     {
         $mapel = MataPelajaran::findOrFail($id);
+
+        // FIX #3: layer 2 auth
+        $this->authorize('toggleActive', $mapel);
+
         $mapel->update(['is_active' => !$mapel->is_active]);
+
         return $this->success($mapel->fresh(), 'Status berhasil diubah.');
     }
 
     /* ── DESTROY ─────────────────────────────────────────────── */
-    public function destroy($id)
+    public function destroy($id): JsonResponse
     {
-        MataPelajaran::findOrFail($id)->delete();
+        $mapel = MataPelajaran::findOrFail($id);
+
+        // FIX #3: layer 2 auth
+        $this->authorize('delete', $mapel);
+
+        // Sekarang soft delete karena model pakai SoftDeletes trait
+        $mapel->delete();
+
         return $this->success(null, 'Mata pelajaran berhasil dihapus.');
     }
 
     /* ── DROPDOWN ────────────────────────────────────────────── */
-    public function dropdown()
+    public function dropdown(): JsonResponse
     {
         $data = MataPelajaran::where('is_active', true)
             ->orderBy('kelompok')->orderBy('nama_mapel')
             ->get(['id', 'kode', 'nama_mapel', 'kelompok', 'tingkat']);
+
         return $this->success($data);
     }
 
-    /* ─────────────────────────────────────────────────────────── */
-    /*  EXPORT  →  .xlsx  (pure PHP, no library)                  */
-    /* ─────────────────────────────────────────────────────────── */
+    /* ── EXPORT ──────────────────────────────────────────────── */
     public function export(Request $request)
     {
         $rows = MataPelajaran::query()
             ->when($request->kelompok, fn($q) => $q->where('kelompok', $request->kelompok))
-            ->when($request->tingkat, fn($q) => $q->where('tingkat', $request->tingkat))
+            // FIX #1: konsisten — filter tingkat pakai LIKE
+            ->when($request->tingkat, fn($q) => $q->where('tingkat', 'LIKE', "%{$request->tingkat}%"))
             ->when(
                 $request->is_active !== null && $request->is_active !== '',
                 fn($q) => $q->where('is_active', (bool) $request->is_active)
@@ -133,9 +160,7 @@ class MasterDataMapelController extends Controller
         ]);
     }
 
-    /* ─────────────────────────────────────────────────────────── */
-    /*  DOWNLOAD TEMPLATE  →  .xlsx  (pure PHP, no library)       */
-    /* ─────────────────────────────────────────────────────────── */
+    /* ── DOWNLOAD TEMPLATE ───────────────────────────────────── */
     public function downloadTemplate()
     {
         $headers = ['kode', 'nama_mapel', 'kelompok', 'tingkat', 'jam_per_minggu', 'kurikulum'];
@@ -156,168 +181,23 @@ class MasterDataMapelController extends Controller
         ]);
     }
 
-    /* ─────────────────────────────────────────────────────────── */
-    /*  IMPORT  →  baca .xlsx (ZipArchive + SimpleXML, built-in)  */
-    /*             atau .csv sebagai fallback                      */
-    /* ─────────────────────────────────────────────────────────── */
-    public function import(ImportMapelRequest $request)
+    /* ── IMPORT ──────────────────────────────────────────────── */
+    /* FIX #4: import sekarang async via Job (standar wajib)      */
+    public function import(ImportMapelRequest $request): JsonResponse
     {
-
         $file = $request->file('file');
-        $ext = strtolower($file->getClientOriginalExtension());
-        $allRows = [];
+        $schoolId = app('current_school_id');
 
-        if (in_array($ext, ['xlsx', 'xls'])) {
-            // ── Baca xlsx via ZipArchive + SimpleXML ──────────────
-            $zip = new \ZipArchive();
-            if ($zip->open($file->getRealPath()) !== true) {
-                return $this->error('File Excel tidak bisa dibuka.', 'INVALID_EXCEL', 422);
-            }
+        // Simpan file ke storage sementara agar bisa dibaca Job
+        $path = $file->store("schools/{$schoolId}/imports/mapel", 'local');
 
-            // Baca shared strings
-            $sharedStrings = [];
-            $ssXml = $zip->getFromName('xl/sharedStrings.xml');
-            if ($ssXml !== false) {
-                $ss = simplexml_load_string($ssXml);
-                foreach ($ss->si as $si) {
-                    // Gabungkan semua <t> dalam satu <si>
-                    $text = '';
-                    foreach ($si->r ?? [$si] as $r) {
-                        $text .= (string) ($r->t ?? '');
-                    }
-                    if ($text === '' && isset($si->t)) {
-                        $text = (string) $si->t;
-                    }
-                    $sharedStrings[] = $text;
-                }
-            }
+        // Dispatch Job — proses dilakukan async di queue
+        ProcessMapelImport::dispatch($path, $schoolId, auth()->id());
 
-            // Baca sheet pertama
-            $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
-            $zip->close();
-
-            if ($sheetXml === false) {
-                return $this->error('Sheet Excel tidak ditemukan.', 'INVALID_EXCEL_SHEET', 422);
-            }
-
-            $sheet = simplexml_load_string($sheetXml);
-            $ns = $sheet->getNamespaces(true);
-            $sheet->registerXPathNamespace('ns', reset($ns) ?: 'http://schemas.openxmlformats.org/spreadsheetml/2006/main');
-
-            foreach ($sheet->sheetData->row as $row) {
-                $rowData = [];
-                foreach ($row->c as $cell) {
-                    $type = (string) ($cell['t'] ?? '');
-                    $value = (string) ($cell->v ?? '');
-                    if ($type === 's') {
-                        $value = $sharedStrings[(int) $value] ?? '';
-                    } elseif ($type === 'inlineStr') {
-                        $value = (string) ($cell->is->t ?? '');
-                    }
-                    // Tentukan posisi kolom dari referensi sel (A1, B2, dst)
-                    $ref = (string) ($cell['r'] ?? '');
-                    preg_match('/^([A-Z]+)/', $ref, $colMatch);
-                    $colIdx = $colMatch ? $this->colLetterToIndex($colMatch[1]) : count($rowData);
-                    // Isi gap jika ada kolom kosong di tengah
-                    while (count($rowData) < $colIdx)
-                        $rowData[] = '';
-                    $rowData[] = $value;
-                }
-                $allRows[] = $rowData;
-            }
-        } else {
-            // ── CSV fallback ──────────────────────────────────────
-            $handle = fopen($file->getRealPath(), 'r');
-            $bom = fread($handle, 3);
-            if ($bom !== "\xEF\xBB\xBF")
-                rewind($handle);
-            while (($row = fgetcsv($handle)) !== false)
-                $allRows[] = $row;
-            fclose($handle);
-        }
-
-        if (empty($allRows)) {
-            return response()->json(['success' => false, 'message' => 'File kosong atau tidak valid.'], 422);
-        }
-
-        // ── Proses header ─────────────────────────────────────────
-        $rawHeader = array_shift($allRows);
-        $header = array_map(fn($h) => strtolower(trim((string) $h)), $rawHeader);
-
-        $required = ['kode', 'nama_mapel', 'kelompok', 'jam_per_minggu', 'kurikulum'];
-        $missing = array_diff($required, $header);
-        if ($missing) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Kolom wajib tidak ditemukan: ' . implode(', ', $missing),
-            ], 422);
-        }
-
-        $imported = 0;
-        $skipped = 0;
-        $errors = [];
-        $rowNum = 1;
-
-        foreach ($allRows as $cols) {
-            $rowNum++;
-            if (count(array_filter($cols, fn($c) => trim((string) $c) !== '')) === 0)
-                continue;
-
-            $data = array_combine($header, array_pad(array_map('strval', $cols), count($header), ''));
-            $kode = strtoupper(trim($data['kode'] ?? ''));
-            $namaMapel = trim($data['nama_mapel'] ?? '');
-            $kelompok = trim($data['kelompok'] ?? '');
-            $tingkatRaw = trim($data['tingkat'] ?? '');
-            $jamRaw = trim($data['jam_per_minggu'] ?? '');
-            $kurikulum = trim($data['kurikulum'] ?? '');
-
-            if (!$kode || !$namaMapel || !$kelompok || !$jamRaw || !$kurikulum) {
-                $errors[] = "Baris {$rowNum}: kolom wajib ada yang kosong.";
-                $skipped++;
-                continue;
-            }
-            if (!in_array($kelompok, self::KELOMPOK_VALID)) {
-                $errors[] = "Baris {$rowNum}: kelompok '{$kelompok}' tidak valid.";
-                $skipped++;
-                continue;
-            }
-            if (!in_array($kurikulum, self::KURIKULUM_VALID)) {
-                $errors[] = "Baris {$rowNum}: kurikulum '{$kurikulum}' tidak valid.";
-                $skipped++;
-                continue;
-            }
-            if (!is_numeric($jamRaw) || (int) $jamRaw < 1 || (int) $jamRaw > 40) {
-                $errors[] = "Baris {$rowNum}: jam_per_minggu harus angka 1–40, ditemukan '{$jamRaw}'.";
-                $skipped++;
-                continue;
-            }
-
-            if (!$tingkatRaw || strtolower($tingkatRaw) === 'semua') {
-                $tingkatValue = null;
-            } else {
-                $tList = array_map('trim', explode(',', $tingkatRaw));
-                $valid = array_filter($tList, fn($t) => in_array($t, ['1', '2', '3', '4', '5', '6']));
-                $tingkatValue = count($valid) === 6 ? null : implode(',', array_values($valid));
-            }
-
-            MataPelajaran::updateOrCreate(['kode' => $kode, 'school_id' => app('current_school_id')], [
-                'nama_mapel' => $namaMapel,
-                'kelompok' => $kelompok,
-                'tingkat' => $tingkatValue,
-                'jam_per_minggu' => (int) $jamRaw,
-                'kurikulum' => $kurikulum,
-                'is_active' => true,
-            ]);
-            $imported++;
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => "Import selesai. {$imported} data berhasil diimpor, {$skipped} baris dilewati.",
-            'imported' => $imported,
-            'skipped' => $skipped,
-            'errors' => $errors,
-        ]);
+        return $this->success(
+            ['queued' => true],
+            'File sedang diproses di latar belakang. Silakan refresh halaman beberapa saat lagi.'
+        );
     }
 
     /* ─────────────────────────────────────────────────────────── */
@@ -341,7 +221,6 @@ class MasterDataMapelController extends Controller
         $allRows = array_merge([$headerRow], $dataRows);
         foreach ($allRows as $ri => $row) {
             $rowNum = $ri + 1;
-            // s=1 → header style, s=2 → zebra even, s=0 → default
             $isHeader = $ri === 0;
             $cellsXml = '';
             foreach ($row as $ci => $val) {
@@ -365,8 +244,7 @@ class MasterDataMapelController extends Controller
 <sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="{$ssCount}" uniqueCount="{$ssCount}">{$ssItems}</sst>
 XML;
 
-        // ── Sheet XML ─────────────────────────────────────────────
-        // Auto-width via customWidth (estimasi karakter × 7 px)
+        // ── Auto-width via customWidth ────────────────────────────
         $colCount = count($headerRow);
         $colDefsXml = '<cols>';
         for ($ci = 0; $ci < $colCount; $ci++) {
@@ -389,8 +267,7 @@ XML;
 </worksheet>
 XML;
 
-        // ── Styles XML ────────────────────────────────────────────
-        // Index 0 = default, 1 = header (ungu+bold+white), 2 = zebra (lavender)
+        // ── Styles (header ungu, zebra lavender) ──────────────────
         $stylesXml = <<<'XML'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
@@ -423,7 +300,7 @@ XML;
 </styleSheet>
 XML;
 
-        // ── Workbook & rels XML ───────────────────────────────────
+        // ── Workbook & rels ───────────────────────────────────────
         $workbookXml = <<<'XML'
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
@@ -460,7 +337,7 @@ XML;
 </Types>
 XML;
 
-        // ── Zip semua jadi .xlsx ──────────────────────────────────
+        // ── Zip → .xlsx ───────────────────────────────────────────
         $tmpFile = tempnam(sys_get_temp_dir(), 'xlsx_');
         $zip = new \ZipArchive();
         $zip->open($tmpFile, \ZipArchive::OVERWRITE);
@@ -478,7 +355,7 @@ XML;
         return $binary;
     }
 
-    /* ── Helper: column index (0-based) → letter (A, B, … Z, AA) */
+    /* ── Helper: column index (0-based) → letter ────────────── */
     private function indexToColLetter(int $index): string
     {
         $letter = '';
@@ -491,22 +368,12 @@ XML;
         return $letter;
     }
 
-    /* ── Helper: column letter → 0-based index ─────────────── */
-    private function colLetterToIndex(string $col): int
-    {
-        $col = strtoupper($col);
-        $index = 0;
-        for ($i = 0; $i < strlen($col); $i++) {
-            $index = $index * 26 + (ord($col[$i]) - 64);
-        }
-        return $index - 1;
-    }
-
-    /* ── Helper: parse tingkat array ────────────────────────── */
+    /* ── Helper: parse tingkat array → string CSV ───────────── */
     private function parseTingkat(?array $tingkat): ?string
     {
-        if (empty($tingkat) || count($tingkat) === 6)
-            return null;
+        if (empty($tingkat) || count($tingkat) === 6) {
+            return null; // null = semua tingkat
+        }
         return implode(',', array_values(
             array_filter($tingkat, fn($t) => in_array($t, ['1', '2', '3', '4', '5', '6']))
         ));

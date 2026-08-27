@@ -4,17 +4,18 @@ namespace App\Models;
 
 use App\Traits\HasSchoolScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MataPelajaran extends Model
 {
-    use HasSchoolScope;
+    use HasSchoolScope, SoftDeletes;
 
     protected $table = 'mapels';
     protected $primaryKey = 'id';
     public $timestamps = true;
 
     protected $fillable = [
-        'school_id',
+        // school_id diisi otomatis oleh HasSchoolScope (bootHasSchoolScope)
         'kode',
         'nama_mapel',
         'kelompok',
