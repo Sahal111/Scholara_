@@ -11,6 +11,7 @@ use App\Http\Controllers\MasterData\Guru\GuruKompetensiController;
 use App\Http\Controllers\MasterData\Guru\GuruMutasiController;
 use App\Http\Controllers\MasterData\GuruCutiController;
 use App\Http\Controllers\MasterData\JadwalPelajaranController;
+use App\Http\Controllers\MasterData\JurusanController;
 use App\Http\Controllers\MasterData\MasterDataKelasController;
 use App\Http\Controllers\MasterData\MasterDataMapelController;
 use App\Http\Controllers\MasterData\MasterDataOrtuController;
@@ -289,6 +290,21 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
         // Wildcard TERAKHIR — setelah semua static GET routes
         Route::middleware('permission:master_data.mapel.view')->group(function () {
             Route::get('/mapel/{id}', [MasterDataMapelController::class, 'show']);
+        });
+
+        // ── JURUSAN ───────────────────────────────────────────────────────────────
+        // Static routes (dropdown) SEBELUM wildcard {id}
+    
+        Route::middleware('permission:master_data.kelas.view')->group(function () {
+            Route::get('/jurusan/dropdown', [JurusanController::class, 'dropdown']);
+            Route::get('/jurusan', [JurusanController::class, 'index']);
+            Route::get('/jurusan/{id}', [JurusanController::class, 'show']);
+        });
+
+        Route::middleware('permission:master_data.kelas.manage')->group(function () {
+            Route::post('/jurusan', [JurusanController::class, 'store']);
+            Route::put('/jurusan/{id}', [JurusanController::class, 'update']);
+            Route::delete('/jurusan/{id}', [JurusanController::class, 'destroy']);
         });
 
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────

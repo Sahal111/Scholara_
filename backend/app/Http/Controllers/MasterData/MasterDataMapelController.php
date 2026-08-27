@@ -44,6 +44,7 @@ class MasterDataMapelController extends Controller
             'nama_mapel' => $validated['nama_mapel'],
             'kelompok' => $validated['kelompok'],
             'tingkat' => $this->parseTingkat($validated['tingkat'] ?? null),
+            'jurusan_id' => $validated['jurusan_id'] ?? null,
             'jam_per_minggu' => (int) $validated['jam_per_minggu'],
             'kurikulum' => $validated['kurikulum'],
             'is_active' => true,
@@ -79,6 +80,7 @@ class MasterDataMapelController extends Controller
             'nama_mapel' => $validated['nama_mapel'],
             'kelompok' => $validated['kelompok'],
             'tingkat' => $this->parseTingkat($validated['tingkat'] ?? null),
+            'jurusan_id' => array_key_exists('jurusan_id', $validated) ? $validated['jurusan_id'] : $mapel->jurusan_id,
             'jam_per_minggu' => (int) $validated['jam_per_minggu'],
             'kurikulum' => $validated['kurikulum'],
             'is_active' => $request->boolean('is_active', $mapel->is_active),
@@ -371,11 +373,14 @@ XML;
     /* ── Helper: parse tingkat array → string CSV ───────────── */
     private function parseTingkat(?array $tingkat): ?string
     {
-        if (empty($tingkat) || count($tingkat) === 6) {
+        $allLevels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+
+        if (empty($tingkat) || count($tingkat) === count($allLevels)) {
             return null; // null = semua tingkat
         }
-        return implode(',', array_values(
-            array_filter($tingkat, fn($t) => in_array($t, ['1', '2', '3', '4', '5', '6']))
-        ));
+
+        $filtered = array_values(array_filter($tingkat, fn($t) => in_array($t, $allLevels)));
+
+        return empty($filtered) ? null : implode(',', $filtered);
     }
 }

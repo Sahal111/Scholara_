@@ -31,7 +31,7 @@ class ProcessMapelImport implements ShouldQueue
         // Set school_id ke app container supaya SchoolScope bisa inject WHERE school_id = ?
         app()->instance('current_school_id', $this->schoolId);
 
-        $filePath = storage_path('app/' . $this->storedFilePath);
+        $filePath = Storage::disk('local')->path($this->storedFilePath);
 
         if (!file_exists($filePath)) {
             Log::warning("ProcessMapelImport: file tidak ditemukan — {$this->storedFilePath}");

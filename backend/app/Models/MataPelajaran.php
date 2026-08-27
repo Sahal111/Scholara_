@@ -20,6 +20,7 @@ class MataPelajaran extends Model
         'nama_mapel',
         'kelompok',
         'tingkat',
+        'jurusan_id',
         'kurikulum',
         'jam_per_minggu',
         'is_active',
@@ -39,6 +40,11 @@ class MataPelajaran extends Model
     }
 
     // ── Relasi ──────────────────────────────────────────────
+
+    public function jurusan()
+    {
+        return $this->belongsTo(Jurusan::class, 'jurusan_id');
+    }
 
     public function plotGuruMapels()
     {
