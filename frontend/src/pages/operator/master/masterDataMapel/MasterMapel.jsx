@@ -326,12 +326,13 @@ function ModalImport({ open, onClose, queryClient }) {
   const fileRef = useRef(null);
   const [file, setFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
-  const [result, setResult] = useState(null);
+  // queued: true = file sudah berhasil dikirim & job sudah diantri di queue
+  const [queued, setQueued] = useState(false);
 
   useEffect(() => {
     if (open) {
       setFile(null);
-      setResult(null);
+      setQueued(false);
     }
   }, [open]);
 
@@ -340,11 +341,14 @@ function ModalImport({ open, onClose, queryClient }) {
       api.post("/operator/master-data/mapel/import", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       }),
-    onSuccess: (res) => {
-      setResult(res.data);
+    onSuccess: () => {
+      // Import berjalan async di queue — tidak ada angka imported/skipped
+      // yang bisa langsung ditampilkan. Tandai sebagai queued & invalidate list.
+      setQueued(true);
       queryClient.invalidateQueries(["master-mapel"]);
-      if (res.data.imported > 0)
-        toast.success(`${res.data.imported} data berhasil diimpor!`);
+      toast.success(
+        "File berhasil dikirim. Data sedang diproses di latar belakang.",
+      );
     },
     onError: (err) => {
       toast.error(err.response?.data?.message ?? "Gagal mengimpor file.");
@@ -358,7 +362,6 @@ function ModalImport({ open, onClose, queryClient }) {
       return;
     }
     setFile(f);
-    setResult(null);
   };
 
   const handleDrop = (e) => {
@@ -462,8 +465,23 @@ function ModalImport({ open, onClose, queryClient }) {
             </button>
           </div>
 
-          {/* Drop zone */}
-          {!result && (
+          {/* State: sudah diantri ke queue */}
+          {queued ? (
+            <div className="bg-[#d1fae5] border border-[#006e2a]/20 rounded-2xl p-5 text-center space-y-2">
+              <span className="material-symbols-outlined text-[40px] text-[#006e2a]">
+                schedule_send
+              </span>
+              <p className="text-sm font-extrabold text-[#00342b]">
+                File Berhasil Dikirim!
+              </p>
+              <p className="text-xs text-[#3f4945] leading-relaxed">
+                Data sedang diproses di latar belakang oleh server.
+                <br />
+                Refresh halaman beberapa saat lagi untuk melihat hasilnya.
+              </p>
+            </div>
+          ) : (
+            /* Drop zone */
             <div
               onDragOver={(e) => {
                 e.preventDefault();
@@ -514,62 +532,28 @@ function ModalImport({ open, onClose, queryClient }) {
               )}
             </div>
           )}
-
-          {/* Hasil import */}
-          {result && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-[#d1fae5] border border-[#006e2a]/20 rounded-2xl p-4 text-center">
-                  <p className="text-2xl font-extrabold text-[#006e2a]">
-                    {result.imported}
-                  </p>
-                  <p className="text-xs text-[#3f4945] mt-1 font-medium">
-                    Data Diimpor
-                  </p>
-                </div>
-                <div
-                  className={`border rounded-2xl p-4 text-center ${result.skipped > 0 ? "bg-[#fef3c7] border-[#fde68a]" : "bg-[#f2f4f3] border-[#bfc9c4]/20"}`}
-                >
-                  <p
-                    className={`text-2xl font-extrabold ${result.skipped > 0 ? "text-[#92400e]" : "text-[#707975]"}`}
-                  >
-                    {result.skipped}
-                  </p>
-                  <p className="text-xs text-[#3f4945] mt-1 font-medium">
-                    Baris Dilewati
-                  </p>
-                </div>
-              </div>
-              {result.errors?.length > 0 && (
-                <div className="bg-[#ffdad6] border border-[#ba1a1a]/20 rounded-2xl p-3 max-h-32 overflow-y-auto">
-                  <p className="text-xs font-black text-[#ba1a1a] mb-1.5 flex items-center gap-1 uppercase tracking-widest">
-                    <span className="material-symbols-outlined text-[14px]">
-                      warning
-                    </span>
-                    Detail Baris Bermasalah
-                  </p>
-                  {result.errors.map((e, i) => (
-                    <p key={i} className="text-xs text-[#ba1a1a]/80 font-mono">
-                      • {e}
-                    </p>
-                  ))}
-                </div>
-              )}
-              <button
-                onClick={() => {
-                  setFile(null);
-                  setResult(null);
-                }}
-                className="w-full py-2.5 border border-[#bfc9c4]/30 rounded-2xl text-sm font-bold text-[#3f4945] hover:bg-[#f2f4f3] transition-colors"
-              >
-                Import File Lain
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
-        {!result ? (
+        {queued ? (
+          <div className="flex gap-3 px-6 py-5 border-t border-[#bfc9c4]/20">
+            <button
+              onClick={() => {
+                setFile(null);
+                setQueued(false);
+              }}
+              className="flex-1 py-3 border border-[#bfc9c4]/30 rounded-2xl text-[#191c1c] font-bold text-sm hover:bg-[#f2f4f3] transition-colors"
+            >
+              Import File Lain
+            </button>
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 bg-[#006e2a] text-white rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-[#065043] transition-colors shadow-lg shadow-[#006e2a]/20"
+            >
+              Tutup
+            </button>
+          </div>
+        ) : (
           <div className="flex gap-3 px-6 py-5 border-t border-[#bfc9c4]/20">
             <button
               onClick={onClose}
@@ -585,7 +569,7 @@ function ModalImport({ open, onClose, queryClient }) {
               {importMutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Mengimpor...
+                  Mengunggah...
                 </>
               ) : (
                 <>
@@ -597,21 +581,11 @@ function ModalImport({ open, onClose, queryClient }) {
               )}
             </button>
           </div>
-        ) : (
-          <div className="px-6 py-5 border-t border-[#bfc9c4]/20">
-            <button
-              onClick={onClose}
-              className="w-full py-3 bg-[#006e2a] text-white rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-[#065043] transition-colors shadow-lg shadow-[#006e2a]/20"
-            >
-              Selesai
-            </button>
-          </div>
         )}
       </div>
     </div>
   );
 }
-
 /* ─── Modal Hapus ────────────────────────────────────────────── */
 function ModalHapus({ target, onClose, onConfirm, isPending }) {
   if (!target) return null;

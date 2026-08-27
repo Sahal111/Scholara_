@@ -9,6 +9,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ProcessMapelImport implements ShouldQueue
@@ -16,7 +17,7 @@ class ProcessMapelImport implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 120;
-    public int $tries = 1; // jangan retry — bisa duplikat data
+    public int $tries = 1;
 
     public function __construct(
         private string $storedFilePath,
@@ -28,12 +29,12 @@ class ProcessMapelImport implements ShouldQueue
     public function handle(): void
     {
         // Set school_id ke app container supaya SchoolScope bisa inject WHERE school_id = ?
-        // Context ini tidak terbawa otomatis dari request ke dalam Job
         app()->instance('current_school_id', $this->schoolId);
 
         $filePath = storage_path('app/' . $this->storedFilePath);
 
         if (!file_exists($filePath)) {
+            Log::warning("ProcessMapelImport: file tidak ditemukan — {$this->storedFilePath}");
             return;
         }
 
@@ -41,6 +42,7 @@ class ProcessMapelImport implements ShouldQueue
             $rows = $this->parseXlsx($filePath);
 
             if (empty($rows)) {
+                Log::warning("ProcessMapelImport: file kosong atau gagal di-parse — {$this->storedFilePath}");
                 return;
             }
 
@@ -69,7 +71,7 @@ class ProcessMapelImport implements ShouldQueue
             $kurikulumValid = ['Kurikulum 2013', 'Kurikulum Merdeka', 'Keduanya'];
 
             DB::transaction(function () use ($rows, $get, $kelompokValid, $kurikulumValid) {
-                foreach ($rows as $row) {
+                foreach ($rows as $rowIndex => $row) {
                     // Skip baris kosong
                     if (empty(array_filter($row, fn($v) => trim($v) !== ''))) {
                         continue;
@@ -111,9 +113,15 @@ class ProcessMapelImport implements ShouldQueue
                         $jamPerMinggu = 2;
                     }
 
-                    // Upsert berdasarkan kode (per sekolah sudah di-scope oleh SchoolScope)
+                    // FIX: sertakan school_id di search key agar updateOrCreate
+                    // cocok dengan unique constraint (school_id, kode) di DB.
+                    // SchoolScope sudah inject WHERE school_id secara otomatis
+                    // untuk SELECT-nya, tapi INSERT butuh school_id eksplisit.
                     MataPelajaran::updateOrCreate(
-                        ['kode' => strtoupper($kode)],
+                        [
+                            'school_id' => $this->schoolId,
+                            'kode' => strtoupper($kode),
+                        ],
                         [
                             'nama_mapel' => $namaMapel,
                             'kelompok' => $kelompok,
@@ -125,8 +133,18 @@ class ProcessMapelImport implements ShouldQueue
                     );
                 }
             });
+
+            Log::info("ProcessMapelImport: selesai — school_id={$this->schoolId}, rows=" . count($rows));
+
+        } catch (\Throwable $e) {
+            // Log error supaya tidak diam-diam hilang
+            Log::error("ProcessMapelImport gagal: " . $e->getMessage(), [
+                'school_id' => $this->schoolId,
+                'file' => $this->storedFilePath,
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e; // re-throw agar job ditandai failed
         } finally {
-            // Hapus file temp setelah selesai
             Storage::delete($this->storedFilePath);
         }
     }
