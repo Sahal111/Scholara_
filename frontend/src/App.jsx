@@ -40,6 +40,7 @@ import DetailTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSeme
 import DetailSemester from "./pages/operator/master/masterDataTahunAjaranSemester/DetailSemester";
 import RecycleBinTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/components/RecycleBinTahunAjaran";
 import ArsipTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/components/ArsipTahunAjaran";
+import DetailArsipTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailArsipTahunAjaran";
 import MasterMapel from "./pages/operator/master/masterDataMapel/MasterMapel";
 import MasterJadwal from "./pages/operator/master/MasterJadwal";
 import PengumumanOperator from "./pages/operator/master/PengumumanOperator";
@@ -202,6 +203,10 @@ export default function App() {
         <Route
           path="master/tahun-ajaran/arsip"
           element={<ArsipTahunAjaran />}
+        />
+        <Route
+          path="master/tahun-ajaran/arsip/:id"
+          element={<DetailArsipTahunAjaran />}
         />
         <Route path="master/tahun-ajaran/:id" element={<DetailTahunAjaran />} />
         <Route

@@ -129,7 +129,7 @@ function ArsipRow({ item, onUnarsip }) {
       <td className="py-8 px-4 text-right">
         <div className="flex items-center justify-end gap-2">
           <Link
-            to={`/operator/master/tahun-ajaran/${item.id}`}
+            to={`/operator/master/tahun-ajaran/arsip/${item.id}`}
             className="text-[#707975]/40 hover:text-[#00342b] transition-all p-2 rounded-full hover:bg-[#eceeed]"
             title="Lihat Detail"
           >
@@ -171,7 +171,7 @@ function ArsipCard({ item, onUnarsip }) {
 
       <div className="flex items-center gap-2 border-t border-[#eceeed] pt-3">
         <Link
-          to={`/operator/master/tahun-ajaran/${item.id}`}
+          to={`/operator/master/tahun-ajaran/arsip/${item.id}`}
           className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-[#f2f4f3] text-[#3f4945] text-xs font-bold hover:bg-[#e6e9e8] transition"
         >
           <span className="material-symbols-outlined text-[15px]">
