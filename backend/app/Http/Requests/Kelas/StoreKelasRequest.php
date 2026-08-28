@@ -18,7 +18,7 @@ class StoreKelasRequest extends FormRequest
             'semester_id' => 'nullable|integer|exists:semesters,id',
             'nama_kelas' => 'required|string|max:20',
             'tingkat' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12',
-            'jurusan_id' => 'nullable|integer|exists:jurusans,id',
+            'program_pendidikan_id' => 'nullable|integer|exists:program_pendidikans,id',
             'kurikulum' => 'required|string|max:50',
             'wali_kelas_id' => 'nullable|integer|exists:gurus,id',
             'kapasitas' => 'required|integer|min:1|max:60',
@@ -32,7 +32,7 @@ class StoreKelasRequest extends FormRequest
             'nama_kelas.required' => 'Nama kelas wajib diisi.',
             'tingkat.required' => 'Tingkat kelas wajib dipilih.',
             'tingkat.in' => 'Tingkat kelas harus antara 1–12.',
-            'jurusan_id.exists' => 'Jurusan tidak ditemukan.',
+            'program_pendidikan_id.exists' => 'Program pendidikan tidak ditemukan.',
             'kapasitas.required' => 'Kapasitas kelas wajib diisi.',
             'kapasitas.max' => 'Kapasitas kelas maksimal 60 siswa.',
         ];

@@ -21,7 +21,7 @@ class Kelas extends Model
         'semester_id',
         'nama_kelas',
         'tingkat',
-        'jurusan_id',
+        'program_pendidikan_id',
         'kurikulum',
         'wali_kelas_id',
         'kapasitas',
@@ -42,9 +42,9 @@ class Kelas extends Model
 
     // ── Relasi ──────────────────────────────────────────────
 
-    public function jurusan()
+    public function programPendidikan()
     {
-        return $this->belongsTo(Jurusan::class, 'jurusan_id');
+        return $this->belongsTo(ProgramPendidikan::class, 'program_pendidikan_id');
     }
 
     public function tahunAjaran()

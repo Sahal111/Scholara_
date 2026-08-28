@@ -11,7 +11,7 @@ use App\Http\Controllers\MasterData\Guru\GuruKompetensiController;
 use App\Http\Controllers\MasterData\Guru\GuruMutasiController;
 use App\Http\Controllers\MasterData\GuruCutiController;
 use App\Http\Controllers\MasterData\JadwalPelajaranController;
-use App\Http\Controllers\MasterData\JurusanController;
+use App\Http\Controllers\MasterData\ProgramPendidikanController;
 use App\Http\Controllers\MasterData\MasterDataKelasController;
 use App\Http\Controllers\MasterData\MasterDataMapelController;
 use App\Http\Controllers\MasterData\MasterDataOrtuController;
@@ -292,19 +292,22 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
             Route::get('/mapel/{id}', [MasterDataMapelController::class, 'show']);
         });
 
-        // ── JURUSAN ───────────────────────────────────────────────────────────────
-        // Static routes (dropdown) SEBELUM wildcard {id}
+        // ── PROGRAM PENDIDIKAN ────────────────────────────────────────────────────
+        // Menggantikan /jurusan — mendukung hierarki multi-jenjang
+        // (Bidang Keahlian → Program Keahlian → Konsentrasi, atau Peminatan SMA/MA)
+        // Static routes (dropdown, tree) SEBELUM wildcard {id}
     
         Route::middleware('permission:master_data.kelas.view')->group(function () {
-            Route::get('/jurusan/dropdown', [JurusanController::class, 'dropdown']);
-            Route::get('/jurusan', [JurusanController::class, 'index']);
-            Route::get('/jurusan/{id}', [JurusanController::class, 'show']);
+            Route::get('/program-pendidikan/dropdown', [ProgramPendidikanController::class, 'dropdown']);
+            Route::get('/program-pendidikan/tree', [ProgramPendidikanController::class, 'tree']);
+            Route::get('/program-pendidikan', [ProgramPendidikanController::class, 'index']);
+            Route::get('/program-pendidikan/{id}', [ProgramPendidikanController::class, 'show']);
         });
 
         Route::middleware('permission:master_data.kelas.manage')->group(function () {
-            Route::post('/jurusan', [JurusanController::class, 'store']);
-            Route::put('/jurusan/{id}', [JurusanController::class, 'update']);
-            Route::delete('/jurusan/{id}', [JurusanController::class, 'destroy']);
+            Route::post('/program-pendidikan', [ProgramPendidikanController::class, 'store']);
+            Route::put('/program-pendidikan/{id}', [ProgramPendidikanController::class, 'update']);
+            Route::delete('/program-pendidikan/{id}', [ProgramPendidikanController::class, 'destroy']);
         });
 
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────

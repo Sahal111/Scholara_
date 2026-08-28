@@ -32,7 +32,7 @@ class UpdateMapelRequest extends FormRequest
             'kelompok' => 'required|in:' . implode(',', self::KELOMPOK_VALID),
             'tingkat' => 'nullable|array',
             'tingkat.*' => 'in:1,2,3,4,5,6,7,8,9,10,11,12',
-            'jurusan_id' => 'nullable|integer|exists:jurusans,id',
+            'program_pendidikan_id' => 'nullable|integer|exists:program_pendidikans,id',
             'jam_per_minggu' => 'required|integer|min:1|max:40',
             'kurikulum' => 'required|in:' . implode(',', self::KURIKULUM_VALID),
             'is_active' => 'boolean',
@@ -50,6 +50,7 @@ class UpdateMapelRequest extends FormRequest
             'jam_per_minggu.required' => 'Jam per minggu wajib diisi.',
             'kurikulum.required' => 'Kurikulum wajib dipilih.',
             'kurikulum.in' => 'Kurikulum tidak valid.',
+            'program_pendidikan_id.exists' => 'Program pendidikan tidak ditemukan.',
         ];
     }
 }
