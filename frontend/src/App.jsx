@@ -42,6 +42,7 @@ import RecycleBinTahunAjaran from "./pages/operator/master/masterDataTahunAjaran
 import ArsipTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/components/ArsipTahunAjaran";
 import DetailArsipTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailArsipTahunAjaran";
 import MasterMapel from "./pages/operator/master/masterDataMapel/MasterMapel";
+import MasterProgram from "./pages/operator/master/masterDataProgram/MasterProgram";
 import MasterJadwal from "./pages/operator/master/MasterJadwal";
 import PengumumanOperator from "./pages/operator/master/PengumumanOperator";
 import GaleriOperator from "./pages/operator/master/GaleriOperator";
@@ -214,6 +215,7 @@ export default function App() {
           element={<DetailSemester />}
         />
         <Route path="master/mapel" element={<MasterMapel />} />
+        <Route path="master/program-pendidikan" element={<MasterProgram />} />
         <Route path="master/jadwal-pelajaran" element={<MasterJadwal />} />
         <Route path="master/pengumuman" element={<PengumumanOperator />} />
         <Route path="master/galeri" element={<GaleriOperator />} />
