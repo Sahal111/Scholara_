@@ -140,7 +140,6 @@ class MultiSchoolSeeder extends Seeder
                 'domain' => "{$def['subdomain']}.siakad.id",
                 'is_primary' => true,
                 'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             // 3. Settings default
@@ -181,7 +180,6 @@ class MultiSchoolSeeder extends Seeder
 
         $rows = array_map(fn($s) => array_merge($s, [
             'school_id' => $school->id,
-            'created_at' => now(),
             'updated_at' => now(),
         ]), $defaults);
 

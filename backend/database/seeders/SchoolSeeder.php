@@ -77,7 +77,6 @@ class SchoolSeeder extends Seeder
             'domain' => 'minurulhuda3.siakad.id',
             'is_primary' => true,
             'created_at' => now(),
-            'updated_at' => now(),
         ]);
     }
 
