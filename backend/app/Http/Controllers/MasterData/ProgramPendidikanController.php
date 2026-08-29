@@ -81,8 +81,15 @@ class ProgramPendidikanController extends Controller
     {
         $validated = $request->validated();
 
+        // parent_id dikirim sebagai ULID dari frontend — resolve ke integer PK
+        $parentId = null;
+        if (!empty($validated['parent_id'])) {
+            $parent = ProgramPendidikan::where('ulid', $validated['parent_id'])->value('id');
+            $parentId = $parent;
+        }
+
         $program = ProgramPendidikan::create([
-            'parent_id' => $validated['parent_id'] ?? null,
+            'parent_id' => $parentId,
             'nama' => $validated['nama'],
             'kode' => isset($validated['kode']) ? strtoupper($validated['kode']) : null,
             'jenis' => $validated['jenis'],
@@ -92,7 +99,7 @@ class ProgramPendidikanController extends Controller
         ]);
 
         return $this->created(
-            $program->load('parent:id,nama,kode'),
+            $program->load('parent:id,ulid,nama,kode'),
             'Program pendidikan berhasil ditambahkan.'
         );
     }
@@ -122,9 +129,15 @@ class ProgramPendidikanController extends Controller
         $program = ProgramPendidikan::where('ulid', $ulid)->firstOrFail();
         $validated = $request->validated();
 
+        // parent_id dikirim sebagai ULID dari frontend — resolve ke integer PK
+        $parentId = null;
+        if (!empty($validated['parent_id'])) {
+            $parentId = ProgramPendidikan::where('ulid', $validated['parent_id'])->value('id');
+        }
+
         // Guard: jangan izinkan circular reference (parent adalah descendant sendiri)
-        if (isset($validated['parent_id']) && $validated['parent_id'] !== null) {
-            if ($this->isDescendantOf($validated['parent_id'], $program->id)) {
+        if ($parentId !== null) {
+            if ($this->isDescendantOf($parentId, $program->id)) {
                 return $this->error(
                     'Program induk yang dipilih adalah turunan dari program ini. Tidak diizinkan (circular).',
                     'CIRCULAR_REFERENCE',
@@ -134,7 +147,7 @@ class ProgramPendidikanController extends Controller
         }
 
         $program->update([
-            'parent_id' => $validated['parent_id'] ?? null,
+            'parent_id' => $parentId,
             'nama' => $validated['nama'],
             'kode' => isset($validated['kode']) ? strtoupper($validated['kode']) : null,
             'jenis' => $validated['jenis'],

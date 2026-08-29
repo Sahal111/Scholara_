@@ -117,7 +117,7 @@ function ModalProgram({
   }, [open, editData, defaultJenis]);
 
   const createMutation = useCreateProgram();
-  const updateMutation = useUpdateProgram(editData?.id);
+  const updateMutation = useUpdateProgram(editData?.ulid);
 
   const handleSubmit = () => {
     if (!form.nama.trim()) {
@@ -210,7 +210,7 @@ function ModalProgram({
                 >
                   <option value="">— Tidak ada / Isi nanti —</option>
                   {parents.map((p) => (
-                    <option key={p.id} value={p.id}>
+                    <option key={p.ulid} value={p.ulid}>
                       {p.kode ? `[${p.kode}] ` : ""}
                       {p.nama}
                     </option>
@@ -574,7 +574,7 @@ export default function MasterProgram() {
 
   // ── Mutations — inisialisasi di level komponen, BUKAN di dalam handler
   const deleteMutation = useDeleteProgram();
-  const updateMutation = useUpdateProgram(editData?.id);
+  const updateMutation = useUpdateProgram(editData?.ulid);
 
   const handleEdit = (item) => {
     setEditData(item);
@@ -585,7 +585,7 @@ export default function MasterProgram() {
   const handleDelete = (item) => setDeleteItem(item);
 
   const handleConfirmDelete = () => {
-    deleteMutation.mutate(deleteItem.id, {
+    deleteMutation.mutate(deleteItem.ulid, {
       onSuccess: () => setDeleteItem(null),
     });
   };
@@ -593,7 +593,7 @@ export default function MasterProgram() {
   // fix: tidak memanggil hook di dalam handler — pakai api instance langsung
   const handleToggleStatus = (item) => {
     api
-      .put(`/operator/master-data/program-pendidikan/${item.id}`, {
+      .put(`/operator/master-data/program-pendidikan/${item.ulid}`, {
         parent_id: item.parent_id ?? null,
         nama: item.nama,
         kode: item.kode ?? null,
@@ -903,7 +903,7 @@ export default function MasterProgram() {
                   >
                     <option value="">{colParentLabel}: Semua</option>
                     {parentDropdown.map((p) => (
-                      <option key={p.id} value={p.id}>
+                      <option key={p.ulid} value={p.ulid}>
                         {p.kode ? `[${p.kode}] ` : ""}
                         {p.nama}
                       </option>
@@ -1030,7 +1030,7 @@ export default function MasterProgram() {
                 ) : (
                   programs.map((item, idx) => (
                     <tr
-                      key={item.id}
+                      key={item.ulid}
                       className={`border-b border-[#bfc9c4]/10 transition-colors hover:bg-[#006e2a]/[0.02]
                       ${idx === programs.length - 1 ? "border-b-0" : ""}`}
                     >

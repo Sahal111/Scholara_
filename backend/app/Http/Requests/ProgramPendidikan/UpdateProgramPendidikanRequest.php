@@ -23,12 +23,13 @@ class UpdateProgramPendidikanRequest extends FormRequest
         $intId = $program?->id;
 
         return [
+            // parent_id dikirim frontend sebagai ULID string
             'parent_id' => [
                 'nullable',
-                'integer',
+                'string',
                 // Tidak boleh jadi parent diri sendiri
-                Rule::notIn([$intId]),
-                Rule::exists('program_pendidikans', 'id')
+                Rule::notIn([$ulid]),
+                Rule::exists('program_pendidikans', 'ulid')
                     ->where('school_id', $schoolId)
                     ->whereNull('deleted_at'),
             ],

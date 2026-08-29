@@ -18,11 +18,12 @@ class StoreProgramPendidikanRequest extends FormRequest
         $schoolId = app('current_school_id');
 
         return [
+            // parent_id dikirim frontend sebagai ULID string (bukan integer)
+            // Validasi: harus ULID yang exist dan milik sekolah yang sama
             'parent_id' => [
                 'nullable',
-                'integer',
-                // Parent harus milik sekolah yang sama
-                Rule::exists('program_pendidikans', 'id')
+                'string',
+                Rule::exists('program_pendidikans', 'ulid')
                     ->where('school_id', $schoolId)
                     ->whereNull('deleted_at'),
             ],
