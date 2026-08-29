@@ -429,7 +429,7 @@ function SidebarItem({ item, onClose }) {
 
 /* ── SidebarContent ─────────────────────────────────────────── */
 export function SidebarContent({ onClose }) {
-  const { user, logout } = useAuth();
+  const { user, school, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -437,6 +437,8 @@ export function SidebarContent({ onClose }) {
     toast.success("Berhasil logout.");
     navigate("/login", { replace: true });
   };
+
+  const schoolName = school?.nama ?? "Admin Portal";
 
   return (
     <div
@@ -455,10 +457,10 @@ export function SidebarContent({ onClose }) {
         </div>
         <div className="flex-1 min-w-0">
           <h1
-            className="font-extrabold text-white text-lg leading-tight tracking-tight"
+            className="font-extrabold text-white text-lg leading-tight tracking-tight truncate"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            MI Nurul Huda 3
+            {schoolName}
           </h1>
           <p className="text-[#94d3c1] text-xs font-medium uppercase tracking-wider mt-1">
             Admin Portal
