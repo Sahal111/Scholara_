@@ -2,6 +2,7 @@ import { createPortal } from "react-dom";
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import api from "../../../../lib/axios";
 import {
   useProgramList,
   useProgramDropdown,
@@ -54,7 +55,14 @@ const labelCls =
 const selectCls = inputCls + " appearance-none cursor-pointer";
 
 // ── Modal Tambah / Edit ───────────────────────────────────────────────────────
-function ModalProgram({ open, onClose, editData, defaultJenis, jenisOptions }) {
+function ModalProgram({
+  open,
+  onClose,
+  editData,
+  defaultJenis,
+  jenisOptions,
+  schoolJenis,
+}) {
   const isEdit = !!editData;
   const qc = useQueryClient();
 
@@ -64,12 +72,15 @@ function ModalProgram({ open, onClose, editData, defaultJenis, jenisOptions }) {
     return jenisOptions[0]?.value ?? "umum";
   };
 
+  // jenjang_sasaran default: lock ke school.jenis jika tersedia, fallback "semua"
+  const defaultJenjang = schoolJenis ?? "semua";
+
   const empty = {
     parent_id: "",
     nama: "",
     kode: "",
     jenis: resolveDefaultJenis(),
-    jenjang_sasaran: "semua",
+    jenjang_sasaran: defaultJenjang,
     deskripsi: "",
     is_active: true,
   };
@@ -97,7 +108,7 @@ function ModalProgram({ open, onClose, editData, defaultJenis, jenisOptions }) {
             nama: editData.nama ?? "",
             kode: editData.kode ?? "",
             jenis: editData.jenis ?? resolveDefaultJenis(),
-            jenjang_sasaran: editData.jenjang_sasaran ?? "semua",
+            jenjang_sasaran: editData.jenjang_sasaran ?? defaultJenjang,
             deskripsi: editData.deskripsi ?? "",
             is_active: editData.is_active ?? true,
           }
@@ -240,25 +251,43 @@ function ModalProgram({ open, onClose, editData, defaultJenis, jenisOptions }) {
             </p>
           </div>
 
-          {/* Jenjang Sasaran */}
+          {/* Jenjang Sasaran — locked ke school.jenis jika diketahui */}
           <div>
             <label className={labelCls}>Jenjang Sasaran</label>
-            <div className="relative">
-              <select
-                className={selectCls}
-                value={form.jenjang_sasaran}
-                onChange={(e) => set("jenjang_sasaran", e.target.value)}
-              >
-                {JENJANG_LIST.map((j) => (
-                  <option key={j} value={j}>
-                    {j === "semua" ? "Semua Jenjang" : j}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[18px]">
-                expand_more
-              </span>
-            </div>
+            {schoolJenis ? (
+              // Lock: sekolah sudah punya jenjang, tidak perlu pilih manual
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f2f4f3] border border-[#bfc9c4]/40 rounded-xl">
+                <span className="material-symbols-outlined text-[16px] text-[#006e2a]">
+                  lock
+                </span>
+                <span className="text-sm font-semibold text-[#00342b]">
+                  {schoolJenis}
+                </span>
+                <span className="text-xs text-[#707975] ml-auto">
+                  Sesuai jenjang sekolah
+                </span>
+                {/* Hidden input agar form.jenjang_sasaran tetap terkirim */}
+                <input type="hidden" value={form.jenjang_sasaran} />
+              </div>
+            ) : (
+              // Fallback: sekolah belum diketahui — tampilkan dropdown penuh
+              <div className="relative">
+                <select
+                  className={selectCls}
+                  value={form.jenjang_sasaran}
+                  onChange={(e) => set("jenjang_sasaran", e.target.value)}
+                >
+                  {JENJANG_LIST.map((j) => (
+                    <option key={j} value={j}>
+                      {j === "semua" ? "Semua Jenjang" : j}
+                    </option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[18px]">
+                  expand_more
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Deskripsi */}
@@ -493,9 +522,9 @@ export default function MasterProgram() {
   const qc = useQueryClient();
   const { school } = useAuth();
 
-  // Config dinamis berdasarkan jenis sekolah dari AuthContext
-  const programConfig = getProgramConfig(school?.jenis);
-  const jenisOptions = getProgramJenisOptions(school?.jenis);
+  // Config dinamis berdasarkan jenis + kurikulum sekolah dari AuthContext
+  const programConfig = getProgramConfig(school?.jenis, school?.kurikulum);
+  const jenisOptions = getProgramJenisOptions(school?.jenis, school?.kurikulum);
   const JENIS_LIST = programConfig.tabs ?? [];
 
   // ── State filter & pagination
@@ -508,6 +537,7 @@ export default function MasterProgram() {
   // ── State modal
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [modalDefaultJenis, setModalDefaultJenis] = useState(null); // fix: simpan defaultJenis dari tombol
   const [deleteItem, setDeleteItem] = useState(null);
 
   // Saat tab berubah, reset page dan filter parent
@@ -542,12 +572,13 @@ export default function MasterProgram() {
   );
   const parentDropdown = parentDropdownData?.data ?? [];
 
-  // ── Mutations
+  // ── Mutations — inisialisasi di level komponen, BUKAN di dalam handler
   const deleteMutation = useDeleteProgram();
   const updateMutation = useUpdateProgram(editData?.id);
 
   const handleEdit = (item) => {
     setEditData(item);
+    setModalDefaultJenis(item.jenis); // saat edit, default jenis dari data
     setModalOpen(true);
   };
 
@@ -559,25 +590,38 @@ export default function MasterProgram() {
     });
   };
 
+  // fix: tidak memanggil hook di dalam handler — pakai api instance langsung
   const handleToggleStatus = (item) => {
-    useUpdateProgram(item.id).mutate(
-      { ...item, is_active: !item.is_active },
-      {
-        onSuccess: () =>
-          qc.invalidateQueries({ queryKey: ["program-pendidikan"] }),
-      },
-    );
+    api
+      .put(`/operator/master-data/program-pendidikan/${item.id}`, {
+        parent_id: item.parent_id ?? null,
+        nama: item.nama,
+        kode: item.kode ?? null,
+        jenis: item.jenis,
+        jenjang_sasaran: item.jenjang_sasaran,
+        deskripsi: item.deskripsi ?? null,
+        is_active: !item.is_active,
+      })
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ["program-pendidikan"] });
+        toast.success(
+          item.is_active ? "Program dinonaktifkan." : "Program diaktifkan.",
+        );
+      })
+      .catch(() => toast.error("Gagal mengubah status program."));
   };
 
-  // Buka modal tambah
+  // fix: simpan defaultJenis dari tombol yang diklik
   const handleTambah = (defaultJenis) => {
     setEditData(null);
+    setModalDefaultJenis(defaultJenis ?? programConfig.defaultJenis ?? null);
     setModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setModalOpen(false);
     setEditData(null);
+    setModalDefaultJenis(null);
   };
 
   // Label header kolom dinamis berdasarkan tab
@@ -609,8 +653,9 @@ export default function MasterProgram() {
         open={modalOpen}
         onClose={handleCloseModal}
         editData={editData}
-        defaultJenis={activeTab}
+        defaultJenis={modalDefaultJenis ?? activeTab}
         jenisOptions={jenisOptions}
+        schoolJenis={school?.jenis ?? null}
       />
       {/* ── Modal Hapus ─────────────────────────────────────────────── */}
       <ModalHapus

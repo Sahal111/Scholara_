@@ -54,11 +54,13 @@ class ProgramPendidikan extends Model
 
     /** Jenis program mengikuti nomenklatur Kemdikbud */
     const JENIS = [
-        'bidang_keahlian',
-        'program_keahlian',
-        'konsentrasi_keahlian',
-        'peminatan',
-        'umum',
+        'bidang_keahlian',        // SMK/MAK level-1
+        'program_keahlian',       // SMK/MAK level-2
+        'konsentrasi_keahlian',   // SMK/MAK level-3
+        'peminatan',              // SMA/MA K13: IPA, IPS, Bahasa
+        'mata_pelajaran_pilihan', // SMA/MA Kurikulum Merdeka: Kelompok MIPA, IPS, Bahasa, Vokasi
+        'keagamaan',              // MA/MAN: Tafsir, Hadis, Fikih, Ilmu Kalam, Bahasa Arab
+        'umum',                   // Fleksibel / custom
     ];
 
     /** Label tampilan untuk UI */
@@ -67,6 +69,8 @@ class ProgramPendidikan extends Model
         'program_keahlian' => 'Program Keahlian',
         'konsentrasi_keahlian' => 'Konsentrasi Keahlian',
         'peminatan' => 'Peminatan',
+        'mata_pelajaran_pilihan' => 'Mata Pelajaran Pilihan',
+        'keagamaan' => 'Keagamaan',
         'umum' => 'Umum',
     ];
 

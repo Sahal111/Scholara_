@@ -99,17 +99,17 @@ class ProgramPendidikanController extends Controller
 
     // ── Show ──────────────────────────────────────────────────────
 
-    public function show(int $id): JsonResponse
+    public function show(string $ulid): JsonResponse
     {
         $program = ProgramPendidikan::with([
             'parent:id,ulid,nama,kode,jenis',
             'children:id,ulid,parent_id,nama,kode,jenis,is_active',
-            'children.children:id,ulid,parent_id,nama,kode,jenis,is_active', // 1 level lagi untuk SMK
+            'children.children:id,ulid,parent_id,nama,kode,jenis,is_active',
         ])
             ->withCount(['kelas', 'children', 'mapels'])
-            ->findOrFail($id);
+            ->where('ulid', $ulid)
+            ->firstOrFail();
 
-        // Append label jenis ke response
         $program->append('jenis_label');
 
         return $this->success($program);
@@ -117,14 +117,14 @@ class ProgramPendidikanController extends Controller
 
     // ── Update ────────────────────────────────────────────────────
 
-    public function update(UpdateProgramPendidikanRequest $request, int $id): JsonResponse
+    public function update(UpdateProgramPendidikanRequest $request, string $ulid): JsonResponse
     {
-        $program = ProgramPendidikan::findOrFail($id);
+        $program = ProgramPendidikan::where('ulid', $ulid)->firstOrFail();
         $validated = $request->validated();
 
         // Guard: jangan izinkan circular reference (parent adalah descendant sendiri)
         if (isset($validated['parent_id']) && $validated['parent_id'] !== null) {
-            if ($this->isDescendantOf($validated['parent_id'], $id)) {
+            if ($this->isDescendantOf($validated['parent_id'], $program->id)) {
                 return $this->error(
                     'Program induk yang dipilih adalah turunan dari program ini. Tidak diizinkan (circular).',
                     'CIRCULAR_REFERENCE',
@@ -151,9 +151,11 @@ class ProgramPendidikanController extends Controller
 
     // ── Destroy ───────────────────────────────────────────────────
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(string $ulid): JsonResponse
     {
-        $program = ProgramPendidikan::withCount(['kelas', 'children'])->findOrFail($id);
+        $program = ProgramPendidikan::withCount(['kelas', 'children'])
+            ->where('ulid', $ulid)
+            ->firstOrFail();
 
         if ($program->kelas_count > 0) {
             return $this->error(

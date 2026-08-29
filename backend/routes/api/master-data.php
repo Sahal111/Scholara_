@@ -301,13 +301,13 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
             Route::get('/program-pendidikan/dropdown', [ProgramPendidikanController::class, 'dropdown']);
             Route::get('/program-pendidikan/tree', [ProgramPendidikanController::class, 'tree']);
             Route::get('/program-pendidikan', [ProgramPendidikanController::class, 'index']);
-            Route::get('/program-pendidikan/{id}', [ProgramPendidikanController::class, 'show']);
+            Route::get('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'show']);
         });
 
         Route::middleware('permission:master_data.kelas.manage')->group(function () {
             Route::post('/program-pendidikan', [ProgramPendidikanController::class, 'store']);
-            Route::put('/program-pendidikan/{id}', [ProgramPendidikanController::class, 'update']);
-            Route::delete('/program-pendidikan/{id}', [ProgramPendidikanController::class, 'destroy']);
+            Route::put('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'update']);
+            Route::delete('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'destroy']);
         });
 
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────

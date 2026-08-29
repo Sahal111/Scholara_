@@ -37,14 +37,14 @@ export function useProgramTree(params = {}) {
   });
 }
 
-export function useProgramDetail(id) {
+export function useProgramDetail(ulid) {
   return useQuery({
-    queryKey: programKeys.detail(id),
+    queryKey: programKeys.detail(ulid),
     queryFn: async () => {
-      const { data } = await api.get(`${BASE}/${id}`);
+      const { data } = await api.get(`${BASE}/${ulid}`);
       return data;
     },
-    enabled: Boolean(id),
+    enabled: Boolean(ulid),
     staleTime: 60_000,
   });
 }
@@ -77,14 +77,15 @@ export function useCreateProgram() {
   });
 }
 
-export function useUpdateProgram(id) {
+// Pakai ulid bukan integer id
+export function useUpdateProgram(ulid) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload) => api.put(`${BASE}/${id}`, payload),
+    mutationFn: (payload) => api.put(`${BASE}/${ulid}`, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: programKeys.lists() });
       qc.invalidateQueries({ queryKey: programKeys.tree() });
-      qc.invalidateQueries({ queryKey: programKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: programKeys.detail(ulid) });
       toast.success("Program pendidikan berhasil diperbarui.");
     },
     onError: (err) => {
@@ -95,10 +96,11 @@ export function useUpdateProgram(id) {
   });
 }
 
+// Pakai ulid bukan integer id
 export function useDeleteProgram() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id) => api.delete(`${BASE}/${id}`),
+    mutationFn: (ulid) => api.delete(`${BASE}/${ulid}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: programKeys.lists() });
       qc.invalidateQueries({ queryKey: programKeys.tree() });

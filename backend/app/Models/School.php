@@ -18,6 +18,7 @@ class School extends Model
         'npsn',
         'jenis',
         'jenjang',
+        'kurikulum',
         'status',
         'trial_ends_at',
         'logo',
@@ -25,21 +26,32 @@ class School extends Model
         'locale',
     ];
 
+    // ── Konstanta kurikulum ──────────────────────────────────
+
+    const KURIKULUM_MERDEKA = 'Kurikulum Merdeka';
+    const KURIKULUM_K13 = 'K13';
+    const KURIKULUM_LAINNYA = 'Lainnya';
+
     // ── Konstanta jenis sekolah ──────────────────────────────
 
     /**
      * Jenis sekolah yang MEMILIKI program pendidikan hierarkis (SMK/MAK).
-     * Digunakan frontend untuk menentukan tab apa yang ditampilkan.
+     * Struktur: Bidang Keahlian → Program Keahlian → Konsentrasi Keahlian.
+     * Kurikulum tidak mengubah struktur hierarki, hanya konten.
      */
     const JENIS_DENGAN_PROGRAM_HIERARKI = ['SMK', 'MAK'];
 
     /**
-     * Jenis sekolah yang menggunakan peminatan (SMA/MA).
+     * Jenis sekolah menengah atas umum (SMA/MA).
+     * Struktur program bergantung pada kurikulum:
+     *   - Kurikulum Merdeka → mata_pelajaran_pilihan (dipilih per siswa)
+     *   - K13               → peminatan (IPA/IPS/Bahasa, melekat ke rombel)
+     * MA juga bisa punya program jenis `keagamaan` di kedua kurikulum.
      */
-    const JENIS_DENGAN_PEMINATAN = ['SMA', 'MA'];
+    const JENIS_MENENGAH_ATAS_UMUM = ['SMA', 'MA'];
 
     /**
-     * Jenis sekolah tanpa program pendidikan khusus (SD/MI/SMP/MTs).
+     * Jenis sekolah tanpa program pendidikan khusus.
      * program_pendidikan_id pada kelas selalu NULL untuk jenis ini.
      */
     const JENIS_TANPA_PROGRAM = ['SD', 'MI', 'SMP', 'MTs', 'SDLB', 'SMPLB', 'SMALB', 'SLB'];

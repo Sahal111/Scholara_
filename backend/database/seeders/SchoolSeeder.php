@@ -50,6 +50,8 @@ class SchoolSeeder extends Seeder
             'nama' => 'MI Nurul Huda 3',
             'npsn' => '60717525',
             'jenis' => 'MI',
+            'jenjang' => 'dasar',
+            'kurikulum' => School::KURIKULUM_MERDEKA,
             'status' => 'active',
         ]);
     }

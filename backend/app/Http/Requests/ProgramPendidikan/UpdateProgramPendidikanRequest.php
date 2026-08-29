@@ -16,14 +16,18 @@ class UpdateProgramPendidikanRequest extends FormRequest
     public function rules(): array
     {
         $schoolId = app('current_school_id');
-        $id = $this->route('id');
+        $ulid = $this->route('ulid');
+
+        // Resolve integer id dari ulid untuk keperluan Rule::notIn dan ignore()
+        $program = \App\Models\ProgramPendidikan::where('ulid', $ulid)->first();
+        $intId = $program?->id;
 
         return [
             'parent_id' => [
                 'nullable',
                 'integer',
                 // Tidak boleh jadi parent diri sendiri
-                Rule::notIn([$id]),
+                Rule::notIn([$intId]),
                 Rule::exists('program_pendidikans', 'id')
                     ->where('school_id', $schoolId)
                     ->whereNull('deleted_at'),
@@ -36,7 +40,7 @@ class UpdateProgramPendidikanRequest extends FormRequest
                 Rule::unique('program_pendidikans', 'kode')
                     ->where('school_id', $schoolId)
                     ->whereNull('deleted_at')
-                    ->ignore($id),
+                    ->ignore($intId),
             ],
             'jenis' => ['required', Rule::in(ProgramPendidikan::JENIS)],
             'jenjang_sasaran' => ['required', Rule::in(ProgramPendidikan::JENJANG)],
