@@ -54,6 +54,102 @@ const labelCls =
   "block text-xs font-semibold text-[#3f4945] mb-1.5 uppercase tracking-wide";
 const selectCls = inputCls + " appearance-none cursor-pointer";
 
+// ─── Konfigurasi konteks modal per jenis ─────────────────────────────────────
+// Tiap jenis punya: icon, warna aksen, placeholder nama, hint kode, deskripsi kontekstual
+const MODAL_CONTEXT = {
+  bidang_keahlian: {
+    icon: "category",
+    accentBg: "bg-violet-50",
+    accentBorder: "border-violet-200",
+    accentText: "text-violet-700",
+    accentIcon: "text-violet-600",
+    badgeBg: "bg-violet-100",
+    namePlaceholder: "cth: Teknologi Informasi dan Komunikasi",
+    kodePlaceholder: "cth: TIK",
+    kodeHint: "Digunakan sebagai prefix nama rombel.",
+    contextDesc: "Kelompok tertinggi — menaungi beberapa Program Keahlian.",
+  },
+  program_keahlian: {
+    icon: "school",
+    accentBg: "bg-blue-50",
+    accentBorder: "border-blue-200",
+    accentText: "text-blue-700",
+    accentIcon: "text-blue-600",
+    badgeBg: "bg-blue-100",
+    namePlaceholder: "cth: Teknik Komputer dan Informatika",
+    kodePlaceholder: "cth: TKI",
+    kodeHint: "Digunakan sebagai label dalam pemilihan rombel.",
+    contextDesc:
+      "Berada di bawah Bidang Keahlian. Menaungi beberapa Konsentrasi.",
+  },
+  konsentrasi_keahlian: {
+    icon: "account_tree",
+    accentBg: "bg-emerald-50",
+    accentBorder: "border-[#006e2a]/20",
+    accentText: "text-[#006e2a]",
+    accentIcon: "text-[#006e2a]",
+    badgeBg: "bg-[#006e2a]/10",
+    namePlaceholder: "cth: Rekayasa Perangkat Lunak",
+    kodePlaceholder: "cth: RPL",
+    kodeHint: "Dipakai sebagai label kelas, contoh: X RPL 1.",
+    contextDesc:
+      "Level terdalam — langsung dikaitkan ke rombel dan mata pelajaran.",
+  },
+  peminatan: {
+    icon: "psychology",
+    accentBg: "bg-amber-50",
+    accentBorder: "border-amber-200",
+    accentText: "text-amber-700",
+    accentIcon: "text-amber-600",
+    badgeBg: "bg-amber-100",
+    namePlaceholder: "cth: MIPA / IPS / Bahasa dan Budaya",
+    kodePlaceholder: "cth: IPA",
+    kodeHint: "Dipakai sebagai label rombel, contoh: XI IPA 2.",
+    contextDesc: "Peminatan per rombel — berlaku untuk K13 SMA/MA.",
+  },
+  mata_pelajaran_pilihan: {
+    icon: "menu_book",
+    accentBg: "bg-cyan-50",
+    accentBorder: "border-cyan-200",
+    accentText: "text-cyan-700",
+    accentIcon: "text-cyan-600",
+    badgeBg: "bg-cyan-100",
+    namePlaceholder: "cth: Kelompok MIPA",
+    kodePlaceholder: "cth: MIPA",
+    kodeHint: "Dipakai untuk pengelompokan mapel pilihan siswa.",
+    contextDesc:
+      "Kurikulum Merdeka — siswa memilih mapel secara individual, bukan per jurusan.",
+  },
+  keagamaan: {
+    icon: "mosque",
+    accentBg: "bg-teal-50",
+    accentBorder: "border-teal-200",
+    accentText: "text-teal-700",
+    accentIcon: "text-teal-600",
+    badgeBg: "bg-teal-100",
+    namePlaceholder: "cth: Tafsir-Ilmu Tafsir",
+    kodePlaceholder: "cth: TAF",
+    kodeHint: "Kode singkat program keagamaan.",
+    contextDesc:
+      "Program keagamaan khas MA/MAN — Tafsir, Hadis, Fikih, Ilmu Kalam, Bahasa Arab.",
+  },
+  umum: {
+    icon: "star",
+    accentBg: "bg-[#f2f4f3]",
+    accentBorder: "border-[#bfc9c4]/40",
+    accentText: "text-[#3f4945]",
+    accentIcon: "text-[#3f4945]",
+    badgeBg: "bg-[#eceeed]",
+    namePlaceholder: "Nama program pendidikan",
+    kodePlaceholder: "cth: PRG",
+    kodeHint: "Opsional. Digunakan sebagai label rombel.",
+    contextDesc:
+      "Program fleksibel untuk jenjang atau kebutuhan khusus sekolah.",
+  },
+};
+
+const DEFAULT_MODAL_CONTEXT = MODAL_CONTEXT.umum;
+
 // ── Modal Tambah / Edit ───────────────────────────────────────────────────────
 function ModalProgram({
   open,
@@ -66,22 +162,18 @@ function ModalProgram({
   schoolJenis,
 }) {
   const isEdit = !!editData;
-  const qc = useQueryClient();
 
   // Apakah jenis dikunci dari tombol yang diklik (bukan tab "semua" atau undefined)
-  // Saat tambah baru via tombol spesifik → lock jenis, tidak bisa diganti user
   const isJenisLocked = !isEdit && !!defaultJenis && defaultJenis !== "semua";
 
   // Apakah parent dikunci — ketika tambah child dari baris program tertentu
   const isParentLocked = !isEdit && !!defaultParentId;
 
-  // Jenis default: pakai tab aktif jika valid, fallback ke opsi pertama yang tersedia
   const resolveDefaultJenis = () => {
     if (defaultJenis && defaultJenis !== "semua") return defaultJenis;
     return jenisOptions[0]?.value ?? "umum";
   };
 
-  // jenjang_sasaran default: lock ke school.jenis jika tersedia, fallback "semua"
   const defaultJenjang = schoolJenis ?? "semua";
 
   const empty = {
@@ -96,6 +188,9 @@ function ModalProgram({
 
   const [form, setForm] = useState(empty);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+
+  // Konteks visual berdasarkan jenis yang sedang aktif di form
+  const ctx = MODAL_CONTEXT[form.jenis] ?? DEFAULT_MODAL_CONTEXT;
 
   // Dropdown parent — filter berdasarkan jenis yang dipilih
   const parentJenisMap = {
@@ -134,7 +229,7 @@ function ModalProgram({
 
   const handleSubmit = () => {
     if (!form.nama.trim()) {
-      toast.error("Nama program wajib diisi.");
+      toast.error("Nama wajib diisi.");
       return;
     }
     const payload = {
@@ -149,6 +244,22 @@ function ModalProgram({
   if (!open) return null;
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  // Label dinamis untuk judul & tombol submit
+  const jenisLabel =
+    jenisOptions.find((j) => j.value === form.jenis)?.label ??
+    JENIS_LABEL[form.jenis] ??
+    "Program";
+
+  const modalTitle = isEdit
+    ? `Edit ${jenisLabel}`
+    : isJenisLocked
+      ? `Tambah ${jenisLabel}`
+      : "Tambah Program Pendidikan";
+
+  const submitLabel = isEdit
+    ? "Simpan Perubahan"
+    : `Tambah ${isJenisLocked ? jenisLabel : "Program"}`;
+
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
@@ -158,12 +269,18 @@ function ModalProgram({
         className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh] border border-[#bfc9c4]/30"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#bfc9c4]/30 bg-[#f2f4f3]">
+        {/* ── Header — kontekstual per jenis ─────────────────────── */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#bfc9c4]/20 bg-[#f2f4f3]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#006e2a]/10 flex items-center justify-center border border-[#006e2a]/20">
-              <span className="material-symbols-outlined text-[22px] text-[#006e2a]">
-                {isEdit ? "edit_note" : "add_circle"}
+            {/* Icon warna sesuai jenis */}
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center border ${ctx.accentBg} ${ctx.accentBorder}`}
+            >
+              <span
+                className={`material-symbols-outlined text-[22px] ${ctx.accentIcon}`}
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                {isEdit ? "edit_note" : ctx.icon}
               </span>
             </div>
             <div>
@@ -171,47 +288,79 @@ function ModalProgram({
                 className="text-base font-bold text-[#00342b]"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
-                {isEdit
-                  ? "Edit Program"
-                  : isJenisLocked
-                    ? `Tambah ${jenisOptions.find((j) => j.value === form.jenis)?.label ?? "Program"}`
-                    : "Tambah Program Pendidikan"}
+                {modalTitle}
               </h3>
-              <p className="text-xs text-[#707975]">
-                Kelola program keahlian, peminatan, dan konsentrasi
+              {/* Deskripsi kontekstual — berbeda tiap jenis, bukan teks generik */}
+              <p className="text-xs text-[#707975] leading-snug max-w-xs">
+                {isEdit
+                  ? `Ubah data ${jenisLabel.toLowerCase()} ini.`
+                  : ctx.contextDesc}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#707975] hover:bg-[#eceeed] transition-colors"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#707975] hover:bg-[#eceeed] transition-colors flex-shrink-0"
           >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
 
-        {/* Body */}
+        {/* ── Breadcrumb hierarki — hanya saat tambah child dengan parent terkunci */}
+        {!isEdit && isParentLocked && parentJenis && (
+          <div className="px-6 pt-4 pb-0">
+            <div
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl border ${ctx.accentBg} ${ctx.accentBorder}`}
+            >
+              <span
+                className={`material-symbols-outlined text-[16px] ${ctx.accentIcon}`}
+              >
+                account_tree
+              </span>
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <span className="text-[11px] font-semibold text-[#707975] uppercase tracking-wide whitespace-nowrap">
+                  {JENIS_LABEL[parentJenis]}
+                </span>
+                <span className="material-symbols-outlined text-[14px] text-[#bfc9c4]">
+                  chevron_right
+                </span>
+                <span
+                  className={`text-sm font-bold truncate ${ctx.accentText}`}
+                >
+                  {defaultParentLabel ?? "Program terpilih"}
+                </span>
+              </div>
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full whitespace-nowrap ${ctx.badgeBg} ${ctx.accentText}`}
+              >
+                Induk
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* ── Body ────────────────────────────────────────────────── */}
         <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
-          {/* Jenis */}
+          {/* Jenis Program */}
           <div>
             <label className={labelCls}>Jenis Program</label>
             {isJenisLocked ? (
-              // Terkunci — jenis sudah ditentukan dari tombol yang diklik
-              <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f2f4f3] border border-[#bfc9c4]/40 rounded-xl">
-                <span className="material-symbols-outlined text-[16px] text-[#006e2a]">
-                  lock
+              // Terkunci — tampilkan sebagai badge informatif, bukan field biasa
+              <div
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border ${ctx.accentBg} ${ctx.accentBorder}`}
+              >
+                <span
+                  className={`material-symbols-outlined text-[18px] ${ctx.accentIcon}`}
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  {ctx.icon}
                 </span>
-                <span className="text-sm font-semibold text-[#00342b]">
-                  {jenisOptions.find((j) => j.value === form.jenis)?.label ??
-                    form.jenis}
-                </span>
-                <span className="text-xs text-[#707975] ml-auto">
-                  Ditentukan dari tombol
+                <span className={`text-sm font-bold ${ctx.accentText}`}>
+                  {jenisLabel}
                 </span>
                 <input type="hidden" value={form.jenis} />
               </div>
             ) : (
-              // Bebas dipilih — mode edit atau tombol "Tambah" dari empty state
               <div className="relative">
                 <select
                   className={selectCls}
@@ -231,86 +380,73 @@ function ModalProgram({
             )}
           </div>
 
-          {/* Parent — hanya tampil jika jenis punya parent */}
-          {parentJenis && (
+          {/* Parent — hanya tampil jika jenis punya parent DAN parent tidak terkunci via breadcrumb */}
+          {parentJenis && !isParentLocked && (
             <div>
               <label className={labelCls}>
-                {JENIS_LABEL[parentJenis]} (Induk)
+                {JENIS_LABEL[parentJenis]}{" "}
+                <span className="text-[#707975] normal-case font-normal">
+                  (Induk)
+                </span>
               </label>
-              {isParentLocked ? (
-                // Terkunci — parent sudah ditentukan dari baris program yang diklik
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#006e2a]/5 border border-[#006e2a]/20 rounded-xl">
-                  <span className="material-symbols-outlined text-[16px] text-[#006e2a]">
-                    link
-                  </span>
-                  <span className="text-sm font-semibold text-[#00342b] flex-1 truncate">
-                    {defaultParentLabel ?? "Program terpilih"}
-                  </span>
-                  <span className="text-[10px] text-[#006e2a] font-bold uppercase tracking-wider bg-[#006e2a]/10 px-2 py-0.5 rounded-full whitespace-nowrap">
-                    Terhubung
-                  </span>
-                  <input type="hidden" value={form.parent_id} />
-                </div>
-              ) : (
-                // Bebas dipilih
-                <div className="relative">
-                  <select
-                    className={selectCls}
-                    value={form.parent_id}
-                    onChange={(e) => set("parent_id", e.target.value)}
-                  >
-                    <option value="">— Tidak ada / Isi nanti —</option>
-                    {parents.map((p) => (
-                      <option key={p.ulid} value={p.ulid}>
-                        {p.kode ? `[${p.kode}] ` : ""}
-                        {p.nama}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[18px]">
-                    expand_more
-                  </span>
-                </div>
-              )}
+              <div className="relative">
+                <select
+                  className={selectCls}
+                  value={form.parent_id}
+                  onChange={(e) => set("parent_id", e.target.value)}
+                >
+                  <option value="">— Pilih induk / isi nanti —</option>
+                  {parents.map((p) => (
+                    <option key={p.ulid} value={p.ulid}>
+                      {p.kode ? `[${p.kode}] ` : ""}
+                      {p.nama}
+                    </option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[18px]">
+                  expand_more
+                </span>
+              </div>
             </div>
           )}
+
+          {/* Hidden input parent saat terkunci */}
+          {isParentLocked && <input type="hidden" value={form.parent_id} />}
 
           {/* Nama */}
           <div>
             <label className={labelCls}>
-              Nama Program <span className="text-red-500">*</span>
+              Nama {jenisLabel} <span className="text-red-500">*</span>
             </label>
             <input
               className={inputCls}
-              placeholder="cth: Rekayasa Perangkat Lunak"
+              placeholder={ctx.namePlaceholder}
               value={form.nama}
               onChange={(e) => set("nama", e.target.value)}
+              autoFocus
             />
           </div>
 
           {/* Kode */}
           <div>
-            <label className={labelCls}>Kode Program</label>
+            <label className={labelCls}>Kode</label>
             <input
-              className={inputCls + " uppercase"}
-              placeholder="cth: RPL"
+              className={inputCls + " uppercase tracking-widest font-mono"}
+              placeholder={ctx.kodePlaceholder}
               value={form.kode}
               onChange={(e) => set("kode", e.target.value.toUpperCase())}
               maxLength={20}
             />
-            <p className="text-[10px] text-[#707975] mt-1">
-              Opsional. Digunakan sebagai label rombel (X RPL 1).
-            </p>
+            <p className="text-[10px] text-[#707975] mt-1">{ctx.kodeHint}</p>
           </div>
 
-          {/* Jenjang Sasaran — locked ke school.jenis jika diketahui */}
+          {/* Jenjang Sasaran */}
           <div>
             <label className={labelCls}>Jenjang Sasaran</label>
             {schoolJenis ? (
-              // Lock: sekolah sudah punya jenjang, tidak perlu pilih manual
               <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f2f4f3] border border-[#bfc9c4]/40 rounded-xl">
-                <span className="material-symbols-outlined text-[16px] text-[#006e2a]">
-                  lock
+                <span className="material-symbols-outlined text-[16px] text-[#3f4945]">
+                  school
                 </span>
                 <span className="text-sm font-semibold text-[#00342b]">
                   {schoolJenis}
@@ -318,11 +454,9 @@ function ModalProgram({
                 <span className="text-xs text-[#707975] ml-auto">
                   Sesuai jenjang sekolah
                 </span>
-                {/* Hidden input agar form.jenjang_sasaran tetap terkirim */}
                 <input type="hidden" value={form.jenjang_sasaran} />
               </div>
             ) : (
-              // Fallback: sekolah belum diketahui — tampilkan dropdown penuh
               <div className="relative">
                 <select
                   className={selectCls}
@@ -344,17 +478,22 @@ function ModalProgram({
 
           {/* Deskripsi */}
           <div>
-            <label className={labelCls}>Deskripsi</label>
+            <label className={labelCls}>
+              Deskripsi{" "}
+              <span className="text-[#707975] normal-case font-normal">
+                (opsional)
+              </span>
+            </label>
             <textarea
               className={inputCls + " resize-none"}
               rows={3}
-              placeholder="Deskripsi singkat program ini..."
+              placeholder={`Deskripsi singkat ${jenisLabel.toLowerCase()} ini...`}
               value={form.deskripsi}
               onChange={(e) => set("deskripsi", e.target.value)}
             />
           </div>
 
-          {/* Status — hanya edit */}
+          {/* Status — hanya saat edit */}
           {isEdit && (
             <div className="flex items-center gap-3 p-3 rounded-xl bg-[#f2f4f3] border border-[#bfc9c4]/30">
               <button
@@ -377,8 +516,8 @@ function ModalProgram({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#bfc9c4]/30 bg-[#f2f4f3]">
+        {/* ── Footer ──────────────────────────────────────────────── */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#bfc9c4]/20 bg-[#f2f4f3]">
           <button
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl border border-[#bfc9c4]/50 text-sm font-semibold text-[#3f4945] hover:bg-[#eceeed] transition-colors"
@@ -388,9 +527,9 @@ function ModalProgram({
           <button
             onClick={handleSubmit}
             disabled={isPending}
-            className="px-6 py-2.5 rounded-xl bg-[#006e2a] text-white text-sm font-bold hover:bg-[#00531e] disabled:opacity-60 transition-colors flex items-center gap-2"
+            className={`px-6 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-60 transition-all flex items-center gap-2 bg-[#006e2a] hover:bg-[#00531e] shadow-sm hover:shadow-[0_4px_12px_rgba(0,110,42,0.3)]`}
           >
-            {isPending && (
+            {isPending ? (
               <svg
                 className="animate-spin w-4 h-4"
                 viewBox="0 0 24 24"
@@ -410,8 +549,12 @@ function ModalProgram({
                   d="M4 12a8 8 0 018-8v8z"
                 />
               </svg>
+            ) : (
+              <span className="material-symbols-outlined text-[18px]">
+                {isEdit ? "check" : "add"}
+              </span>
             )}
-            {isEdit ? "Simpan Perubahan" : "Tambah Program"}
+            {isPending ? "Menyimpan..." : submitLabel}
           </button>
         </div>
       </div>
@@ -602,9 +745,18 @@ export default function MasterProgram() {
   const qc = useQueryClient();
   const { school } = useAuth();
 
-  // Config dinamis berdasarkan jenis + kurikulum sekolah dari AuthContext
-  const programConfig = getProgramConfig(school?.jenis, school?.kurikulum);
-  const jenisOptions = getProgramJenisOptions(school?.jenis, school?.kurikulum);
+  // Config dinamis berdasarkan jenis + kurikulum + subtipe sekolah dari AuthContext
+  // subtipe membedakan MA reguler vs MAN IC / MAN PK / MAN Plus Vokasi
+  const programConfig = getProgramConfig(
+    school?.jenis,
+    school?.kurikulum,
+    school?.subtipe,
+  );
+  const jenisOptions = getProgramJenisOptions(
+    school?.jenis,
+    school?.kurikulum,
+    school?.subtipe,
+  );
   const JENIS_LIST = programConfig.tabs ?? [];
 
   // ── State filter & pagination

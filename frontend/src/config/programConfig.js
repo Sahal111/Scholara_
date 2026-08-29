@@ -179,11 +179,7 @@ const CONFIG_SUPERADMIN = {
     TAB_UMUM,
   ],
   addButtons: [
-    {
-      jenis: "bidang_keahlian",
-      label: "Tambah Bidang",
-      variant: "outline",
-    },
+    { jenis: "bidang_keahlian", label: "Tambah Bidang", variant: "outline" },
     { jenis: "program_keahlian", label: "Tambah Program", variant: "solid" },
   ],
   defaultJenis: "bidang_keahlian",
@@ -192,14 +188,128 @@ const CONFIG_SUPERADMIN = {
   isSuperAdmin: true,
 };
 
-// ─── Matrix jenis × kurikulum ─────────────────────────────────────────────────
+// ─── Config subtipe MA ────────────────────────────────────────────────────────
+// Sumber: Peraturan Menteri Agama, nomenklatur Kemenag.
+// Subtipe NULL → config reguler MA (CONFIG_MA_MERDEKA / CONFIG_MA_K13).
+// Subtipe non-NULL → config khusus di bawah ini.
 
 /**
- * Lookup: CONFIG_MATRIX[jenis][kurikulum] → config object.
- *
- * Kurikulum yang tidak terdaftar di level-2 → fallback ke 'default'
- * (biasanya sama dengan Kurikulum Merdeka).
+ * MAN Insan Cendekia — struktur program sama dengan MA reguler.
+ * Perbedaan ada di KONTEN program (fokus sains, riset), bukan di hierarki.
+ * Secara UI: identik MA Merdeka, tapi deskripsi lebih kontekstual.
  */
+const CONFIG_MAN_IC_MERDEKA = {
+  hasTabs: true,
+  tabs: [TAB_SEMUA, TAB_MAPIL, TAB_AGAMA],
+  addButtons: [
+    {
+      jenis: "mata_pelajaran_pilihan",
+      label: "Tambah Kelompok Mapel",
+      variant: "outline",
+    },
+    { jenis: "keagamaan", label: "Tambah Program Keagamaan", variant: "solid" },
+  ],
+  defaultJenis: "mata_pelajaran_pilihan",
+  description:
+    "MAN IC — Kurikulum Merdeka: kelola kelompok mata pelajaran pilihan " +
+    "(sains, teknologi) dan program keagamaan unggulan.",
+};
+
+const CONFIG_MAN_IC_K13 = {
+  hasTabs: true,
+  tabs: [TAB_SEMUA, TAB_MINAT, TAB_AGAMA],
+  addButtons: [
+    { jenis: "peminatan", label: "Tambah Peminatan", variant: "outline" },
+    { jenis: "keagamaan", label: "Tambah Program Keagamaan", variant: "solid" },
+  ],
+  defaultJenis: "peminatan",
+  description:
+    "MAN IC — K13: kelola peminatan (IPA, IPS, Bahasa) dan program keagamaan unggulan.",
+};
+
+/**
+ * MAN Program Keagamaan — dominan keagamaan, peminatan umum tetap ada.
+ * Urutan tab dibalik: Keagamaan diutamakan karena itu core MAN PK.
+ */
+const CONFIG_MAN_PK_MERDEKA = {
+  hasTabs: true,
+  tabs: [TAB_SEMUA, TAB_AGAMA, TAB_MAPIL],
+  addButtons: [
+    { jenis: "keagamaan", label: "Tambah Program Keagamaan", variant: "solid" },
+    {
+      jenis: "mata_pelajaran_pilihan",
+      label: "Tambah Kelompok Mapel",
+      variant: "outline",
+    },
+  ],
+  defaultJenis: "keagamaan",
+  description:
+    "MAN PK — Kurikulum Merdeka: program keagamaan diutamakan " +
+    "(Tafsir, Hadis, Fikih, Ilmu Kalam, Bahasa Arab), dilengkapi kelompok mapel pilihan.",
+};
+
+const CONFIG_MAN_PK_K13 = {
+  hasTabs: true,
+  tabs: [TAB_SEMUA, TAB_AGAMA, TAB_MINAT],
+  addButtons: [
+    { jenis: "keagamaan", label: "Tambah Program Keagamaan", variant: "solid" },
+    { jenis: "peminatan", label: "Tambah Peminatan", variant: "outline" },
+  ],
+  defaultJenis: "keagamaan",
+  description:
+    "MAN PK — K13: program keagamaan diutamakan, dilengkapi peminatan umum (IPA/IPS/Bahasa).",
+};
+
+/**
+ * MAN Plus Keterampilan (Vokasi) — MA + hierarki vokasi SMK-like.
+ * Tab: peminatan/mapel pilihan + keagamaan + bidang/program/konsentrasi vokasi.
+ * Ini satu-satunya config MA yang memiliki hierarki 3 level.
+ */
+const CONFIG_MAN_PLUS_VOKASI_MERDEKA = {
+  hasTabs: true,
+  tabs: [TAB_SEMUA, TAB_MAPIL, TAB_AGAMA, TAB_BIDANG, TAB_PROGRAM, TAB_KONSEN],
+  addButtons: [
+    {
+      jenis: "konsentrasi_keahlian",
+      label: "Tambah Konsentrasi",
+      variant: "outline",
+    },
+    {
+      jenis: "mata_pelajaran_pilihan",
+      label: "Tambah Kelompok Mapel",
+      variant: "outline",
+    },
+    { jenis: "keagamaan", label: "Tambah Program Keagamaan", variant: "solid" },
+  ],
+  defaultJenis: "konsentrasi_keahlian",
+  description:
+    "MAN Plus Keterampilan — Kurikulum Merdeka: kelola program vokasi " +
+    "(Bidang → Program → Konsentrasi), kelompok mapel pilihan, dan program keagamaan.",
+};
+
+const CONFIG_MAN_PLUS_VOKASI_K13 = {
+  hasTabs: true,
+  tabs: [TAB_SEMUA, TAB_MINAT, TAB_AGAMA, TAB_BIDANG, TAB_PROGRAM, TAB_KONSEN],
+  addButtons: [
+    {
+      jenis: "konsentrasi_keahlian",
+      label: "Tambah Konsentrasi",
+      variant: "outline",
+    },
+    { jenis: "peminatan", label: "Tambah Peminatan", variant: "outline" },
+    { jenis: "keagamaan", label: "Tambah Program Keagamaan", variant: "solid" },
+  ],
+  defaultJenis: "konsentrasi_keahlian",
+  description:
+    "MAN Plus Keterampilan — K13: kelola program vokasi bertingkat, " +
+    "peminatan (IPA/IPS/Bahasa), dan program keagamaan.",
+};
+
+// ─── Matrix jenis × kurikulum ─────────────────────────────────────────────────
+//
+// Lookup utama: CONFIG_MATRIX[jenis][kurikulum] → config object.
+// Kurikulum tidak terdaftar → fallback ke 'default'.
+
 const CONFIG_MATRIX = {
   SMK: {
     default: CONFIG_SMK,
@@ -223,7 +333,7 @@ const CONFIG_MATRIX = {
     default: CONFIG_MA_MERDEKA,
     "Kurikulum Merdeka": CONFIG_MA_MERDEKA,
     K13: CONFIG_MA_K13,
-    Lainnya: CONFIG_MA_MERDEKA, // MA Lainnya (Cambridge dll) → tetap tampilkan Keagamaan
+    Lainnya: CONFIG_MA_MERDEKA,
   },
   SD: { default: CONFIG_TANPA_PROGRAM },
   MI: { default: CONFIG_TANPA_PROGRAM },
@@ -235,6 +345,32 @@ const CONFIG_MATRIX = {
   SLB: { default: CONFIG_TANPA_PROGRAM },
 };
 
+// ─── Matrix subtipe MA × kurikulum ───────────────────────────────────────────
+//
+// Hanya untuk jenis MA dengan subtipe non-null.
+// Lookup: SUBTIPE_MATRIX[subtipe][kurikulum] → config object.
+
+const SUBTIPE_MATRIX = {
+  man_ic: {
+    default: CONFIG_MAN_IC_MERDEKA,
+    "Kurikulum Merdeka": CONFIG_MAN_IC_MERDEKA,
+    K13: CONFIG_MAN_IC_K13,
+    Lainnya: CONFIG_MAN_IC_MERDEKA,
+  },
+  man_pk: {
+    default: CONFIG_MAN_PK_MERDEKA,
+    "Kurikulum Merdeka": CONFIG_MAN_PK_MERDEKA,
+    K13: CONFIG_MAN_PK_K13,
+    Lainnya: CONFIG_MAN_PK_MERDEKA,
+  },
+  man_plus_vokasi: {
+    default: CONFIG_MAN_PLUS_VOKASI_MERDEKA,
+    "Kurikulum Merdeka": CONFIG_MAN_PLUS_VOKASI_MERDEKA,
+    K13: CONFIG_MAN_PLUS_VOKASI_K13,
+    Lainnya: CONFIG_MAN_PLUS_VOKASI_MERDEKA,
+  },
+};
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 /**
@@ -242,12 +378,22 @@ const CONFIG_MATRIX = {
  *
  * @param {string|null|undefined} schoolJenis     - e.g. 'SMK', 'MA', 'MI'
  * @param {string|null|undefined} schoolKurikulum - e.g. 'Kurikulum Merdeka', 'K13'
+ * @param {string|null|undefined} schoolSubtipe   - e.g. 'man_ic', 'man_pk', 'man_plus_vokasi', null
  * @returns Config object
  */
-export function getProgramConfig(schoolJenis, schoolKurikulum) {
+export function getProgramConfig(schoolJenis, schoolKurikulum, schoolSubtipe) {
   // SuperAdmin tidak terikat ke sekolah — tampilkan semua jenis
   if (!schoolJenis) return CONFIG_SUPERADMIN;
 
+  // MA dengan subtipe khusus → pakai matrix subtipe
+  if (schoolJenis === "MA" && schoolSubtipe && SUBTIPE_MATRIX[schoolSubtipe]) {
+    const subtipeMap = SUBTIPE_MATRIX[schoolSubtipe];
+    return (
+      subtipeMap[schoolKurikulum] ?? subtipeMap["default"] ?? CONFIG_FALLBACK
+    );
+  }
+
+  // Semua jenis lain (termasuk MA reguler subtipe null) → matrix biasa
   const jenisMap = CONFIG_MATRIX[schoolJenis];
   if (!jenisMap) return CONFIG_FALLBACK;
 
@@ -259,10 +405,15 @@ export function getProgramConfig(schoolJenis, schoolKurikulum) {
  *
  * @param {string|null|undefined} schoolJenis
  * @param {string|null|undefined} schoolKurikulum
+ * @param {string|null|undefined} schoolSubtipe
  * @returns {Array<{value:string, label:string}>}
  */
-export function getProgramJenisOptions(schoolJenis, schoolKurikulum) {
-  const config = getProgramConfig(schoolJenis, schoolKurikulum);
+export function getProgramJenisOptions(
+  schoolJenis,
+  schoolKurikulum,
+  schoolSubtipe,
+) {
+  const config = getProgramConfig(schoolJenis, schoolKurikulum, schoolSubtipe);
   if (!config.hasTabs) return [];
 
   return (config.tabs ?? [])

@@ -17,6 +17,7 @@ class School extends Model
         'nama',
         'npsn',
         'jenis',
+        'subtipe',
         'jenjang',
         'kurikulum',
         'status',
@@ -55,6 +56,68 @@ class School extends Model
      * program_pendidikan_id pada kelas selalu NULL untuk jenis ini.
      */
     const JENIS_TANPA_PROGRAM = ['SD', 'MI', 'SMP', 'MTs', 'SDLB', 'SMPLB', 'SMALB', 'SLB'];
+
+    // ── Konstanta subtipe ────────────────────────────────────
+
+    /**
+     * MAN Insan Cendekia — fokus riset, sains, teknologi, dan keimanan.
+     * Struktur program: sama dengan MA reguler (peminatan/mapel pilihan + keagamaan).
+     * Bedanya ada di konten program dan intensitas — bukan di struktur hierarki.
+     */
+    const SUBTIPE_MAN_IC = 'man_ic';
+
+    /**
+     * MAN Program Keagamaan — peminatan keagamaan super padat.
+     * Pendalaman kitab kuning, Bahasa Arab & Inggris tingkat tinggi (asrama).
+     * Struktur program: dominan `keagamaan`, tetap bisa punya peminatan umum.
+     */
+    const SUBTIPE_MAN_PK = 'man_pk';
+
+    /**
+     * MAN Plus Keterampilan (Vokasi) — MA reguler DITAMBAH program vokasi.
+     * Contoh: MA + TKJ, MA + Multimedia, MA + Tata Busana, MA + Tata Boga.
+     * Struktur program: peminatan/mapel pilihan + keagamaan + hierarki vokasi
+     * (Bidang Keahlian → Program Keahlian → Konsentrasi Keahlian).
+     * Sumber: Peraturan Menteri Agama tentang MAN Plus Keterampilan.
+     */
+    const SUBTIPE_MAN_PLUS_VOKASI = 'man_plus_vokasi';
+
+    /** Semua nilai subtipe yang valid — untuk validasi FormRequest */
+    const SUBTIPE_VALID = [
+        self::SUBTIPE_MAN_IC,
+        self::SUBTIPE_MAN_PK,
+        self::SUBTIPE_MAN_PLUS_VOKASI,
+    ];
+
+    // ── Helper subtipe ───────────────────────────────────────
+
+    /** Apakah sekolah ini MAN Plus Vokasi? */
+    public function isManPlusVokasi(): bool
+    {
+        return $this->jenis === 'MA' && $this->subtipe === self::SUBTIPE_MAN_PLUS_VOKASI;
+    }
+
+    /** Apakah sekolah ini MAN IC? */
+    public function isManIc(): bool
+    {
+        return $this->jenis === 'MA' && $this->subtipe === self::SUBTIPE_MAN_IC;
+    }
+
+    /** Apakah sekolah ini MAN PK? */
+    public function isManPk(): bool
+    {
+        return $this->jenis === 'MA' && $this->subtipe === self::SUBTIPE_MAN_PK;
+    }
+
+    /**
+     * Apakah sekolah ini memiliki program vokasi bertingkat?
+     * True untuk SMK, MAK, dan MAN Plus Vokasi.
+     */
+    public function hasVokasiHierarki(): bool
+    {
+        return in_array($this->jenis, self::JENIS_DENGAN_PROGRAM_HIERARKI)
+            || $this->isManPlusVokasi();
+    }
 
     protected $casts = [
         'trial_ends_at' => 'datetime',
