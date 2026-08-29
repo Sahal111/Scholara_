@@ -162,6 +162,36 @@ const CONFIG_FALLBACK = {
   description: "Kelola program pendidikan sekolah.",
 };
 
+/**
+ * SuperAdmin / school null — tidak terikat pada jenis sekolah tertentu.
+ * Tampilkan semua jenis yang mungkin agar bisa mengelola lintas jenjang.
+ */
+const CONFIG_SUPERADMIN = {
+  hasTabs: true,
+  tabs: [
+    TAB_SEMUA,
+    TAB_BIDANG,
+    TAB_PROGRAM,
+    TAB_KONSEN,
+    TAB_MINAT,
+    TAB_MAPIL,
+    TAB_AGAMA,
+    TAB_UMUM,
+  ],
+  addButtons: [
+    {
+      jenis: "bidang_keahlian",
+      label: "Tambah Bidang",
+      variant: "outline",
+    },
+    { jenis: "program_keahlian", label: "Tambah Program", variant: "solid" },
+  ],
+  defaultJenis: "bidang_keahlian",
+  description:
+    "Mode SuperAdmin: kelola semua jenis program pendidikan lintas sekolah.",
+  isSuperAdmin: true,
+};
+
 // ─── Matrix jenis × kurikulum ─────────────────────────────────────────────────
 
 /**
@@ -215,7 +245,8 @@ const CONFIG_MATRIX = {
  * @returns Config object
  */
 export function getProgramConfig(schoolJenis, schoolKurikulum) {
-  if (!schoolJenis) return CONFIG_FALLBACK;
+  // SuperAdmin tidak terikat ke sekolah — tampilkan semua jenis
+  if (!schoolJenis) return CONFIG_SUPERADMIN;
 
   const jenisMap = CONFIG_MATRIX[schoolJenis];
   if (!jenisMap) return CONFIG_FALLBACK;

@@ -60,11 +60,20 @@ function ModalProgram({
   onClose,
   editData,
   defaultJenis,
+  defaultParentId, // pre-select & lock parent ketika "Tambah Konsentrasi" dari baris program
+  defaultParentLabel, // label parent untuk ditampilkan saat terkunci
   jenisOptions,
   schoolJenis,
 }) {
   const isEdit = !!editData;
   const qc = useQueryClient();
+
+  // Apakah jenis dikunci dari tombol yang diklik (bukan tab "semua" atau undefined)
+  // Saat tambah baru via tombol spesifik → lock jenis, tidak bisa diganti user
+  const isJenisLocked = !isEdit && !!defaultJenis && defaultJenis !== "semua";
+
+  // Apakah parent dikunci — ketika tambah child dari baris program tertentu
+  const isParentLocked = !isEdit && !!defaultParentId;
 
   // Jenis default: pakai tab aktif jika valid, fallback ke opsi pertama yang tersedia
   const resolveDefaultJenis = () => {
@@ -76,7 +85,7 @@ function ModalProgram({
   const defaultJenjang = schoolJenis ?? "semua";
 
   const empty = {
-    parent_id: "",
+    parent_id: defaultParentId ?? "",
     nama: "",
     kode: "",
     jenis: resolveDefaultJenis(),
@@ -112,9 +121,13 @@ function ModalProgram({
             deskripsi: editData.deskripsi ?? "",
             is_active: editData.is_active ?? true,
           }
-        : { ...empty, jenis: resolveDefaultJenis() },
+        : {
+            ...empty,
+            jenis: resolveDefaultJenis(),
+            parent_id: defaultParentId ?? "",
+          },
     );
-  }, [open, editData, defaultJenis]);
+  }, [open, editData, defaultJenis, defaultParentId]);
 
   const createMutation = useCreateProgram();
   const updateMutation = useUpdateProgram(editData?.ulid);
@@ -158,7 +171,11 @@ function ModalProgram({
                 className="text-base font-bold text-[#00342b]"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
-                {isEdit ? "Edit Program" : "Tambah Program Pendidikan"}
+                {isEdit
+                  ? "Edit Program"
+                  : isJenisLocked
+                    ? `Tambah ${jenisOptions.find((j) => j.value === form.jenis)?.label ?? "Program"}`
+                    : "Tambah Program Pendidikan"}
               </h3>
               <p className="text-xs text-[#707975]">
                 Kelola program keahlian, peminatan, dan konsentrasi
@@ -178,22 +195,40 @@ function ModalProgram({
           {/* Jenis */}
           <div>
             <label className={labelCls}>Jenis Program</label>
-            <div className="relative">
-              <select
-                className={selectCls}
-                value={form.jenis}
-                onChange={(e) => set("jenis", e.target.value)}
-              >
-                {jenisOptions.map((j) => (
-                  <option key={j.value} value={j.value}>
-                    {j.label}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[18px]">
-                expand_more
-              </span>
-            </div>
+            {isJenisLocked ? (
+              // Terkunci — jenis sudah ditentukan dari tombol yang diklik
+              <div className="flex items-center gap-2 px-4 py-2.5 bg-[#f2f4f3] border border-[#bfc9c4]/40 rounded-xl">
+                <span className="material-symbols-outlined text-[16px] text-[#006e2a]">
+                  lock
+                </span>
+                <span className="text-sm font-semibold text-[#00342b]">
+                  {jenisOptions.find((j) => j.value === form.jenis)?.label ??
+                    form.jenis}
+                </span>
+                <span className="text-xs text-[#707975] ml-auto">
+                  Ditentukan dari tombol
+                </span>
+                <input type="hidden" value={form.jenis} />
+              </div>
+            ) : (
+              // Bebas dipilih — mode edit atau tombol "Tambah" dari empty state
+              <div className="relative">
+                <select
+                  className={selectCls}
+                  value={form.jenis}
+                  onChange={(e) => set("jenis", e.target.value)}
+                >
+                  {jenisOptions.map((j) => (
+                    <option key={j.value} value={j.value}>
+                      {j.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[18px]">
+                  expand_more
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Parent — hanya tampil jika jenis punya parent */}
@@ -202,24 +237,41 @@ function ModalProgram({
               <label className={labelCls}>
                 {JENIS_LABEL[parentJenis]} (Induk)
               </label>
-              <div className="relative">
-                <select
-                  className={selectCls}
-                  value={form.parent_id}
-                  onChange={(e) => set("parent_id", e.target.value)}
-                >
-                  <option value="">— Tidak ada / Isi nanti —</option>
-                  {parents.map((p) => (
-                    <option key={p.ulid} value={p.ulid}>
-                      {p.kode ? `[${p.kode}] ` : ""}
-                      {p.nama}
-                    </option>
-                  ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[18px]">
-                  expand_more
-                </span>
-              </div>
+              {isParentLocked ? (
+                // Terkunci — parent sudah ditentukan dari baris program yang diklik
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#006e2a]/5 border border-[#006e2a]/20 rounded-xl">
+                  <span className="material-symbols-outlined text-[16px] text-[#006e2a]">
+                    link
+                  </span>
+                  <span className="text-sm font-semibold text-[#00342b] flex-1 truncate">
+                    {defaultParentLabel ?? "Program terpilih"}
+                  </span>
+                  <span className="text-[10px] text-[#006e2a] font-bold uppercase tracking-wider bg-[#006e2a]/10 px-2 py-0.5 rounded-full whitespace-nowrap">
+                    Terhubung
+                  </span>
+                  <input type="hidden" value={form.parent_id} />
+                </div>
+              ) : (
+                // Bebas dipilih
+                <div className="relative">
+                  <select
+                    className={selectCls}
+                    value={form.parent_id}
+                    onChange={(e) => set("parent_id", e.target.value)}
+                  >
+                    <option value="">— Tidak ada / Isi nanti —</option>
+                    {parents.map((p) => (
+                      <option key={p.ulid} value={p.ulid}>
+                        {p.kode ? `[${p.kode}] ` : ""}
+                        {p.nama}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[18px]">
+                    expand_more
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -368,10 +420,19 @@ function ModalProgram({
   );
 }
 
+// Map jenis → label child untuk menu aksi
+const CHILD_LABEL = {
+  bidang_keahlian: "Program Keahlian",
+  program_keahlian: "Konsentrasi",
+};
+
 // ── Dropdown Aksi (more_vert) ─────────────────────────────────────────────────
-function AksiDropdown({ item, onEdit, onDelete, onToggleStatus }) {
+function AksiDropdown({ item, onEdit, onDelete, onToggleStatus, onAddChild }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+
+  // Jenis yang bisa punya child — bidang & program keahlian
+  const childLabel = CHILD_LABEL[item.jenis];
 
   useEffect(() => {
     const handler = (e) => {
@@ -390,7 +451,26 @@ function AksiDropdown({ item, onEdit, onDelete, onToggleStatus }) {
         <span className="material-symbols-outlined text-[20px]">more_vert</span>
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-[#bfc9c4]/30 z-30 overflow-hidden py-1">
+        <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-xl shadow-xl border border-[#bfc9c4]/30 z-30 overflow-hidden py-1">
+          {/* Tambah Child — hanya muncul jika item punya jenis child */}
+          {childLabel && (
+            <>
+              <button
+                onClick={() => {
+                  onAddChild(item);
+                  setOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#006e2a] hover:bg-[#006e2a]/5 transition-colors font-medium"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  add_circle
+                </span>
+                Tambah {childLabel}
+              </button>
+              <div className="h-px bg-[#bfc9c4]/30 my-1" />
+            </>
+          )}
+
           <button
             onClick={() => {
               onEdit(item);
@@ -398,7 +478,7 @@ function AksiDropdown({ item, onEdit, onDelete, onToggleStatus }) {
             }}
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#3f4945] hover:bg-[#f2f4f3] transition-colors"
           >
-            <span className="material-symbols-outlined text-[18px] text-[#006e2a]">
+            <span className="material-symbols-outlined text-[18px] text-[#3f4945]">
               edit
             </span>
             Edit
@@ -537,7 +617,9 @@ export default function MasterProgram() {
   // ── State modal
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
-  const [modalDefaultJenis, setModalDefaultJenis] = useState(null); // fix: simpan defaultJenis dari tombol
+  const [modalDefaultJenis, setModalDefaultJenis] = useState(null);
+  const [modalDefaultParentId, setModalDefaultParentId] = useState(null);
+  const [modalDefaultParentLabel, setModalDefaultParentLabel] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
 
   // Saat tab berubah, reset page dan filter parent
@@ -611,10 +693,33 @@ export default function MasterProgram() {
       .catch(() => toast.error("Gagal mengubah status program."));
   };
 
-  // fix: simpan defaultJenis dari tombol yang diklik
+  // Tambah dari tombol header — jenis sudah ditentukan, parent bebas
   const handleTambah = (defaultJenis) => {
     setEditData(null);
     setModalDefaultJenis(defaultJenis ?? programConfig.defaultJenis ?? null);
+    setModalDefaultParentId(null);
+    setModalDefaultParentLabel(null);
+    setModalOpen(true);
+  };
+
+  // Tambah konsentrasi dari baris program tertentu — jenis & parent sudah ditentukan
+  const handleTambahChild = (parentItem) => {
+    // Tentukan jenis child berdasarkan jenis parent
+    const childJenisMap = {
+      bidang_keahlian: "program_keahlian",
+      program_keahlian: "konsentrasi_keahlian",
+    };
+    const childJenis = childJenisMap[parentItem.jenis];
+    if (!childJenis) return; // konsentrasi tidak punya child
+
+    const parentLabel = parentItem.kode
+      ? `[${parentItem.kode}] ${parentItem.nama}`
+      : parentItem.nama;
+
+    setEditData(null);
+    setModalDefaultJenis(childJenis);
+    setModalDefaultParentId(parentItem.ulid);
+    setModalDefaultParentLabel(parentLabel);
     setModalOpen(true);
   };
 
@@ -622,6 +727,8 @@ export default function MasterProgram() {
     setModalOpen(false);
     setEditData(null);
     setModalDefaultJenis(null);
+    setModalDefaultParentId(null);
+    setModalDefaultParentLabel(null);
   };
 
   // Label header kolom dinamis berdasarkan tab
@@ -654,6 +761,8 @@ export default function MasterProgram() {
         onClose={handleCloseModal}
         editData={editData}
         defaultJenis={modalDefaultJenis ?? activeTab}
+        defaultParentId={modalDefaultParentId}
+        defaultParentLabel={modalDefaultParentLabel}
         jenisOptions={jenisOptions}
         schoolJenis={school?.jenis ?? null}
       />
@@ -1118,6 +1227,7 @@ export default function MasterProgram() {
                           onEdit={handleEdit}
                           onDelete={handleDelete}
                           onToggleStatus={handleToggleStatus}
+                          onAddChild={handleTambahChild}
                         />
                       </td>
                     </tr>
