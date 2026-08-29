@@ -5,15 +5,23 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [school, setSchool] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Token tidak lagi disimpan di localStorage — ada di HttpOnly cookie.
-    // Cek session aktif via /auth/me agar state user ter-restore saat refresh.
+    // Cek session aktif via /auth/me agar state user & school ter-restore saat refresh.
     api
       .get("/auth/me")
-      .then((res) => setUser(res.data.data.user))
-      .catch(() => setUser(null))
+      .then((res) => {
+        const { user, school } = res.data.data;
+        setUser(user);
+        setSchool(school ?? null);
+      })
+      .catch(() => {
+        setUser(null);
+        setSchool(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -23,13 +31,18 @@ export function AuthProvider({ children }) {
       password,
     });
     // Token ada di HttpOnly cookie — tidak perlu disimpan secara manual.
-    const { user } = res.data.data;
+    const { user, school } = res.data.data;
     setUser(user);
+    setSchool(school ?? null);
     return user;
   };
 
   const updateUser = (updatedFields) => {
     setUser((prev) => ({ ...prev, ...updatedFields }));
+  };
+
+  const updateSchool = (updatedFields) => {
+    setSchool((prev) => (prev ? { ...prev, ...updatedFields } : prev));
   };
 
   const logout = async () => {
@@ -38,11 +51,14 @@ export function AuthProvider({ children }) {
     } finally {
       // Cookie di-clear oleh backend. Cukup reset state.
       setUser(null);
+      setSchool(null);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
+    <AuthContext.Provider
+      value={{ user, school, loading, login, logout, updateUser, updateSchool }}
+    >
       {children}
     </AuthContext.Provider>
   );

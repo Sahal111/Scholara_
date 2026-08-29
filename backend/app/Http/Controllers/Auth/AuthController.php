@@ -72,6 +72,7 @@ class AuthController extends Controller
         $user->update(['last_login_at' => now()]);
 
         $profile = $this->getProfile($user);
+        $school = $this->getSchoolData($user);
 
         $cookie = cookie(
             name: 'auth_token',
@@ -98,6 +99,7 @@ class AuthController extends Controller
                     'foto' => $user->foto,
                     'profile' => $profile,
                 ],
+                'school' => $school,
             ],
         ])->withCookie($cookie);
     }
@@ -121,6 +123,7 @@ class AuthController extends Controller
     {
         $user = $request->user()->load(['roles' => fn($q) => $q->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class)]);
         $profile = $this->getProfile($user);
+        $school = $this->getSchoolData($user);
 
         return response()->json([
             'success' => true,
@@ -135,6 +138,7 @@ class AuthController extends Controller
                     'last_login' => $user->last_login_at,
                     'profile' => $profile,
                 ],
+                'school' => $school,
             ],
         ]);
     }
@@ -225,5 +229,35 @@ class AuthController extends Controller
             'bendahara' => $user->bendaharaProfile,
             default => null,
         };
+    }
+
+    /**
+     * Ambil data profil sekolah yang relevan untuk dikirim ke frontend.
+     *
+     * Tujuan: frontend bisa melakukan adaptive UI berdasarkan jenis/jenjang
+     * sekolah tanpa perlu request tambahan ke /api/sekolah/profil.
+     *
+     * Catatan: super_admin tidak punya school_id, return null.
+     */
+    private function getSchoolData(User $user): ?array
+    {
+        if (!$user->school_id) {
+            return null;
+        }
+
+        $school = \App\Models\School::find($user->school_id);
+
+        if (!$school) {
+            return null;
+        }
+
+        return [
+            'id' => $school->ulid,
+            'nama' => $school->nama,
+            'npsn' => $school->npsn,
+            'jenis' => $school->jenis,    // 'MI' | 'MTs' | 'MA' | 'SMK' | 'SMA' dll
+            'jenjang' => $school->jenjang,  // 'dasar' | 'menengah_pertama' | 'menengah_atas'
+            'logo' => $school->logo,
+        ];
     }
 }

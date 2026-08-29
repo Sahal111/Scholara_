@@ -17,12 +17,32 @@ class School extends Model
         'nama',
         'npsn',
         'jenis',
+        'jenjang',
         'status',
         'trial_ends_at',
         'logo',
         'timezone',
         'locale',
     ];
+
+    // ── Konstanta jenis sekolah ──────────────────────────────
+
+    /**
+     * Jenis sekolah yang MEMILIKI program pendidikan hierarkis (SMK/MAK).
+     * Digunakan frontend untuk menentukan tab apa yang ditampilkan.
+     */
+    const JENIS_DENGAN_PROGRAM_HIERARKI = ['SMK', 'MAK'];
+
+    /**
+     * Jenis sekolah yang menggunakan peminatan (SMA/MA).
+     */
+    const JENIS_DENGAN_PEMINATAN = ['SMA', 'MA'];
+
+    /**
+     * Jenis sekolah tanpa program pendidikan khusus (SD/MI/SMP/MTs).
+     * program_pendidikan_id pada kelas selalu NULL untuk jenis ini.
+     */
+    const JENIS_TANPA_PROGRAM = ['SD', 'MI', 'SMP', 'MTs', 'SDLB', 'SMPLB', 'SMALB', 'SLB'];
 
     protected $casts = [
         'trial_ends_at' => 'datetime',
