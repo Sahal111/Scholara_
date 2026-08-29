@@ -255,9 +255,10 @@ class AuthController extends Controller
             'id' => $school->ulid,
             'nama' => $school->nama,
             'npsn' => $school->npsn,
-            'jenis' => $school->jenis,      // 'MI' | 'MTs' | 'MA' | 'SMK' | 'SMA' dll
-            'jenjang' => $school->jenjang,    // 'dasar' | 'menengah_pertama' | 'menengah_atas'
-            'kurikulum' => $school->kurikulum,  // 'Kurikulum Merdeka' | 'K13' | 'Lainnya'
+            'jenis' => $school->jenis,         // 'MI' | 'MTs' | 'MA' | 'SMK' | 'SMA' dll
+            'jenjang' => $school->jenjang,     // 'dasar' | 'menengah_pertama' | 'menengah_atas'
+            'kurikulum' => $school->kurikulum, // 'Kurikulum Merdeka' | 'K13' | 'Lainnya'
+            'subtipe' => $school->subtipe,     // null | 'man_ic' | 'man_pk' | 'man_plus_vokasi'
             'logo' => $school->logo,
         ];
     }

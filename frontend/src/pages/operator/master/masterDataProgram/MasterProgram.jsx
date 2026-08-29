@@ -792,8 +792,8 @@ export default function MasterProgram() {
   };
 
   const { data, isLoading } = useProgramList(queryParams);
-  const programs = data?.data?.data ?? [];
-  const meta = data?.data ?? {};
+  const programs = data?.data ?? [];
+  const meta = data?.meta ?? {};
   const totalPage = meta.last_page ?? 1;
 
   // Dropdown parent untuk filter toolbar — program_keahlian & bidang_keahlian
