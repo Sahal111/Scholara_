@@ -9,6 +9,7 @@ use App\Models\SchoolDomain;
 use App\Models\SchoolSetting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -23,6 +24,8 @@ use Illuminate\Support\Facades\Hash;
  *
  * Seeder ini juga dipakai oleh SchoolProvisioningService saat sekolah baru
  * didaftarkan dari production (bukan hanya untuk dev).
+ *
+ * ⚡ IDEMPOTENT — aman dijalankan berulang kali (tidak crash jika data sudah ada).
  */
 class SchoolSeeder extends Seeder
 {
@@ -46,6 +49,16 @@ class SchoolSeeder extends Seeder
 
     private function createSchool(): School
     {
+        // Gunakan firstOrCreate agar aman dijalankan berulang (idempotent)
+        $school = School::withoutGlobalScopes()
+            ->where('npsn', '60717525')
+            ->first();
+
+        if ($school) {
+            $this->command->warn("⚠️  Sekolah dengan NPSN 60717525 sudah ada (id: {$school->id}). Melewati pembuatan sekolah.");
+            return $school;
+        }
+
         return School::create([
             'nama' => 'MI Nurul Huda 3',
             'npsn' => '60717525',
@@ -58,10 +71,13 @@ class SchoolSeeder extends Seeder
 
     private function createDomain(School $school): void
     {
-        SchoolDomain::create([
+        // insertOrIgnore agar tidak crash jika domain sudah ada
+        DB::table('school_domains')->insertOrIgnore([
             'school_id' => $school->id,
             'domain' => 'minurulhuda3.siakad.id',
             'is_primary' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
@@ -77,32 +93,39 @@ class SchoolSeeder extends Seeder
             ['key' => 'sekolah.email', 'value' => '', 'grup' => 'sekolah'],
             ['key' => 'akademik.kkm_default', 'value' => '70', 'grup' => 'akademik'],
             ['key' => 'akademik.kurikulum', 'value' => 'Merdeka', 'grup' => 'akademik'],
-            ['key' => 'tampilan.primary_color', 'value' => '#2563EB', 'grup' => 'tampilan'],
+            ['key' => 'tampilan.primary_color', 'value' => '#15803D', 'grup' => 'tampilan'],
             ['key' => 'tampilan.theme', 'value' => 'default', 'grup' => 'tampilan'],
         ];
 
         foreach ($defaults as $setting) {
-            SchoolSetting::create(array_merge($setting, ['school_id' => $school->id]));
+            // Hanya insert jika key belum ada untuk sekolah ini
+            $exists = DB::table('school_settings')
+                ->where('school_id', $school->id)
+                ->where('key', $setting['key'])
+                ->exists();
+
+            if (!$exists) {
+                SchoolSetting::create(array_merge($setting, ['school_id' => $school->id]));
+            }
         }
     }
 
     private function createPermissions(School $school): array
     {
         $definitions = $this->permissionDefinitions();
-        $created = [];
+        $result = [];
 
         foreach ($definitions as $def) {
-            $permission = Permission::create([
-                'school_id' => $school->id,
-                'slug' => $def['slug'],
-                'nama' => $def['nama'],
-                'modul' => $def['modul'],
-            ]);
+            // firstOrCreate agar tidak crash jika permission sudah ada
+            $permission = Permission::withoutGlobalScopes()->firstOrCreate(
+                ['school_id' => $school->id, 'slug' => $def['slug']],
+                ['nama' => $def['nama'], 'modul' => $def['modul']]
+            );
 
-            $created[$def['slug']] = $permission;
+            $result[$def['slug']] = $permission;
         }
 
-        return $created;
+        return $result;
     }
 
     private function createRoles(School $school): array
@@ -125,10 +148,11 @@ class SchoolSeeder extends Seeder
 
         $created = [];
         foreach ($roleDefs as $def) {
-            $role = Role::create(array_merge($def, [
-                'school_id' => $school->id,
-                'is_active' => true,
-            ]));
+            // firstOrCreate agar tidak crash jika role sudah ada
+            $role = Role::withoutGlobalScopes()->firstOrCreate(
+                ['school_id' => $school->id, 'slug' => $def['slug']],
+                array_merge($def, ['school_id' => $school->id, 'is_active' => true])
+            );
             $created[$def['slug']] = $role;
         }
 
@@ -160,17 +184,30 @@ class SchoolSeeder extends Seeder
 
     private function createSuperOperator(School $school, Role $role): void
     {
-        // Bypass SchoolScope karena school_id belum di-set di container saat seeder
-        $user = User::withoutGlobalScopes()->create([
-            'school_id' => $school->id,
-            'name' => 'Admin Sekolah',
-            'email' => 'admin@minurulhuda3.sch.id',
-            'username' => 'admin',
-            'password' => Hash::make('password'),
-            'is_active' => true,
-        ]);
+        // Cek apakah user sudah ada sebelum insert
+        $user = User::withoutGlobalScopes()
+            ->where('school_id', $school->id)
+            ->where('username', 'admin')
+            ->first();
 
-        $user->roles()->attach($role->id, ['school_id' => $school->id]);
+        if (!$user) {
+            $user = User::withoutGlobalScopes()->create([
+                'school_id' => $school->id,
+                'name' => 'Admin Sekolah',
+                'email' => 'admin@minurulhuda3.sch.id',
+                'username' => 'admin',
+                'password' => Hash::make('password'),
+                'is_active' => true,
+            ]);
+        }
+
+        // insertOrIgnore agar tidak crash jika role sudah di-assign
+        DB::table('user_roles')->insertOrIgnore([
+            'user_id' => $user->id,
+            'role_id' => $role->id,
+            'school_id' => $school->id,
+            'created_at' => now(),
+        ]);
     }
 
     // ────────────────────────────────────────────────────────
@@ -207,54 +244,20 @@ class SchoolSeeder extends Seeder
             ['slug' => 'master_data.orang_tua.view', 'nama' => 'Lihat Data Orang Tua', 'modul' => 'master_data'],
             ['slug' => 'master_data.orang_tua.manage', 'nama' => 'Kelola Data Orang Tua', 'modul' => 'master_data'],
 
-            // akun
-            ['slug' => 'akun.view', 'nama' => 'Lihat Daftar Akun', 'modul' => 'akun'],
-            ['slug' => 'akun.create', 'nama' => 'Buat Akun', 'modul' => 'akun'],
-            ['slug' => 'akun.update', 'nama' => 'Edit Akun', 'modul' => 'akun'],
-            ['slug' => 'akun.delete', 'nama' => 'Hapus Akun', 'modul' => 'akun'],
-            ['slug' => 'akun.toggle_active', 'nama' => 'Aktifkan/Nonaktifkan Akun', 'modul' => 'akun'],
-            ['slug' => 'akun.reset_password', 'nama' => 'Reset Password Akun', 'modul' => 'akun'],
-            ['slug' => 'akun.approve_ortu', 'nama' => 'Approve Registrasi Ortu', 'modul' => 'akun'],
-            ['slug' => 'akun.manage_roles', 'nama' => 'Kelola Role Akun', 'modul' => 'akun'],
-
             // absensi
             ['slug' => 'absensi.input', 'nama' => 'Input Absensi', 'modul' => 'absensi'],
             ['slug' => 'absensi.edit', 'nama' => 'Edit Absensi', 'modul' => 'absensi'],
-            ['slug' => 'absensi.view_kelas_sendiri', 'nama' => 'Lihat Absensi Kelas Sendiri', 'modul' => 'absensi'],
             ['slug' => 'absensi.view_all', 'nama' => 'Lihat Semua Absensi', 'modul' => 'absensi'],
-            ['slug' => 'absensi.rekap', 'nama' => 'Rekap & Export Absensi', 'modul' => 'absensi'],
+            ['slug' => 'absensi.view_kelas_sendiri', 'nama' => 'Lihat Absensi Kelas Sendiri', 'modul' => 'absensi'],
+            ['slug' => 'absensi.rekap', 'nama' => 'Rekap Absensi', 'modul' => 'absensi'],
 
             // dms
             ['slug' => 'dms.upload', 'nama' => 'Upload Dokumen', 'modul' => 'dms'],
             ['slug' => 'dms.view_own', 'nama' => 'Lihat Dokumen Sendiri', 'modul' => 'dms'],
-            ['slug' => 'dms.view_all', 'nama' => 'Lihat Semua Dokumen Guru', 'modul' => 'dms'],
-            ['slug' => 'dms.approve', 'nama' => 'Approve/Reject Dokumen', 'modul' => 'dms'],
+            ['slug' => 'dms.view_all', 'nama' => 'Lihat Semua Dokumen', 'modul' => 'dms'],
+            ['slug' => 'dms.approve', 'nama' => 'Approve Dokumen', 'modul' => 'dms'],
             ['slug' => 'dms.download', 'nama' => 'Download Dokumen', 'modul' => 'dms'],
-            ['slug' => 'dms.delete', 'nama' => 'Hapus Dokumen', 'modul' => 'dms'],
             ['slug' => 'dms.bulk_download', 'nama' => 'Bulk Download Dokumen', 'modul' => 'dms'],
-
-            // keuangan
-            ['slug' => 'keuangan.tagihan.view', 'nama' => 'Lihat Tagihan', 'modul' => 'keuangan'],
-            ['slug' => 'keuangan.tagihan.manage', 'nama' => 'Kelola Tagihan', 'modul' => 'keuangan'],
-            ['slug' => 'keuangan.pembayaran.view', 'nama' => 'Lihat Pembayaran', 'modul' => 'keuangan'],
-            ['slug' => 'keuangan.pembayaran.input', 'nama' => 'Input Pembayaran', 'modul' => 'keuangan'],
-            ['slug' => 'keuangan.laporan.view', 'nama' => 'Laporan Keuangan', 'modul' => 'keuangan'],
-            ['slug' => 'keuangan.export', 'nama' => 'Export Keuangan', 'modul' => 'keuangan'],
-
-            // ppdb
-            ['slug' => 'ppdb.pendaftar.view', 'nama' => 'Lihat Pendaftar PPDB', 'modul' => 'ppdb'],
-            ['slug' => 'ppdb.pendaftar.update', 'nama' => 'Edit Pendaftar PPDB', 'modul' => 'ppdb'],
-            ['slug' => 'ppdb.pendaftar.approve', 'nama' => 'Approve Pendaftar', 'modul' => 'ppdb'],
-            ['slug' => 'ppdb.pendaftar.reject', 'nama' => 'Tolak Pendaftar', 'modul' => 'ppdb'],
-            ['slug' => 'ppdb.pengaturan.manage', 'nama' => 'Pengaturan PPDB', 'modul' => 'ppdb'],
-
-            // akademik
-            ['slug' => 'akademik.nilai.input', 'nama' => 'Input Nilai', 'modul' => 'akademik'],
-            ['slug' => 'akademik.nilai.view', 'nama' => 'Lihat Nilai', 'modul' => 'akademik'],
-            ['slug' => 'akademik.rapor.generate', 'nama' => 'Generate Rapor', 'modul' => 'akademik'],
-            ['slug' => 'akademik.rapor.view', 'nama' => 'Lihat Rapor', 'modul' => 'akademik'],
-            ['slug' => 'akademik.jadwal.manage', 'nama' => 'Kelola Jadwal', 'modul' => 'akademik'],
-            ['slug' => 'akademik.kalender.manage', 'nama' => 'Kelola Kalender', 'modul' => 'akademik'],
 
             // pengumuman
             ['slug' => 'pengumuman.view', 'nama' => 'Lihat Pengumuman', 'modul' => 'pengumuman'],
@@ -262,56 +265,75 @@ class SchoolSeeder extends Seeder
             ['slug' => 'pengumuman.update', 'nama' => 'Edit Pengumuman', 'modul' => 'pengumuman'],
             ['slug' => 'pengumuman.delete', 'nama' => 'Hapus Pengumuman', 'modul' => 'pengumuman'],
 
-            // pengaturan
-            ['slug' => 'pengaturan.view', 'nama' => 'Lihat Pengaturan', 'modul' => 'pengaturan'],
-            ['slug' => 'pengaturan.update', 'nama' => 'Edit Pengaturan', 'modul' => 'pengaturan'],
-            ['slug' => 'pengaturan.rbac.manage', 'nama' => 'Kelola Role & Permission', 'modul' => 'pengaturan'],
+            // akademik
+            ['slug' => 'akademik.nilai.input', 'nama' => 'Input Nilai', 'modul' => 'akademik'],
+            ['slug' => 'akademik.nilai.view', 'nama' => 'Lihat Nilai', 'modul' => 'akademik'],
+            ['slug' => 'akademik.rapor.view', 'nama' => 'Lihat Rapor', 'modul' => 'akademik'],
+            ['slug' => 'akademik.jadwal.manage', 'nama' => 'Kelola Jadwal', 'modul' => 'akademik'],
+            ['slug' => 'akademik.kalender.manage', 'nama' => 'Kelola Kalender Akademik', 'modul' => 'akademik'],
 
-            // siswa portal — hak akses siswa ke data dirinya sendiri
-            ['slug' => 'siswa_portal.profil.view', 'nama' => 'Lihat Profil Diri', 'modul' => 'siswa_portal'],
-            ['slug' => 'siswa_portal.profil.update', 'nama' => 'Update Profil Diri', 'modul' => 'siswa_portal'],
-            ['slug' => 'siswa_portal.absensi.view', 'nama' => 'Lihat Absensi Diri', 'modul' => 'siswa_portal'],
-            ['slug' => 'siswa_portal.nilai.view', 'nama' => 'Lihat Nilai Diri', 'modul' => 'siswa_portal'],
-            ['slug' => 'siswa_portal.jadwal.view', 'nama' => 'Lihat Jadwal Pelajaran', 'modul' => 'siswa_portal'],
-            ['slug' => 'siswa_portal.pengumuman.view', 'nama' => 'Lihat Pengumuman', 'modul' => 'siswa_portal'],
-            ['slug' => 'siswa_portal.tagihan.view', 'nama' => 'Lihat Tagihan SPP', 'modul' => 'siswa_portal'],
-            ['slug' => 'siswa_portal.rapor.view', 'nama' => 'Lihat Rapor', 'modul' => 'siswa_portal'],
+            // keuangan
+            ['slug' => 'keuangan.tagihan.view', 'nama' => 'Lihat Tagihan', 'modul' => 'keuangan'],
+            ['slug' => 'keuangan.tagihan.manage', 'nama' => 'Kelola Tagihan', 'modul' => 'keuangan'],
+            ['slug' => 'keuangan.pembayaran.view', 'nama' => 'Lihat Pembayaran', 'modul' => 'keuangan'],
+            ['slug' => 'keuangan.pembayaran.input', 'nama' => 'Input Pembayaran', 'modul' => 'keuangan'],
+            ['slug' => 'keuangan.laporan.view', 'nama' => 'Lihat Laporan Keuangan', 'modul' => 'keuangan'],
+            ['slug' => 'keuangan.export', 'nama' => 'Export Keuangan', 'modul' => 'keuangan'],
 
-            // laporan
-            ['slug' => 'laporan.guru.view', 'nama' => 'Laporan Guru', 'modul' => 'laporan'],
-            ['slug' => 'laporan.siswa.view', 'nama' => 'Laporan Siswa', 'modul' => 'laporan'],
-            ['slug' => 'laporan.absensi.view', 'nama' => 'Laporan Absensi', 'modul' => 'laporan'],
-            ['slug' => 'laporan.keuangan.view', 'nama' => 'Laporan Keuangan', 'modul' => 'laporan'],
-            ['slug' => 'laporan.export', 'nama' => 'Export Laporan', 'modul' => 'laporan'],
+            // ppdb
+            ['slug' => 'ppdb.pendaftar.view', 'nama' => 'Lihat Pendaftar PPDB', 'modul' => 'ppdb'],
+            ['slug' => 'ppdb.pendaftar.update', 'nama' => 'Edit Data Pendaftar', 'modul' => 'ppdb'],
+            ['slug' => 'ppdb.pendaftar.approve', 'nama' => 'Approve Pendaftar', 'modul' => 'ppdb'],
+            ['slug' => 'ppdb.pendaftar.reject', 'nama' => 'Tolak Pendaftar', 'modul' => 'ppdb'],
+            ['slug' => 'ppdb.pengaturan.manage', 'nama' => 'Kelola Pengaturan PPDB', 'modul' => 'ppdb'],
 
-            // BK (Bimbingan Konseling)
+            // bk
             ['slug' => 'bk.konseling.view', 'nama' => 'Lihat Data Konseling', 'modul' => 'bk'],
-            ['slug' => 'bk.konseling.create', 'nama' => 'Buat Sesi Konseling', 'modul' => 'bk'],
-            ['slug' => 'bk.konseling.update', 'nama' => 'Edit Sesi Konseling', 'modul' => 'bk'],
-            ['slug' => 'bk.konseling.delete', 'nama' => 'Hapus Sesi Konseling', 'modul' => 'bk'],
+            ['slug' => 'bk.konseling.create', 'nama' => 'Tambah Konseling', 'modul' => 'bk'],
+            ['slug' => 'bk.konseling.update', 'nama' => 'Edit Konseling', 'modul' => 'bk'],
             ['slug' => 'bk.catatan.view', 'nama' => 'Lihat Catatan BK', 'modul' => 'bk'],
-            ['slug' => 'bk.catatan.create', 'nama' => 'Buat Catatan BK', 'modul' => 'bk'],
-            ['slug' => 'bk.catatan.update', 'nama' => 'Edit Catatan BK', 'modul' => 'bk'],
-            ['slug' => 'bk.laporan.view', 'nama' => 'Laporan BK', 'modul' => 'bk'],
+            ['slug' => 'bk.catatan.create', 'nama' => 'Tambah Catatan BK', 'modul' => 'bk'],
+            ['slug' => 'bk.laporan.view', 'nama' => 'Lihat Laporan BK', 'modul' => 'bk'],
             ['slug' => 'bk.laporan.export', 'nama' => 'Export Laporan BK', 'modul' => 'bk'],
 
-            // Perpustakaan
-            ['slug' => 'perpustakaan.buku.view', 'nama' => 'Lihat Katalog Buku', 'modul' => 'perpustakaan'],
+            // perpustakaan
+            ['slug' => 'perpustakaan.buku.view', 'nama' => 'Lihat Buku', 'modul' => 'perpustakaan'],
             ['slug' => 'perpustakaan.buku.create', 'nama' => 'Tambah Buku', 'modul' => 'perpustakaan'],
             ['slug' => 'perpustakaan.buku.update', 'nama' => 'Edit Buku', 'modul' => 'perpustakaan'],
             ['slug' => 'perpustakaan.buku.delete', 'nama' => 'Hapus Buku', 'modul' => 'perpustakaan'],
             ['slug' => 'perpustakaan.peminjaman.view', 'nama' => 'Lihat Peminjaman', 'modul' => 'perpustakaan'],
             ['slug' => 'perpustakaan.peminjaman.manage', 'nama' => 'Kelola Peminjaman', 'modul' => 'perpustakaan'],
-            ['slug' => 'perpustakaan.laporan.view', 'nama' => 'Laporan Perpustakaan', 'modul' => 'perpustakaan'],
-            ['slug' => 'perpustakaan.laporan.export', 'nama' => 'Export Laporan Perpustakaan', 'modul' => 'perpustakaan'],
+            ['slug' => 'perpustakaan.laporan.view', 'nama' => 'Lihat Laporan Perpus', 'modul' => 'perpustakaan'],
+            ['slug' => 'perpustakaan.laporan.export', 'nama' => 'Export Laporan Perpus', 'modul' => 'perpustakaan'],
 
-            // Surat & Tata Usaha
+            // surat / tata usaha
             ['slug' => 'surat.view', 'nama' => 'Lihat Surat', 'modul' => 'surat'],
             ['slug' => 'surat.create', 'nama' => 'Buat Surat', 'modul' => 'surat'],
             ['slug' => 'surat.update', 'nama' => 'Edit Surat', 'modul' => 'surat'],
             ['slug' => 'surat.delete', 'nama' => 'Hapus Surat', 'modul' => 'surat'],
             ['slug' => 'surat.arsip', 'nama' => 'Arsip Surat', 'modul' => 'surat'],
-            ['slug' => 'surat.legalisir', 'nama' => 'Legalisir Dokumen', 'modul' => 'surat'],
+            ['slug' => 'surat.legalisir', 'nama' => 'Proses Legalisir', 'modul' => 'surat'],
+
+            // laporan
+            ['slug' => 'laporan.guru.view', 'nama' => 'Lihat Laporan Guru', 'modul' => 'laporan'],
+            ['slug' => 'laporan.siswa.view', 'nama' => 'Lihat Laporan Siswa', 'modul' => 'laporan'],
+            ['slug' => 'laporan.absensi.view', 'nama' => 'Lihat Laporan Absensi', 'modul' => 'laporan'],
+            ['slug' => 'laporan.keuangan.view', 'nama' => 'Lihat Laporan Keuangan', 'modul' => 'laporan'],
+            ['slug' => 'laporan.export', 'nama' => 'Export Laporan', 'modul' => 'laporan'],
+
+            // pengaturan
+            ['slug' => 'pengaturan.view', 'nama' => 'Lihat Pengaturan', 'modul' => 'pengaturan'],
+            ['slug' => 'pengaturan.rbac.manage', 'nama' => 'Kelola Role & Permission', 'modul' => 'pengaturan'],
+
+            // portal siswa
+            ['slug' => 'siswa_portal.profil.view', 'nama' => 'Lihat Profil Siswa', 'modul' => 'siswa_portal'],
+            ['slug' => 'siswa_portal.profil.update', 'nama' => 'Edit Profil Siswa', 'modul' => 'siswa_portal'],
+            ['slug' => 'siswa_portal.absensi.view', 'nama' => 'Lihat Absensi Sendiri', 'modul' => 'siswa_portal'],
+            ['slug' => 'siswa_portal.nilai.view', 'nama' => 'Lihat Nilai Sendiri', 'modul' => 'siswa_portal'],
+            ['slug' => 'siswa_portal.jadwal.view', 'nama' => 'Lihat Jadwal', 'modul' => 'siswa_portal'],
+            ['slug' => 'siswa_portal.pengumuman.view', 'nama' => 'Lihat Pengumuman', 'modul' => 'siswa_portal'],
+            ['slug' => 'siswa_portal.tagihan.view', 'nama' => 'Lihat Tagihan SPP', 'modul' => 'siswa_portal'],
+            ['slug' => 'siswa_portal.rapor.view', 'nama' => 'Lihat Rapor Online', 'modul' => 'siswa_portal'],
         ];
     }
 
@@ -423,7 +445,6 @@ class SchoolSeeder extends Seeder
                 'ppdb.pengaturan.manage',
             ],
 
-            // Wakil Kepala Sekolah — hampir setara kepsek, tambahan manage kurikulum/kesiswaan
             'wakasek' => [
                 'master_data.guru.view',
                 'master_data.guru.export',
@@ -456,7 +477,6 @@ class SchoolSeeder extends Seeder
                 'pengaturan.view',
             ],
 
-            // Guru BK — akses konseling, tidak bisa lihat nilai akademik
             'guru_bk' => [
                 'master_data.siswa.view',
                 'absensi.view_all',
@@ -474,7 +494,6 @@ class SchoolSeeder extends Seeder
                 'bk.laporan.export',
             ],
 
-            // Pustakawan — kelola perpustakaan, tidak ada akses akademik
             'pustakawan' => [
                 'master_data.siswa.view',
                 'pengumuman.view',
@@ -488,7 +507,6 @@ class SchoolSeeder extends Seeder
                 'perpustakaan.laporan.export',
             ],
 
-            // Tata Usaha — surat, arsip, legalisir, tidak akses data akademik sensitif
             'tata_usaha' => [
                 'master_data.siswa.view',
                 'master_data.guru.view',
@@ -510,7 +528,6 @@ class SchoolSeeder extends Seeder
                 'laporan.export',
             ],
 
-            // Admin Keuangan — input tagihan & invoice, tidak bisa approve/laporan tingkat bendahara
             'admin_keuangan' => [
                 'master_data.siswa.view',
                 'keuangan.tagihan.view',
