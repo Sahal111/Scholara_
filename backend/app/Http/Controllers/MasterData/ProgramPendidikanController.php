@@ -5,6 +5,7 @@ namespace App\Http\Controllers\MasterData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProgramPendidikan\StoreProgramPendidikanRequest;
 use App\Http\Requests\ProgramPendidikan\UpdateProgramPendidikanRequest;
+use App\Http\Resources\ProgramPendidikanResource;
 use App\Models\ProgramPendidikan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,7 +47,7 @@ class ProgramPendidikanController extends Controller
             ->orderBy('nama')
             ->paginate((int) ($request->per_page ?? 15));
 
-        return $this->success($data);
+        return $this->success(ProgramPendidikanResource::collection($data));
     }
 
     // ── Tree — hierarki lengkap untuk UI struktur ─────────────────
@@ -72,7 +73,7 @@ class ProgramPendidikanController extends Controller
             ->orderBy('nama')
             ->get();
 
-        return $this->success($data);
+        return $this->success(ProgramPendidikanResource::collection($data));
     }
 
     // ── Store ─────────────────────────────────────────────────────
@@ -84,8 +85,7 @@ class ProgramPendidikanController extends Controller
         // parent_id dikirim sebagai ULID dari frontend — resolve ke integer PK
         $parentId = null;
         if (!empty($validated['parent_id'])) {
-            $parent = ProgramPendidikan::where('ulid', $validated['parent_id'])->value('id');
-            $parentId = $parent;
+            $parentId = ProgramPendidikan::where('ulid', $validated['parent_id'])->value('id');
         }
 
         $program = ProgramPendidikan::create([
@@ -99,7 +99,7 @@ class ProgramPendidikanController extends Controller
         ]);
 
         return $this->created(
-            $program->load('parent:id,ulid,nama,kode'),
+            new ProgramPendidikanResource($program->load('parent:id,ulid,nama,kode,jenis')),
             'Program pendidikan berhasil ditambahkan.'
         );
     }
@@ -117,9 +117,9 @@ class ProgramPendidikanController extends Controller
             ->where('ulid', $ulid)
             ->firstOrFail();
 
-        $program->append('jenis_label');
+        $this->authorize('view', $program);
 
-        return $this->success($program);
+        return $this->success(new ProgramPendidikanResource($program));
     }
 
     // ── Update ────────────────────────────────────────────────────
@@ -127,6 +127,8 @@ class ProgramPendidikanController extends Controller
     public function update(UpdateProgramPendidikanRequest $request, string $ulid): JsonResponse
     {
         $program = ProgramPendidikan::where('ulid', $ulid)->firstOrFail();
+
+        $this->authorize('update', $program);
         $validated = $request->validated();
 
         // parent_id dikirim sebagai ULID dari frontend — resolve ke integer PK
@@ -157,7 +159,7 @@ class ProgramPendidikanController extends Controller
         ]);
 
         return $this->success(
-            $program->fresh(['parent:id,nama,kode'])->append('jenis_label'),
+            new ProgramPendidikanResource($program->fresh(['parent:id,ulid,nama,kode,jenis'])),
             'Program pendidikan berhasil diperbarui.'
         );
     }
@@ -169,6 +171,8 @@ class ProgramPendidikanController extends Controller
         $program = ProgramPendidikan::withCount(['kelas', 'children'])
             ->where('ulid', $ulid)
             ->firstOrFail();
+
+        $this->authorize('delete', $program);
 
         if ($program->kelas_count > 0) {
             return $this->error(
@@ -212,7 +216,17 @@ class ProgramPendidikanController extends Controller
             ->orderBy('nama')
             ->get(['id', 'ulid', 'parent_id', 'nama', 'kode', 'jenis', 'jenjang_sasaran']);
 
-        return $this->success($data);
+        // Mapping ringan — tidak pakai Resource penuh agar tidak trigger extra queries
+        $mapped = $data->map(fn($p) => [
+            'ulid' => $p->ulid,
+            'parent_ulid' => null, // akan di-resolve jika diperlukan; dropdown tidak butuh parent ref
+            'nama' => $p->nama,
+            'kode' => $p->kode,
+            'jenis' => $p->jenis,
+            'jenjang_sasaran' => $p->jenjang_sasaran,
+        ]);
+
+        return $this->success($mapped);
     }
 
     // ── Helper ────────────────────────────────────────────────────
@@ -220,18 +234,23 @@ class ProgramPendidikanController extends Controller
     /**
      * Cek apakah $candidateParentId adalah descendant dari $programId.
      * Digunakan untuk cegah circular reference saat update parent.
+     *
+     * Load semua parent_id sekolah dalam 1 query, traverse in-memory
+     * untuk menghindari N+1 (sebelumnya: 1 query per node).
      */
     private function isDescendantOf(int $candidateParentId, int $programId): bool
     {
-        $current = ProgramPendidikan::find($candidateParentId);
+        // 1 query — ambil map id → parent_id untuk seluruh sekolah
+        /** @var array<int, int|null> $parentMap */
+        $parentMap = ProgramPendidikan::pluck('parent_id', 'id')->all();
+
+        $current = $candidateParentId;
 
         while ($current !== null) {
-            if ($current->id === $programId) {
+            if ($current === $programId) {
                 return true;
             }
-            $current = $current->parent_id
-                ? ProgramPendidikan::find($current->parent_id)
-                : null;
+            $current = $parentMap[$current] ?? null;
         }
 
         return false;

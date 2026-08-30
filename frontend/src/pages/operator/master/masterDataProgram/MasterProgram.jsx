@@ -16,6 +16,7 @@ import {
   getProgramJenisOptions,
   JENIS_LABEL,
 } from "../../../../config/programConfig";
+import Pagination from "../../../../components/ui/Pagination";
 
 // ─── Design tokens (from template) ───────────────────────────────────────────
 // primary              = #00342b
@@ -234,7 +235,7 @@ function ModalProgram({
     }
     const payload = {
       ...form,
-      parent_id: form.parent_id !== "" ? Number(form.parent_id) : null,
+      parent_id: form.parent_id !== "" ? form.parent_id : null,
       kode: form.kode.trim() || null,
     };
     const mutation = isEdit ? updateMutation : createMutation;
@@ -794,7 +795,6 @@ export default function MasterProgram() {
   const { data, isLoading } = useProgramList(queryParams);
   const programs = data?.data ?? [];
   const meta = data?.meta ?? {};
-  const totalPage = meta.last_page ?? 1;
 
   // Dropdown parent untuk filter toolbar — program_keahlian & bidang_keahlian
   const { data: parentDropdownData } = useProgramDropdown(
@@ -898,12 +898,6 @@ export default function MasterProgram() {
     "program_keahlian",
     "semua",
   ].includes(activeTab);
-
-  const paginationRange = () => {
-    const range = [];
-    for (let i = 1; i <= totalPage; i++) range.push(i);
-    return range;
-  };
 
   return (
     <>
@@ -1391,61 +1385,8 @@ export default function MasterProgram() {
 
           {/* ── PAGINATION ────────────────────────────────────────────── */}
           {!isLoading && programs.length > 0 && (
-            <div
-              className="px-6 py-4 border-t border-[#bfc9c4]/10
-            flex flex-col sm:flex-row items-center justify-between gap-3 bg-white"
-            >
-              <p className="text-sm text-[#3f4945]">
-                Menampilkan{" "}
-                <span className="font-medium text-[#00342b]">
-                  {meta.from ?? 0}
-                </span>{" "}
-                sampai{" "}
-                <span className="font-medium text-[#00342b]">
-                  {meta.to ?? 0}
-                </span>{" "}
-                dari{" "}
-                <span className="font-medium text-[#00342b]">
-                  {meta.total ?? 0}
-                </span>{" "}
-                data
-              </p>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="p-1.5 rounded-lg text-[#3f4945] hover:bg-[#f2f4f3] disabled:opacity-40 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    chevron_left
-                  </span>
-                </button>
-
-                {paginationRange().map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`w-8 h-8 rounded-lg font-medium text-sm flex items-center justify-center transition-colors
-                    ${
-                      p === page
-                        ? "bg-[#006e2a] text-white shadow-sm"
-                        : "text-[#3f4945] hover:bg-[#f2f4f3]"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPage, p + 1))}
-                  disabled={page === totalPage}
-                  className="p-1.5 rounded-lg text-[#3f4945] hover:bg-[#f2f4f3] disabled:opacity-40 transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[18px]">
-                    chevron_right
-                  </span>
-                </button>
-              </div>
+            <div className="px-6 py-4 border-t border-[#bfc9c4]/10 bg-white">
+              <Pagination meta={meta} onPageChange={setPage} />
             </div>
           )}
         </div>

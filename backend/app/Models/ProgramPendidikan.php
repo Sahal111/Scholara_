@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string      $ulid
  * @property string      $nama
  * @property string|null $kode
- * @property string      $jenis           bidang_keahlian|program_keahlian|konsentrasi_keahlian|peminatan|umum
+ * @property string      $jenis           bidang_keahlian|program_keahlian|konsentrasi_keahlian|peminatan|mata_pelajaran_pilihan|keagamaan|umum
  * @property string      $jenjang_sasaran SD|MI|SMP|MTs|SMA|MA|SMK|MAK|semua
  * @property string|null $deskripsi
  * @property bool        $is_active
