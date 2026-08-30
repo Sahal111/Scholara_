@@ -61,6 +61,11 @@ const CONFIG_SMK = {
   tabs: [TAB_SEMUA, TAB_BIDANG, TAB_PROGRAM, TAB_KONSEN],
   addButtons: [
     {
+      jenis: "bidang_keahlian",
+      label: "Tambah Bidang",
+      variant: "ghost",
+    },
+    {
       jenis: "konsentrasi_keahlian",
       label: "Tambah Konsentrasi",
       variant: "outline",
@@ -179,7 +184,12 @@ const CONFIG_SUPERADMIN = {
     TAB_UMUM,
   ],
   addButtons: [
-    { jenis: "bidang_keahlian", label: "Tambah Bidang", variant: "outline" },
+    { jenis: "bidang_keahlian", label: "Tambah Bidang", variant: "ghost" },
+    {
+      jenis: "konsentrasi_keahlian",
+      label: "Tambah Konsentrasi",
+      variant: "outline",
+    },
     { jenis: "program_keahlian", label: "Tambah Program", variant: "solid" },
   ],
   defaultJenis: "bidang_keahlian",

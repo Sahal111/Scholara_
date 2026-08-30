@@ -30,9 +30,10 @@ export function useProgramTree(params = {}) {
   return useQuery({
     queryKey: programKeys.tree(params),
     queryFn: async () => {
-      const { data } = await api.get(`${BASE}/tree`, { params });
+      const { data } = await api.get(`${BASE}/tree`, { params: params ?? {} });
       return data;
     },
+    enabled: params !== null,
     staleTime: 60_000,
   });
 }
