@@ -1,4 +1,9 @@
+import { useAuth } from "../../contexts/AuthContext";
+
 export default function OperatorFooter() {
+  const { school } = useAuth();
+  const schoolName = school?.nama ?? "Scholara";
+
   return (
     <footer className="w-full py-10 px-8 flex flex-col md:flex-row justify-between items-center bg-white border-t border-[#bfc9c4]/30 mt-auto z-10 font-bold pb-24 md:pb-10 relative overflow-hidden islamic-pattern">
       <div className="absolute inset-0 bg-gradient-to-r from-[#00342b]/5 via-transparent to-[#006e2a]/5 pointer-events-none" />
@@ -7,7 +12,7 @@ export default function OperatorFooter() {
           className="font-bold text-[#00342b] tracking-wide text-xs"
           style={{ letterSpacing: "0.2em" }}
         >
-          © 2026 MI Nurul Huda 3. All rights reserved.
+          © {new Date().getFullYear()} {schoolName}. All rights reserved.
         </span>
         <span className="hidden md:inline text-[#bfc9c4]">•</span>
         <span

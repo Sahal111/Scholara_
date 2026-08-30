@@ -26,8 +26,9 @@ const navItems = [
 ];
 
 export default function SiswaSidebar({ onClose }) {
-  const { user, logout } = useAuth();
+  const { user, school, logout } = useAuth();
   const navigate = useNavigate();
+  const schoolName = school?.nama ?? "Portal Siswa";
 
   const handleLogout = async () => {
     await logout();
@@ -47,8 +48,8 @@ export default function SiswaSidebar({ onClose }) {
             <h2 className="font-bold text-sm text-slate-800 tracking-tight">
               Portal Siswa
             </h2>
-            <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider">
-              MI Nurul Huda 3
+            <p className="text-[10px] text-blue-600 font-semibold uppercase tracking-wider truncate">
+              {schoolName}
             </p>
           </div>
         </div>

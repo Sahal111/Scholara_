@@ -546,7 +546,7 @@ export function SidebarContent({ onClose }) {
                 Admin
               </span>
               <span className="text-[10px] text-white/40 truncate">
-                MI Nurul Huda 3
+                {schoolName}
               </span>
             </div>
           </div>
@@ -561,7 +561,9 @@ export function SidebarContent({ onClose }) {
           </button>
         </div>
         <div className="mt-2 px-1 flex items-center justify-between text-[10px] text-white/20">
-          <span>© 2026 MI Nurul Huda 3</span>
+          <span>
+            © {new Date().getFullYear()} {schoolName}
+          </span>
           <span className="font-semibold">v2.4.1</span>
         </div>
       </div>

@@ -7,8 +7,9 @@ const BASE_URL =
   import.meta.env.VITE_API_URL?.replace("/api", "") ?? "http://127.0.0.1:8001";
 
 export default function Sidebar({ menus, onClose }) {
-  const { user, logout } = useAuth();
+  const { user, school, logout } = useAuth();
   const navigate = useNavigate();
+  const schoolName = school?.nama ?? "Scholara";
 
   const handleLogout = async () => {
     await logout();
@@ -24,8 +25,8 @@ export default function Sidebar({ menus, onClose }) {
           <BookOpen className="w-5 h-5 text-white" />
         </div>
         <div>
-          <p className="text-sm font-bold text-gray-800 leading-tight">
-            MI Nurul Huda 3
+          <p className="text-sm font-bold text-gray-800 leading-tight truncate">
+            {schoolName}
           </p>
           <p className="text-xs text-gray-400">Sistem Absensi</p>
         </div>
