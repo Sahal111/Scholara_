@@ -1,30 +1,26 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
 
-/* ─── helpers ─────────────────────────────────────────────────── */
-const parentDisplayName = (ortu) =>
-  ortu?.nama_ayah ||
-  ortu?.nama_ibu ||
-  ortu?.nama_wali ||
-  ortu?.email ||
-  `Orang tua #${ortu?.id}`;
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const parentDisplayName = (o) =>
+  o?.nama_ayah ||
+  o?.nama_ibu ||
+  o?.nama_wali ||
+  o?.email ||
+  `Orang tua #${o?.id}`;
 
-const getHubungan = (ortu) => {
-  if (ortu?.nama_ayah) return "Ayah";
-  if (ortu?.nama_ibu) return "Ibu";
-  if (ortu?.nama_wali) return "Wali";
+const getHubungan = (o) => {
+  if (o?.nama_ayah) return "Ayah";
+  if (o?.nama_ibu) return "Ibu";
+  if (o?.nama_wali) return "Wali";
   return "-";
 };
 
-const getKontak = (ortu) =>
-  ortu?.no_hp_ayah || ortu?.no_hp_ibu || ortu?.no_hp_wali || "-";
-
-const getLinkedStudents = (ortu) =>
-  Array.isArray(ortu?.siswa) ? ortu.siswa : [];
-
+const getKontak = (o) => o?.no_hp_ayah || o?.no_hp_ibu || o?.no_hp_wali || "-";
+const getStudents = (o) => (Array.isArray(o?.siswa) ? o.siswa : []);
 const getInitials = (name = "") =>
   name
     .split(" ")
@@ -33,32 +29,117 @@ const getInitials = (name = "") =>
     .join("")
     .toUpperCase();
 
-const avatarColors = [
-  { bg: "#E0E7FF", text: "#4338CA", border: "#C7D2FE" },
-  { bg: "#FCE7F3", text: "#9D174D", border: "#FBCFE8" },
-  { bg: "#D1FAE5", text: "#065F46", border: "#A7F3D0" },
-  { bg: "#FEF3C7", text: "#92400E", border: "#FDE68A" },
-  { bg: "#DBEAFE", text: "#1D4ED8", border: "#BFDBFE" },
-  { bg: "#F3E8FF", text: "#7E22CE", border: "#E9D5FF" },
-];
-const getAvatarColor = (id) => avatarColors[(id || 0) % avatarColors.length];
-
 const hubunganBadge = {
-  Ayah: "bg-[#DBEAFE] text-[#1D4ED8] border border-[#BFDBFE]",
-  Ibu: "bg-[#F3E8FF] text-[#7E22CE] border border-[#E9D5FF]",
-  Wali: "bg-[#E0F2FE] text-[#0369A1] border border-[#BAE6FD]",
-  "-": "bg-surface-container text-on-surface-variant border border-border-light",
+  Ayah: "bg-surface-container text-on-surface-variant border-outline-variant/30",
+  Ibu: "bg-surface-container text-on-surface-variant border-outline-variant/30",
+  Wali: "bg-surface-container text-on-surface-variant border-outline-variant/30",
+  "-": "bg-surface-container text-on-surface-variant border-outline-variant/30",
 };
 
-/* ─── component ───────────────────────────────────────────────── */
+// ── Skeleton Row ──────────────────────────────────────────────────────────────
+function SkeletonRow() {
+  return (
+    <tr className="border-b border-outline-variant/10 animate-pulse">
+      <td className="px-6 py-4 w-12">
+        <div className="w-4 h-4 bg-surface-container-high rounded mx-auto" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-surface-container-high shrink-0" />
+          <div className="space-y-1.5">
+            <div className="h-3.5 w-32 bg-surface-container-high rounded" />
+            <div className="h-2.5 w-40 bg-surface-container-high/60 rounded" />
+          </div>
+        </div>
+      </td>
+      <td className="px-6 py-4 hidden md:table-cell">
+        <div className="h-6 w-14 bg-surface-container-high rounded-md" />
+      </td>
+      <td className="px-6 py-4 hidden lg:table-cell">
+        <div className="space-y-1.5">
+          <div className="h-3.5 w-28 bg-surface-container-high rounded" />
+          <div className="h-2.5 w-16 bg-surface-container-high/60 rounded" />
+        </div>
+      </td>
+      <td className="px-6 py-4 hidden md:table-cell">
+        <div className="h-3 w-32 bg-surface-container-high rounded" />
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 w-14 bg-surface-container-high rounded-full" />
+      </td>
+      <td className="px-6 py-4 text-right">
+        <div className="flex justify-end gap-2">
+          <div className="w-7 h-7 rounded-lg bg-surface-container-high" />
+          <div className="w-7 h-7 rounded-lg bg-surface-container-high" />
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ── Stat Card ─────────────────────────────────────────────────────────────────
+function StatCard({
+  icon,
+  iconColor,
+  label,
+  value,
+  sub,
+  progressBar,
+  progressVal,
+  progressColor,
+  children,
+}) {
+  return (
+    <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-[1.5rem] p-5 shadow-sm hover:-translate-y-1 hover:shadow-md transition-all duration-300 group relative overflow-hidden">
+      {/* ghost icon */}
+      <div className="absolute top-0 right-0 p-4 opacity-[0.07] group-hover:opacity-[0.12] transition-opacity pointer-events-none">
+        <span className={`material-symbols-outlined text-[80px] ${iconColor}`}>
+          {icon}
+        </span>
+      </div>
+      <div className="relative z-10">
+        <p className="text-[10px] font-bold tracking-widest uppercase text-on-surface-variant mb-2">
+          {label}
+        </p>
+        {children ?? (
+          <>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-[36px] font-extrabold text-on-background leading-none">
+                {value ?? "—"}
+              </h3>
+              {sub && !progressBar && (
+                <span className="text-sm text-outline">{sub}</span>
+              )}
+            </div>
+            {progressBar && (
+              <div className="w-full bg-surface-variant h-1.5 rounded-full mt-3">
+                <div
+                  className={`${progressColor} h-1.5 rounded-full`}
+                  style={{ width: `${progressVal ?? 0}%` }}
+                />
+              </div>
+            )}
+            {sub && !progressBar && (
+              <p className="text-xs text-on-surface-variant mt-1">{sub}</p>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function MasterOrtu() {
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [filterStatus, setFilterStatus] = useState("");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [hubFilter, setHubFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState(new Set());
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const emptyForm = {
     nama_ayah: "",
@@ -72,20 +153,44 @@ export default function MasterOrtu() {
   };
   const [formData, setFormData] = useState(emptyForm);
 
-  /* mutations */
+  // ── Queries ──────────────────────────────────────────────────────────────────
+  const { data, isLoading } = useQuery({
+    queryKey: ["master-ortu", search, page],
+    queryFn: () =>
+      api
+        .get("/operator/master-data/orang-tua", {
+          params: { search, page, paginate: 1 },
+        })
+        .then((r) => r.data.data),
+    keepPreviousData: true,
+  });
+
+  const ortuList = data?.data ?? [];
+  const total = data?.total ?? 0;
+  const lastPage = data?.last_page ?? 1;
+  const perPage = 10;
+
+  // derived stats
+  const statsAktif = ortuList.filter((o) =>
+    getStudents(o).some((s) => s.user_ortu?.length > 0),
+  ).length;
+  const statsMulti = ortuList.filter((o) => getStudents(o).length > 1).length;
+  const aktifPct =
+    ortuList.length > 0 ? Math.round((statsAktif / ortuList.length) * 100) : 0;
+
+  // ── Mutations ────────────────────────────────────────────────────────────────
   const createMutation = useMutation({
-    mutationFn: (data) => api.post("/operator/master-data/orang-tua", data),
+    mutationFn: (d) => api.post("/operator/master-data/orang-tua", d),
     onSuccess: () => {
       toast.success("Data orang tua berhasil ditambahkan.");
       queryClient.invalidateQueries(["master-ortu"]);
       setShowAddModal(false);
       setFormData(emptyForm);
     },
-    onError: (error) => {
-      const errors = error.response?.data?.errors;
-      if (errors) Object.values(errors).forEach((item) => toast.error(item[0]));
-      else
-        toast.error(error.response?.data?.message || "Gagal menambahkan data");
+    onError: (err) => {
+      const errors = err.response?.data?.errors;
+      if (errors) Object.values(errors).forEach((e) => toast.error(e[0]));
+      else toast.error(err.response?.data?.message || "Gagal menambahkan data");
     },
   });
 
@@ -96,696 +201,711 @@ export default function MasterOrtu() {
       queryClient.invalidateQueries(["master-ortu"]);
       setDeleteTarget(null);
     },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || "Gagal menghapus data");
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Gagal menghapus data");
       setDeleteTarget(null);
     },
   });
 
-  /* query */
-  const { data, isLoading } = useQuery({
-    queryKey: ["master-ortu", search, page],
-    queryFn: () =>
-      api
-        .get("/operator/master-data/orang-tua", {
-          params: { search, page, paginate: 1 },
-        })
-        .then((res) => res.data.data),
-    keepPreviousData: true,
-  });
-
-  const ortuList = data?.data || [];
-  const pagination = data || {};
-  const totalData = pagination.total || 0;
-  const lastPage = pagination.last_page || 1;
-
-  /* stats derived */
-  const statsTotal = totalData;
-  const statsAktif = ortuList.filter((o) =>
-    getLinkedStudents(o).some((s) => s.user_ortu?.length > 0),
-  ).length;
-  const statsBelumAktif = ortuList.filter(
-    (o) => !getLinkedStudents(o).some((s) => s.user_ortu?.length > 0),
-  ).length;
-  const statsMultiAnak = ortuList.filter(
-    (o) => getLinkedStudents(o).length > 1,
-  ).length;
-
-  const handleAddSubmit = (e) => {
-    e.preventDefault();
-    createMutation.mutate(formData);
+  // ── Selection helpers ────────────────────────────────────────────────────────
+  const toggleSelect = (id) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleAll = () => {
+    if (selected.size === ortuList.length) setSelected(new Set());
+    else setSelected(new Set(ortuList.map((o) => o.id)));
   };
 
-  const clearFilterStatus = () => setFilterStatus("");
+  const resetFilter = () => {
+    setSearch("");
+    setHubFilter("");
+    setStatusFilter("");
+    setPage(1);
+  };
+  const hasFilter = search || hubFilter || statusFilter;
+  const startNum = total === 0 ? 0 : (page - 1) * perPage + 1;
+  const endNum = Math.min(page * perPage, total);
 
-  /* ─── render ─────────────────────────────────────────────────── */
+  // smart page numbers
+  const pageNums = (() => {
+    const pages = [];
+    for (let i = Math.max(1, page - 2); i <= Math.min(lastPage, page + 2); i++)
+      pages.push(i);
+    return pages;
+  })();
+
+  // ── Filtered list (client-side hub filter since API may not support it) ──────
+  const filtered = ortuList.filter((o) => {
+    if (hubFilter && getHubungan(o) !== hubFilter) return false;
+    return true;
+  });
+
   return (
-    <div className="space-y-space-lg">
-      {/* ── Page Header ───────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-1 text-label-md text-text-secondary mb-2">
-            <span>Dashboard</span>
-            <span className="material-symbols-outlined text-[14px]">
-              chevron_right
-            </span>
-            <span>Data Master</span>
-            <span className="material-symbols-outlined text-[14px]">
-              chevron_right
-            </span>
-            <span className="text-primary font-semibold">Orang Tua</span>
-          </nav>
-          <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface">
-            Master Data Orang Tua
-          </h1>
+    <div className="flex-1 flex flex-col">
+      <div className="p-4 sm:p-6 lg:p-8 pb-24 flex-1 space-y-8 lg:space-y-12">
+        {/* ── Page Header ─────────────────────────────────────────────────── */}
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 md:gap-8">
+          <div className="space-y-2">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-success/10 border border-success/20">
+              <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+              <span className="text-[10px] font-bold tracking-widest uppercase text-success">
+                Master Data
+              </span>
+            </div>
+            {/* Title */}
+            <h1 className="text-3xl sm:text-4xl lg:text-[48px] font-extrabold text-on-background leading-tight tracking-tight">
+              Data Orang Tua{" "}
+              <span
+                className="font-normal italic text-on-primary-fixed-variant"
+                style={{ fontFamily: "'EB Garamond', Georgia, serif" }}
+              >
+                &amp; Wali Murid
+              </span>
+            </h1>
+            <p className="text-on-surface-variant/80 max-w-2xl text-sm sm:text-base">
+              Kelola informasi profil, kontak, dan hubungan wali murid secara
+              terpadu.
+            </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            {/* Import / Export pill */}
+            <div className="flex items-center bg-surface-container-low/70 p-1.5 rounded-2xl border border-outline-variant/30">
+              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-on-background text-sm font-semibold hover:bg-surface-variant transition-all">
+                <span className="material-symbols-outlined text-[20px]">
+                  upload
+                </span>
+                <span className="hidden sm:inline">Import</span>
+              </button>
+              <div className="w-px h-6 bg-outline-variant/30 mx-1" />
+              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-on-background text-sm font-semibold hover:bg-surface-variant transition-all">
+                <span className="material-symbols-outlined text-[20px]">
+                  download
+                </span>
+                <span className="hidden sm:inline">Export</span>
+              </button>
+            </div>
+            {/* Tambah Orang Tua */}
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-bold hover:-translate-y-0.5 hover:shadow-xl active:scale-95 transition-all shadow-lg"
+              style={{ backgroundColor: "#00342b" }}
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                person_add
+              </span>
+              <span>Tambah Orang Tua</span>
+            </button>
+          </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => queryClient.invalidateQueries(["master-ortu"])}
-            className="bg-surface-container-lowest hover:bg-surface-container-low border border-border-light text-on-surface font-semibold py-2 px-3 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm text-label-md"
+        {/* ── Stats Grid ──────────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {/* Total Wali */}
+          <StatCard
+            icon="group"
+            iconColor="text-on-background"
+            label="Total Wali"
+            value={isLoading ? "—" : total}
+          />
+
+          {/* Wali Aktif */}
+          <StatCard
+            icon="verified_user"
+            iconColor="text-success"
+            label="Wali Aktif"
+            value={isLoading ? "—" : statsAktif}
+            sub={`/ ${total}`}
+            progressBar
+            progressVal={aktifPct}
+            progressColor="bg-success"
+          />
+
+          {/* Wali Baru */}
+          <StatCard
+            icon="person_add"
+            iconColor="text-accent-gold"
+            label="Wali Baru"
+            value={isLoading ? "—" : statsMulti}
+            sub="Lebih dari 1 anak"
+          />
+
+          {/* Rasio Hubungan */}
+          <StatCard
+            icon="supervisor_account"
+            iconColor="text-on-primary-fixed-variant"
+            label="Rasio Hubungan"
           >
-            <span className="material-symbols-outlined text-[18px]">
-              refresh
-            </span>
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-          <button className="bg-surface-container-lowest hover:bg-surface-container-low border border-border-light text-on-surface font-semibold py-2 px-3 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm text-label-md">
-            <span className="material-symbols-outlined text-[18px]">
-              download
-            </span>
-            <span className="hidden sm:inline">Export</span>
-          </button>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-primary hover:bg-on-primary-fixed-variant text-white font-semibold py-2 px-4 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm text-label-md"
+            <div className="space-y-2 mt-1">
+              {[
+                { label: "Ayah", pct: 48 },
+                { label: "Ibu", pct: 52 },
+              ].map(({ label, pct }) => (
+                <div key={label}>
+                  <div className="flex justify-between text-[11px] font-bold mb-1">
+                    <span>{label}</span>
+                    <span className="text-on-primary-fixed-variant">
+                      {pct}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-surface-variant h-1.5 rounded-full">
+                    <div
+                      className="h-1.5 rounded-full"
+                      style={{ width: `${pct}%`, backgroundColor: "#00342b" }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </StatCard>
+
+          {/* Verifikasi Dokumen */}
+          <StatCard
+            icon="fact_check"
+            iconColor="text-success"
+            label="Verifikasi Dok"
+            value="94%"
           >
-            <span className="material-symbols-outlined text-[18px]">add</span>
-            <span>Tambah Orang Tua</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Stats Grid ────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-        {/* Total */}
-        <div className="bg-surface-container-lowest border border-border-light p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-[18px] text-text-secondary">
-              group
-            </span>
-          </div>
-          <p className="text-label-md text-text-secondary mb-1">
-            Total Orang Tua
-          </p>
-          <h3 className="text-headline-md font-bold text-on-surface">
-            {isLoading ? "—" : statsTotal}
-          </h3>
-        </div>
-
-        {/* Akun Aktif */}
-        <div className="bg-surface-container-lowest border border-border-light p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-8 h-8 rounded-full bg-on-primary-container flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-[18px] text-success">
-              verified_user
-            </span>
-          </div>
-          <p className="text-label-md text-text-secondary mb-1">Akun Aktif</p>
-          <h3 className="text-headline-md font-bold text-on-surface">
-            {isLoading ? "—" : statsAktif}
-          </h3>
-          {!isLoading && statsTotal > 0 && (
-            <div className="w-full bg-border-light rounded-full h-1.5 mt-2">
-              <div
-                className="bg-success h-1.5 rounded-full"
-                style={{
-                  width: `${Math.round((statsAktif / ortuList.length) * 100) || 0}%`,
-                }}
-              />
+            <div>
+              <div className="flex items-baseline gap-1">
+                <h3 className="text-[36px] font-extrabold text-on-background leading-none">
+                  94%
+                </h3>
+              </div>
+              <p className="text-xs text-success font-medium mt-1">
+                Dokumen Terverifikasi
+              </p>
             </div>
-          )}
+          </StatCard>
         </div>
 
-        {/* Belum Aktivasi */}
-        <div className="bg-surface-container-lowest border border-border-light p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-8 h-8 rounded-full bg-[#FEF3C7] flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-[18px] text-warning">
-              pending_actions
-            </span>
-          </div>
-          <p className="text-label-md text-text-secondary mb-1">
-            Belum Aktivasi
-          </p>
-          <h3 className="text-headline-md font-bold text-on-surface">
-            {isLoading ? "—" : statsBelumAktif}
-          </h3>
-          {!isLoading && ortuList.length > 0 && (
-            <div className="w-full bg-border-light rounded-full h-1.5 mt-2">
-              <div
-                className="bg-warning h-1.5 rounded-full"
-                style={{
-                  width: `${Math.round((statsBelumAktif / ortuList.length) * 100) || 0}%`,
-                }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Lebih dari 1 anak */}
-        <div className="bg-surface-container-lowest border border-border-light p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-8 h-8 rounded-full bg-[#DBEAFE] flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-[18px] text-info">
-              family_restroom
-            </span>
-          </div>
-          <p className="text-label-md text-text-secondary mb-1">
-            Lebih dari 1 Anak
-          </p>
-          <h3 className="text-headline-md font-bold text-on-surface">
-            {isLoading ? "—" : statsMultiAnak}
-          </h3>
-          {!isLoading && ortuList.length > 0 && (
-            <div className="w-full bg-border-light rounded-full h-1.5 mt-2">
-              <div
-                className="bg-info h-1.5 rounded-full"
-                style={{
-                  width: `${Math.round((statsMultiAnak / ortuList.length) * 100) || 0}%`,
-                }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Total Halaman ini */}
-        <div className="bg-surface-container-lowest border border-border-light p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow col-span-2 sm:col-span-1">
-          <div className="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center mb-2">
-            <span className="material-symbols-outlined text-[18px] text-text-secondary">
-              diversity_1
-            </span>
-          </div>
-          <p className="text-label-md text-text-secondary mb-1">Halaman Ini</p>
-          <h3 className="text-headline-md font-bold text-on-surface">
-            {isLoading ? "—" : ortuList.length}
-          </h3>
-        </div>
-      </div>
-
-      {/* ── Main Data Card ────────────────────────────────────── */}
-      <div className="bg-surface-container-lowest border border-border-light rounded-2xl shadow-sm flex flex-col min-h-[500px]">
-        {/* Toolbar */}
-        <div className="p-4 border-b border-border-light space-y-3">
-          <div className="flex flex-col sm:flex-row justify-between gap-3">
+        {/* ── Data Table ──────────────────────────────────────────────────── */}
+        <div className="bg-white rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-outline-variant/20 overflow-hidden">
+          {/* Toolbar */}
+          <div className="bg-surface-container-lowest border-b border-outline-variant/20 p-4 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center shadow-sm">
             {/* Search */}
-            <div className="relative w-full sm:max-w-md">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-[20px]">
+            <div className="relative flex-1 group">
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-success transition-colors text-[20px]">
                 search
               </span>
               <input
-                type="text"
-                placeholder="Cari nama, no HP, email..."
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
                   setPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-2 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                className="w-full bg-surface-container-low/50 border border-outline-variant/20 rounded-2xl py-3.5 pl-12 pr-4 text-on-surface placeholder:text-on-surface-variant/50 focus:ring-2 focus:ring-success/20 focus:border-success transition-all text-sm outline-none"
+                placeholder="Cari nama, NIK, atau nama siswa..."
+                type="text"
               />
             </div>
-            {/* Mobile filter toggle */}
-            <button
-              className="sm:hidden flex items-center justify-center gap-2 border border-border-light rounded-lg py-2 px-4 bg-background-light text-text-secondary text-label-md"
-              onClick={() => setMobileFilterOpen((v) => !v)}
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                filter_list
-              </span>
-              Filters
-            </button>
-          </div>
 
-          {/* Filter Chips — desktop always visible, mobile toggled */}
-          <div
-            className={`${mobileFilterOpen ? "flex" : "hidden"} sm:flex flex-wrap items-center gap-2`}
-          >
-            <div className="flex items-center border border-border-light rounded-lg bg-background-light px-3 py-1.5 cursor-pointer hover:border-text-secondary transition-colors group">
-              <span className="text-label-md text-text-secondary group-hover:text-on-surface">
-                Hubungan
-              </span>
-              <span className="material-symbols-outlined text-[18px] text-text-secondary ml-1">
-                arrow_drop_down
-              </span>
-            </div>
-            <div className="flex items-center border border-border-light rounded-lg bg-background-light px-3 py-1.5 cursor-pointer hover:border-text-secondary transition-colors group">
-              <span className="text-label-md text-text-secondary group-hover:text-on-surface">
-                Anak Tertaut
-              </span>
-              <span className="material-symbols-outlined text-[18px] text-text-secondary ml-1">
-                arrow_drop_down
-              </span>
-            </div>
-            {filterStatus && (
-              <div className="flex items-center border border-primary/30 bg-primary/5 rounded-lg px-3 py-1.5">
-                <span className="text-label-md text-primary">
-                  Status: {filterStatus}
-                </span>
-                <button
-                  onClick={clearFilterStatus}
-                  className="ml-2 text-primary hover:text-danger focus:outline-none"
+            {/* Filters */}
+            <div className="flex flex-wrap lg:flex-nowrap items-center gap-3">
+              {/* Hubungan */}
+              <div className="relative flex-1 min-w-[150px] lg:flex-none lg:w-44">
+                <select
+                  value={hubFilter}
+                  onChange={(e) => {
+                    setHubFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full bg-surface-container-low/50 border border-outline-variant/20 rounded-2xl py-3.5 pl-4 pr-10 text-on-surface font-bold text-xs uppercase tracking-wider focus:ring-2 focus:ring-success/20 focus:border-success appearance-none cursor-pointer transition-all outline-none"
                 >
-                  <span className="material-symbols-outlined text-[14px]">
-                    close
-                  </span>
-                </button>
+                  <option value="">Hubungan: Semua</option>
+                  <option value="Ayah">Ayah</option>
+                  <option value="Ibu">Ibu</option>
+                  <option value="Wali">Wali</option>
+                </select>
+                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[20px]">
+                  expand_more
+                </span>
               </div>
-            )}
-            {(search || filterStatus) && (
-              <button
-                onClick={() => {
-                  setSearch("");
-                  setFilterStatus("");
-                  setPage(1);
-                }}
-                className="text-primary hover:text-on-primary-fixed-variant text-label-md underline ml-auto"
-              >
-                Reset Filters
-              </button>
-            )}
-          </div>
-        </div>
 
-        {/* ── Table ──────────────────────────────────────────── */}
-        <div className="flex-1 overflow-x-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                <p className="text-label-md text-text-secondary">
-                  Memuat data...
-                </p>
+              {/* Status */}
+              <div className="relative flex-1 min-w-[150px] lg:flex-none lg:w-44">
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full bg-surface-container-low/50 border border-outline-variant/20 rounded-2xl py-3.5 pl-4 pr-10 text-on-surface font-bold text-xs uppercase tracking-wider focus:ring-2 focus:ring-success/20 focus:border-success appearance-none cursor-pointer transition-all outline-none"
+                >
+                  <option value="">Status: Semua</option>
+                  <option value="aktif">Aktif</option>
+                  <option value="nonaktif">Tidak Aktif</option>
+                </select>
+                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[20px]">
+                  expand_more
+                </span>
               </div>
+
+              <div className="hidden lg:block h-10 w-px bg-outline-variant/20" />
+
+              {/* Reset */}
+              <button
+                onClick={resetFilter}
+                className="flex items-center gap-2 px-4 py-3.5 rounded-2xl border border-outline-variant/20 text-on-surface-variant hover:bg-error-container/10 hover:text-error hover:border-error/30 transition-all font-bold text-xs uppercase tracking-widest bg-white/50 shrink-0"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  refresh
+                </span>
+                <span>Reset</span>
+              </button>
             </div>
-          ) : ortuList.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <span className="material-symbols-outlined text-[56px] text-border-light mb-3">
-                group_off
+          </div>
+
+          {/* Bulk action bar */}
+          {selected.size > 0 && (
+            <div className="px-6 py-3 bg-success/5 border-b border-success/10 flex items-center gap-3">
+              <span className="text-sm font-semibold text-success">
+                {selected.size} data dipilih
               </span>
-              <p className="text-body-lg text-on-surface font-semibold mb-1">
-                Tidak ada data ditemukan
-              </p>
-              <p className="text-label-md text-text-secondary">
-                {search
-                  ? `Tidak ada hasil untuk "${search}"`
-                  : "Belum ada data orang tua"}
-              </p>
+              <button
+                className="text-xs font-bold px-3 py-1.5 rounded-lg text-white transition-colors"
+                style={{ backgroundColor: "#00342b" }}
+              >
+                Export Dipilih
+              </button>
+              <button
+                onClick={() => setSelected(new Set())}
+                className="text-xs text-on-surface-variant hover:text-error transition-colors ml-auto"
+              >
+                Batal Pilih
+              </button>
             </div>
-          ) : (
-            <table className="w-full text-left border-collapse">
+          )}
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse whitespace-nowrap">
               <thead>
-                <tr className="bg-background-light border-b border-border-light text-text-secondary text-label-md">
-                  <th className="py-3 px-4 font-semibold whitespace-nowrap">
-                    Orang Tua
+                <tr className="bg-surface-container-low border-b border-outline-variant/30 text-xs uppercase tracking-wider text-on-surface-variant font-bold">
+                  <th className="px-6 py-4 w-12 text-center">
+                    <input
+                      type="checkbox"
+                      checked={
+                        ortuList.length > 0 && selected.size === ortuList.length
+                      }
+                      onChange={toggleAll}
+                      className="rounded border-outline-variant text-success focus:ring-success"
+                    />
                   </th>
-                  <th className="py-3 px-4 font-semibold whitespace-nowrap">
-                    Hubungan
+                  <th className="px-6 py-4">Wali</th>
+                  <th className="px-6 py-4 hidden md:table-cell">Hubungan</th>
+                  <th className="px-6 py-4 hidden lg:table-cell">
+                    Siswa Terkait
                   </th>
-                  <th className="py-3 px-4 font-semibold whitespace-nowrap">
-                    Anak Tertaut (Kelas)
-                  </th>
-                  <th className="py-3 px-4 font-semibold whitespace-nowrap">
-                    Kontak
-                  </th>
-                  <th className="py-3 px-4 font-semibold whitespace-nowrap">
-                    Status Akun
-                  </th>
-                  <th className="py-3 px-4 font-semibold text-right whitespace-nowrap">
-                    Aksi
-                  </th>
+                  <th className="px-6 py-4 hidden md:table-cell">Kontak</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-light text-body-md text-on-surface">
-                {ortuList.map((ortu) => {
-                  const students = getLinkedStudents(ortu);
-                  const hasAccount = students.some(
-                    (s) => (s.user_ortu?.length ?? 0) > 0,
-                  );
-                  const hubungan = getHubungan(ortu);
-                  const kontak = getKontak(ortu);
-                  const displayName = parentDisplayName(ortu);
-                  const avatarColor = getAvatarColor(ortu.id);
-                  const initials = getInitials(displayName);
 
-                  return (
-                    <tr
-                      key={ortu.id}
-                      className="hover:bg-background-light/60 transition-colors group"
+              <tbody className="text-sm divide-y divide-outline-variant/10">
+                {isLoading ? (
+                  [...Array(5)].map((_, i) => <SkeletonRow key={i} />)
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="text-center py-20 text-on-surface-variant"
                     >
-                      {/* Orang Tua */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3 min-w-[190px]">
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0 border"
-                            style={{
-                              background: avatarColor.bg,
-                              color: avatarColor.text,
-                              borderColor: avatarColor.border,
-                            }}
-                          >
-                            {initials}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-on-surface group-hover:text-primary transition-colors text-body-lg leading-tight">
-                              {displayName}
-                            </p>
-                            {ortu.email ? (
-                              <p className="text-[12px] text-text-secondary truncate max-w-[160px]">
-                                {ortu.email}
-                              </p>
-                            ) : (
-                              <p className="text-[12px] text-text-secondary italic">
-                                Tidak ada email
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Hubungan */}
-                      <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${hubunganBadge[hubungan]}`}
-                        >
-                          {hubungan}
+                      <div className="flex flex-col items-center gap-3">
+                        <span className="material-symbols-outlined text-[56px] text-outline-variant">
+                          supervisor_account
                         </span>
-                        {/* Secondary roles */}
-                        <div className="mt-1 space-y-0.5">
-                          {ortu.nama_ayah && hubungan !== "Ayah" && (
-                            <p className="text-[11px] text-text-secondary">
-                              Ayah: {ortu.nama_ayah}
-                            </p>
-                          )}
-                          {ortu.nama_ibu && hubungan !== "Ibu" && (
-                            <p className="text-[11px] text-text-secondary">
-                              Ibu: {ortu.nama_ibu}
-                            </p>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Anak tertaut */}
-                      <td className="py-3 px-4">
-                        {students.length > 0 ? (
-                          <div className="flex flex-col gap-1.5 min-w-[170px]">
-                            {students.map((siswa) => (
-                              <div
-                                key={`${ortu.id}-${siswa.nisn}`}
-                                className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors"
-                              >
-                                <span className="material-symbols-outlined text-[15px]">
-                                  person
-                                </span>
-                                <span>{siswa.nama_lengkap || "-"}</span>
-                                {siswa.kelas?.nama_kelas && (
-                                  <span className="text-xs bg-surface-container px-1.5 py-0.5 rounded text-on-surface-variant">
-                                    {siswa.kelas.nama_kelas}
-                                  </span>
-                                )}
-                                {(siswa.user_ortu?.length ?? 0) > 0 && (
-                                  <span
-                                    className="material-symbols-outlined text-[14px] text-success"
-                                    title="Sudah punya akun"
-                                  >
-                                    check_circle
-                                  </span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                        <p className="font-semibold text-on-surface">
+                          {hasFilter
+                            ? "Tidak ada data yang cocok."
+                            : "Belum ada data orang tua."}
+                        </p>
+                        {hasFilter ? (
+                          <button
+                            onClick={resetFilter}
+                            className="text-sm font-medium hover:underline text-success"
+                          >
+                            Reset filter
+                          </button>
                         ) : (
-                          <span className="text-sm text-text-secondary italic">
-                            Belum ada anak tertaut
+                          <button
+                            onClick={() => setShowAddModal(true)}
+                            className="text-sm font-medium hover:underline flex items-center gap-1 text-success"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">
+                              add
+                            </span>
+                            Tambah sekarang
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((ortu) => {
+                    const students = getStudents(ortu);
+                    const hasAccount = students.some(
+                      (s) => (s.user_ortu?.length ?? 0) > 0,
+                    );
+                    const hubungan = getHubungan(ortu);
+                    const kontak = getKontak(ortu);
+                    const displayName = parentDisplayName(ortu);
+                    const initials = getInitials(displayName);
+                    const firstChild = students[0];
+
+                    return (
+                      <tr
+                        key={ortu.id}
+                        className="hover:bg-surface-bright transition-colors group"
+                      >
+                        {/* Checkbox */}
+                        <td
+                          className="px-6 py-4 text-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSelect(ortu.id);
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected.has(ortu.id)}
+                            readOnly
+                            className="rounded border-outline-variant text-success focus:ring-success"
+                          />
+                        </td>
+
+                        {/* Wali */}
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 shadow-sm"
+                              style={{
+                                backgroundColor: "#e8f5e9",
+                                color: "#00342b",
+                              }}
+                            >
+                              {initials}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-on-background truncate">
+                                {displayName}
+                              </p>
+                              <p className="text-xs text-on-surface-variant truncate">
+                                {ortu.nik
+                                  ? `NIK: ${ortu.nik}`
+                                  : ortu.email || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Hubungan */}
+                        <td className="px-6 py-4 hidden md:table-cell">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border ${hubunganBadge[hubungan] ?? hubunganBadge["-"]}`}
+                          >
+                            {hubungan}
                           </span>
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Kontak */}
-                      <td className="py-3 px-4">
-                        <p className="text-sm">{kontak}</p>
-                        {ortu.alamat && (
-                          <p className="text-[11px] text-text-secondary mt-0.5 line-clamp-1 max-w-[140px]">
-                            {ortu.alamat}
-                          </p>
-                        )}
-                      </td>
+                        {/* Siswa Terkait */}
+                        <td className="px-6 py-4 hidden lg:table-cell">
+                          {firstChild ? (
+                            <>
+                              <p className="font-bold text-on-background truncate">
+                                {firstChild.nama_lengkap ?? "—"}
+                              </p>
+                              <p className="text-xs text-on-surface-variant">
+                                {firstChild.kelas?.nama_kelas ?? "Tanpa Kelas"}
+                                {students.length > 1 && (
+                                  <span className="ml-1 text-success font-medium">
+                                    +{students.length - 1} lainnya
+                                  </span>
+                                )}
+                              </p>
+                            </>
+                          ) : (
+                            <span className="text-xs text-outline">
+                              Belum tertaut
+                            </span>
+                          )}
+                        </td>
 
-                      {/* Status Akun */}
-                      <td className="py-3 px-4">
-                        <div className="flex flex-col gap-1">
+                        {/* Kontak */}
+                        <td className="px-6 py-4 text-on-surface-variant hidden md:table-cell">
+                          <div className="flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[18px]">
+                              call
+                            </span>
+                            <span className="font-medium text-sm">
+                              {kontak}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-6 py-4">
                           {hasAccount ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-on-primary-container text-success border border-success/20 w-fit">
-                              <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-[11px] uppercase tracking-wider border bg-secondary-container/30 text-on-secondary-fixed-variant border-secondary-container/40">
                               Aktif
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A] w-fit">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#B45309]" />
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-[11px] uppercase tracking-wider border bg-surface-variant text-on-surface-variant border-outline-variant/30">
                               Belum Aktif
                             </span>
                           )}
-                          <span className="text-[11px] text-text-secondary">
-                            {students.length} anak tertaut
-                          </span>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Aksi */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            to={`/operator/master/ortu/keluarga/${ortu.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-on-primary-fixed-variant transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">
-                              visibility
-                            </span>
-                            Detail
-                          </Link>
-                          <button
-                            onClick={() => setDeleteTarget(ortu)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 border border-danger/20 text-danger text-xs font-semibold rounded-lg hover:bg-error-container transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-[14px]">
-                              delete
-                            </span>
-                            Hapus
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        {/* Aksi */}
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Link
+                              to={`/operator/master/orang-tua/${ortu.id}`}
+                              title="Detail"
+                              className="p-1.5 text-on-surface-variant hover:text-success rounded-lg hover:bg-success/10 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">
+                                visibility
+                              </span>
+                            </Link>
+                            <button
+                              onClick={() =>
+                                navigate(
+                                  `/operator/master/orang-tua/edit/${ortu.id}`,
+                                )
+                              }
+                              title="Edit"
+                              className="p-1.5 text-on-surface-variant hover:text-success rounded-lg hover:bg-success/10 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">
+                                edit
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => setDeleteTarget(ortu)}
+                              title="Hapus"
+                              className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-error-container/20 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-[20px]">
+                                delete
+                              </span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
 
-        {/* ── Pagination ─────────────────────────────────────── */}
-        {!isLoading && ortuList.length > 0 && (
-          <div className="p-4 border-t border-border-light flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-text-secondary">
-              Menampilkan{" "}
-              <span className="font-semibold text-on-surface">
-                {(page - 1) * 15 + 1}
-              </span>
-              –
-              <span className="font-semibold text-on-surface">
-                {Math.min(page * 15, totalData)}
-              </span>{" "}
-              dari{" "}
-              <span className="font-semibold text-on-surface">{totalData}</span>{" "}
-              data
+          {/* Pagination */}
+          <div className="p-4 sm:p-6 border-t border-outline-variant/20 flex flex-col md:flex-row items-center justify-between gap-4 bg-surface-bright">
+            <p className="text-sm text-on-surface-variant">
+              {total === 0 ? (
+                "Tidak ada data"
+              ) : (
+                <>
+                  Menampilkan{" "}
+                  <span className="font-medium text-on-surface">
+                    {startNum}–{endNum}
+                  </span>{" "}
+                  dari{" "}
+                  <span className="font-medium text-on-surface">{total}</span>{" "}
+                  data
+                </>
+              )}
             </p>
+
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1.5 border border-border-light rounded-lg text-sm font-medium text-text-secondary bg-white hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-outline-variant/30 text-outline hover:bg-surface-container-high transition-all disabled:opacity-30"
               >
-                Previous
+                <span className="material-symbols-outlined text-[20px]">
+                  chevron_left
+                </span>
               </button>
-              <div className="hidden sm:flex gap-1">
-                {Array.from({ length: Math.min(lastPage, 5) }, (_, i) => {
-                  const p = i + 1;
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                        page === p
-                          ? "bg-primary text-white"
-                          : "text-text-secondary hover:bg-surface-container-low"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  );
-                })}
-                {lastPage > 5 && (
+
+              <div className="flex items-center gap-1">
+                {pageNums[0] > 1 && (
                   <>
-                    <span className="w-8 h-8 flex items-center justify-center text-text-secondary text-sm">
-                      ...
-                    </span>
+                    <button
+                      onClick={() => setPage(1)}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-transparent text-on-surface-variant hover:bg-surface-container-high text-sm transition-all"
+                    >
+                      1
+                    </button>
+                    {pageNums[0] > 2 && (
+                      <span className="w-9 h-9 flex items-center justify-center text-on-surface-variant text-sm">
+                        …
+                      </span>
+                    )}
+                  </>
+                )}
+                {pageNums.map((pg) => (
+                  <button
+                    key={pg}
+                    onClick={() => setPage(pg)}
+                    className={`w-9 h-9 flex items-center justify-center rounded-lg font-bold text-sm transition-all ${
+                      page === pg
+                        ? "text-white shadow-sm"
+                        : "border border-transparent text-on-surface-variant hover:bg-surface-container-high"
+                    }`}
+                    style={page === pg ? { backgroundColor: "#00342b" } : {}}
+                  >
+                    {pg}
+                  </button>
+                ))}
+                {pageNums[pageNums.length - 1] < lastPage && (
+                  <>
+                    {pageNums[pageNums.length - 1] < lastPage - 1 && (
+                      <span className="w-9 h-9 flex items-center justify-center text-on-surface-variant text-sm">
+                        …
+                      </span>
+                    )}
                     <button
                       onClick={() => setPage(lastPage)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
-                        page === lastPage
-                          ? "bg-primary text-white"
-                          : "text-text-secondary hover:bg-surface-container-low"
-                      }`}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-transparent text-on-surface-variant hover:bg-surface-container-high text-sm transition-all"
                     >
                       {lastPage}
                     </button>
                   </>
                 )}
               </div>
-              <span className="text-sm text-text-secondary sm:hidden">
-                Hal {page}/{lastPage}
-              </span>
+
               <button
-                onClick={() => setPage((p) => Math.min(p + 1, lastPage))}
-                disabled={page === lastPage}
-                className="px-3 py-1.5 border border-border-light rounded-lg text-sm font-medium text-text-secondary bg-white hover:bg-surface-container-low disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+                disabled={page >= lastPage}
+                className="w-9 h-9 flex items-center justify-center rounded-lg border border-outline-variant/30 text-on-background bg-white hover:bg-surface-container-high transition-all shadow-sm disabled:opacity-30"
               >
-                Next
+                <span className="material-symbols-outlined text-[20px]">
+                  chevron_right
+                </span>
               </button>
             </div>
           </div>
-        )}
+        </div>
       </div>
 
-      {/* ── Add Modal ──────────────────────────────────────────── */}
+      {/* ── Modal Tambah Orang Tua ───────────────────────────────────────── */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border-light">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[20px] text-primary">
-                    person_add
-                  </span>
-                </div>
-                <h3 className="text-section-title font-semibold text-on-surface">
-                  Tambah Data Orang Tua
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-5 border-b border-outline-variant/20">
+              <div>
+                <h3 className="text-lg font-bold text-on-background">
+                  Tambah Orang Tua
                 </h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  Isi minimal satu dari: Ayah, Ibu, atau Wali
+                </p>
               </div>
               <button
                 onClick={() => {
                   setShowAddModal(false);
                   setFormData(emptyForm);
                 }}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-text-secondary hover:bg-surface-container-low hover:text-on-surface transition-colors"
+                className="p-2 rounded-xl hover:bg-surface-container-low text-on-surface-variant transition-colors"
               >
-                <span className="material-symbols-outlined text-[20px]">
-                  close
-                </span>
+                <span className="material-symbols-outlined">close</span>
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6 space-y-4">
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
               {/* Ayah */}
               <div>
-                <p className="text-label-md font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                   Data Ayah
                 </p>
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Nama Ayah"
-                    value={formData.nama_ayah}
-                    onChange={(e) =>
-                      setFormData((p) => ({ ...p, nama_ayah: e.target.value }))
-                    }
-                    className="w-full px-4 py-2.5 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  />
-                  <input
-                    type="text"
-                    placeholder="No. HP Ayah"
-                    value={formData.no_hp_ayah}
-                    onChange={(e) =>
-                      setFormData((p) => ({ ...p, no_hp_ayah: e.target.value }))
-                    }
-                    className="w-full px-4 py-2.5 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  />
+                  {[
+                    { key: "nama_ayah", ph: "Nama Ayah" },
+                    { key: "no_hp_ayah", ph: "No. HP Ayah" },
+                  ].map(({ key, ph }) => (
+                    <input
+                      key={key}
+                      type="text"
+                      placeholder={ph}
+                      value={formData[key]}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, [key]: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-2xl text-sm focus:ring-2 focus:ring-success/20 focus:border-success outline-none transition-all"
+                    />
+                  ))}
                 </div>
               </div>
-
-              <div className="h-px bg-border-light" />
+              <div className="h-px bg-outline-variant/20" />
 
               {/* Ibu */}
               <div>
-                <p className="text-label-md font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">
                   Data Ibu
                 </p>
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Nama Ibu"
-                    value={formData.nama_ibu}
-                    onChange={(e) =>
-                      setFormData((p) => ({ ...p, nama_ibu: e.target.value }))
-                    }
-                    className="w-full px-4 py-2.5 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  />
-                  <input
-                    type="text"
-                    placeholder="No. HP Ibu"
-                    value={formData.no_hp_ibu}
-                    onChange={(e) =>
-                      setFormData((p) => ({ ...p, no_hp_ibu: e.target.value }))
-                    }
-                    className="w-full px-4 py-2.5 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  />
+                  {[
+                    { key: "nama_ibu", ph: "Nama Ibu" },
+                    { key: "no_hp_ibu", ph: "No. HP Ibu" },
+                  ].map(({ key, ph }) => (
+                    <input
+                      key={key}
+                      type="text"
+                      placeholder={ph}
+                      value={formData[key]}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, [key]: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-2xl text-sm focus:ring-2 focus:ring-success/20 focus:border-success outline-none transition-all"
+                    />
+                  ))}
                 </div>
               </div>
-
-              <div className="h-px bg-border-light" />
+              <div className="h-px bg-outline-variant/20" />
 
               {/* Wali */}
               <div>
-                <p className="text-label-md font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                  Data Wali (Opsional)
+                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">
+                  Data Wali{" "}
+                  <span className="normal-case font-normal opacity-60">
+                    (Opsional)
+                  </span>
                 </p>
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Nama Wali"
-                    value={formData.nama_wali}
-                    onChange={(e) =>
-                      setFormData((p) => ({ ...p, nama_wali: e.target.value }))
-                    }
-                    className="w-full px-4 py-2.5 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  />
-                  <input
-                    type="text"
-                    placeholder="No. HP Wali"
-                    value={formData.no_hp_wali}
-                    onChange={(e) =>
-                      setFormData((p) => ({ ...p, no_hp_wali: e.target.value }))
-                    }
-                    className="w-full px-4 py-2.5 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
-                  />
+                  {[
+                    { key: "nama_wali", ph: "Nama Wali" },
+                    { key: "no_hp_wali", ph: "No. HP Wali" },
+                  ].map(({ key, ph }) => (
+                    <input
+                      key={key}
+                      type="text"
+                      placeholder={ph}
+                      value={formData[key]}
+                      onChange={(e) =>
+                        setFormData((p) => ({ ...p, [key]: e.target.value }))
+                      }
+                      className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-2xl text-sm focus:ring-2 focus:ring-success/20 focus:border-success outline-none transition-all"
+                    />
+                  ))}
                 </div>
               </div>
-
-              <div className="h-px bg-border-light" />
+              <div className="h-px bg-outline-variant/20" />
 
               {/* Kontak & Alamat */}
               <div>
-                <p className="text-label-md font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                  Kontak & Alamat
+                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest mb-3">
+                  Kontak &amp; Alamat
                 </p>
                 <div className="space-y-3">
                   <input
@@ -795,47 +915,48 @@ export default function MasterOrtu() {
                     onChange={(e) =>
                       setFormData((p) => ({ ...p, email: e.target.value }))
                     }
-                    className="w-full px-4 py-2.5 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-2xl text-sm focus:ring-2 focus:ring-success/20 focus:border-success outline-none transition-all"
                   />
                   <textarea
                     placeholder="Alamat"
                     value={formData.alamat}
+                    rows={2}
                     onChange={(e) =>
                       setFormData((p) => ({ ...p, alamat: e.target.value }))
                     }
-                    rows={2}
-                    className="w-full px-4 py-2.5 bg-background-light border border-border-light rounded-lg text-body-md focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all resize-none"
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-2xl text-sm focus:ring-2 focus:ring-success/20 focus:border-success outline-none transition-all resize-none"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="flex gap-3 px-6 py-4 border-t border-border-light">
+            {/* Footer */}
+            <div className="flex gap-3 px-6 py-4 border-t border-outline-variant/20 bg-surface-container-lowest">
               <button
                 onClick={() => {
                   setShowAddModal(false);
                   setFormData(emptyForm);
                 }}
-                className="flex-1 py-2.5 border border-border-light rounded-lg text-on-surface font-semibold hover:bg-surface-container-low transition-colors text-body-md"
+                className="flex-1 py-3 border border-outline-variant/30 rounded-2xl text-on-surface font-semibold hover:bg-surface-container-low transition-colors text-sm"
               >
                 Batal
               </button>
               <button
-                onClick={handleAddSubmit}
+                onClick={() => createMutation.mutate(formData)}
                 disabled={createMutation.isPending}
-                className="flex-1 py-2.5 bg-primary text-white rounded-lg font-semibold hover:bg-on-primary-fixed-variant transition-colors text-body-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 py-3 rounded-2xl text-white font-semibold disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm transition-all"
+                style={{ backgroundColor: "#00342b" }}
               >
                 {createMutation.isPending ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{" "}
                     Menyimpan...
                   </>
                 ) : (
                   <>
                     <span className="material-symbols-outlined text-[18px]">
                       save
-                    </span>
+                    </span>{" "}
                     Simpan
                   </>
                 )}
@@ -845,47 +966,47 @@ export default function MasterOrtu() {
         </div>
       )}
 
-      {/* ── Delete Confirm Modal ───────────────────────────────── */}
+      {/* ── Delete Confirm Modal ─────────────────────────────────────────── */}
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-error-container flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-[28px] text-danger">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-error-container flex items-center justify-center mx-auto mb-4">
+              <span className="material-symbols-outlined text-[32px] text-error">
                 delete_forever
               </span>
             </div>
-            <h3 className="text-section-title font-bold text-on-surface mb-2">
+            <h3 className="text-lg font-bold text-on-background mb-2">
               Hapus Data Orang Tua?
             </h3>
-            <p className="text-body-md text-text-secondary mb-6">
+            <p className="text-sm text-on-surface-variant mb-6">
               Data{" "}
-              <span className="font-semibold text-on-surface">
+              <span className="font-semibold text-on-background">
                 {parentDisplayName(deleteTarget)}
               </span>{" "}
-              akan dihapus secara permanen dan tidak dapat dikembalikan.
+              akan dihapus secara permanen.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="flex-1 py-2.5 border border-border-light rounded-lg text-on-surface font-semibold hover:bg-surface-container-low transition-colors"
+                className="flex-1 py-3 border border-outline-variant/30 rounded-2xl text-on-surface font-semibold hover:bg-surface-container-low transition-colors text-sm"
               >
                 Batal
               </button>
               <button
                 onClick={() => deleteMutation.mutate(deleteTarget.id)}
                 disabled={deleteMutation.isPending}
-                className="flex-1 py-2.5 bg-danger text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-error text-white rounded-2xl font-semibold hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm"
               >
                 {deleteMutation.isPending ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{" "}
                     Menghapus...
                   </>
                 ) : (
                   <>
                     <span className="material-symbols-outlined text-[18px]">
                       delete
-                    </span>
+                    </span>{" "}
                     Ya, Hapus
                   </>
                 )}

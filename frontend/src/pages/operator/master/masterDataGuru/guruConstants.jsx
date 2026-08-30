@@ -14,7 +14,14 @@ export const jenisPtkOptions = [
   "Penjaga Sekolah",
   "Lainnya",
 ];
-export const statusOptions = ["PNS", "PPPK", "GTY", "GTT", "Honorer", "Lainnya"];
+export const statusOptions = [
+  "PNS",
+  "PPPK",
+  "GTY",
+  "GTT",
+  "Honorer",
+  "Lainnya",
+];
 export const agamaOptions = [
   "Islam",
   "Kristen Protestan",
@@ -82,6 +89,20 @@ export function statusColor(status) {
   return "bg-surface-variant text-text-secondary border-outline-variant/30";
 }
 
+// Template-style status badge — pakai token yang ada di index.css project
+export function statusBadge(status) {
+  if (!status)
+    return "bg-surface-variant text-on-surface-variant border-outline-variant/30";
+  const s = status.toLowerCase();
+  if (s === "aktif")
+    return "bg-secondary-container/30 text-on-secondary-fixed-variant border-secondary-container/40";
+  if (s === "cuti")
+    return "bg-accent-gold/10 text-accent-gold border-accent-gold/30";
+  if (s === "pensiun" || s === "mutasi" || s === "keluar")
+    return "bg-error-container/20 text-error border-error/20";
+  return "bg-surface-variant text-on-surface-variant border-outline-variant/30";
+}
+
 // ── Form Field Components ─────────────────────────────────────────────────────
 export const INPUT =
   "w-full px-3 py-2.5 rounded-xl border border-border-light bg-surface focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm text-text-primary placeholder:text-text-secondary";
@@ -109,18 +130,48 @@ export function SectionLabel({ children }) {
   );
 }
 
-// ── Skeleton Row ──────────────────────────────────────────────────────────────
+// ── Skeleton Row (7 cols: checkbox, guru, L/P, jabatan, wali, status, aksi) ──
 export function SkeletonRow() {
   return (
-    <tr className="border-b border-border-light">
-      {[10, 8, 20, 10, 12, 10, 10].map((w, i) => (
-        <td key={i} className="px-6 py-4">
-          <div
-            className={`h-4 bg-surface-container-high rounded animate-pulse`}
-            style={{ width: `${w * 5}px` }}
-          />
-        </td>
-      ))}
+    <tr className="border-b border-outline-variant/10">
+      {/* Checkbox */}
+      <td className="px-6 py-4 w-12">
+        <div className="w-4 h-4 bg-surface-container-high rounded animate-pulse mx-auto" />
+      </td>
+      {/* Guru (avatar + name) */}
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-surface-container-high animate-pulse shrink-0" />
+          <div className="space-y-1.5">
+            <div className="h-3.5 w-36 bg-surface-container-high rounded animate-pulse" />
+            <div className="h-2.5 w-24 bg-surface-container-high/60 rounded animate-pulse" />
+          </div>
+        </div>
+      </td>
+      {/* L/P */}
+      <td className="px-6 py-4 hidden md:table-cell">
+        <div className="h-3 w-6 bg-surface-container-high rounded animate-pulse" />
+      </td>
+      {/* Jabatan */}
+      <td className="px-6 py-4 hidden md:table-cell">
+        <div className="h-3 w-28 bg-surface-container-high rounded animate-pulse" />
+      </td>
+      {/* Wali Kelas */}
+      <td className="px-6 py-4 hidden lg:table-cell">
+        <div className="h-6 w-20 bg-surface-container-high rounded-lg animate-pulse" />
+      </td>
+      {/* Status */}
+      <td className="px-6 py-4">
+        <div className="h-6 w-16 bg-surface-container-high rounded-full animate-pulse" />
+      </td>
+      {/* Aksi */}
+      <td className="px-6 py-4 text-right">
+        <div className="flex items-center justify-end gap-2">
+          <div className="w-7 h-7 rounded-lg bg-surface-container-high animate-pulse" />
+          <div className="w-7 h-7 rounded-lg bg-surface-container-high animate-pulse" />
+          <div className="w-7 h-7 rounded-lg bg-surface-container-high animate-pulse" />
+        </div>
+      </td>
     </tr>
   );
 }
