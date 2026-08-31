@@ -107,6 +107,7 @@ export function useToggleProgramStatus() {
     mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/toggle-active`),
     onSuccess: (_, ulid) => {
       qc.invalidateQueries({ queryKey: programKeys.lists() });
+      qc.invalidateQueries({ queryKey: programKeys.tree() });
       qc.invalidateQueries({ queryKey: programKeys.dropdown() });
       qc.invalidateQueries({ queryKey: programKeys.detail(ulid) });
     },
