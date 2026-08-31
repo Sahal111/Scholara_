@@ -40,7 +40,7 @@ const T = {
    ────────────────────────────────────────────────────────────────────────────── */
 
 /* ──────────────────────────────────────────────────────────────────────────────
-   Helper: flatten tree → array flat dengan depth info
+   Helper: flatten tree → array flat dengan depth info (untuk stat count saja)
    ────────────────────────────────────────────────────────────────────────────── */
 function flattenTree(nodes, depth = 0, rows = []) {
   if (!nodes) return rows;
@@ -51,6 +51,20 @@ function flattenTree(nodes, depth = 0, rows = []) {
     }
   }
   return rows;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   Helper: collect semua ulid dari tree (untuk init expanded state)
+   ────────────────────────────────────────────────────────────────────────────── */
+function collectAllUlids(nodes, result = new Set()) {
+  if (!nodes) return result;
+  for (const node of nodes) {
+    result.add(node.ulid);
+    if (node.descendantsTree?.length) {
+      collectAllUlids(node.descendantsTree, result);
+    }
+  }
+  return result;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────
@@ -792,100 +806,212 @@ function StatusBadge({ active }) {
 }
 
 /* ──────────────────────────────────────────────────────────────────────────────
-   Tree Row — render baris sesuai depth, persis seperti template
+   Badge label per jenis (untuk depth 1 ke bawah)
    ────────────────────────────────────────────────────────────────────────────── */
-function TreeRow({
-  row,
+const JENIS_BADGE = {
+  program_keahlian: { label: "Program Keahlian" },
+  konsentrasi_keahlian: { label: "Konsentrasi" },
+  peminatan: { label: "Peminatan" },
+  mata_pelajaran_pilihan: { label: "Mapel Pilihan" },
+  keagamaan: { label: "Keagamaan" },
+  umum: { label: "Program" },
+};
+
+/* ──────────────────────────────────────────────────────────────────────────────
+   TreeNode — recursive, collapsible, pixel-perfect sesuai template HTML
+   ────────────────────────────────────────────────────────────────────────────── */
+function TreeNode({
+  node,
+  depth,
   canManage,
   onEdit,
   onDelete,
   onToggleStatus,
   onAddChild,
-  isLast,
+  expandedSet,
+  onToggleExpand,
 }) {
-  const { _depth: depth, jenis, nama, kode, kelas_count, is_active } = row;
+  const children = node.descendantsTree ?? [];
+  const hasChildren = children.length > 0;
+  const isExpanded = expandedSet.has(node.ulid);
+  const { jenis, nama, kode, kelas_count, siswa_count, is_active } = node;
   const icon = JENIS_ICON[jenis] ?? "circle";
+  const badgeLabel = JENIS_BADGE[jenis]?.label ?? "Program";
 
-  /* ── Mobile card fallback (< sm) ─── */
-  /* Untuk mobile kita render versi card, bukan table row */
+  /* shared children renderer */
+  const childRows = isExpanded
+    ? children.map((child) => (
+        <TreeNode
+          key={child.ulid}
+          node={child}
+          depth={depth + 1}
+          canManage={canManage}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onToggleStatus={onToggleStatus}
+          onAddChild={onAddChild}
+          expandedSet={expandedSet}
+          onToggleExpand={onToggleExpand}
+        />
+      ))
+    : null;
 
-  /* ── Depth 0: Bidang Keahlian (root / header group) ── */
-  if (depth === 0)
+  /* ── Depth 0: Bidang Keahlian ── */
+  if (depth === 0) {
     return (
-      <tr className="bg-[#006e2a]/[0.03] border-b border-[#bfc9c4]/10 group/row">
-        <td className="px-4 sm:px-6 py-4">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <span className="material-symbols-outlined text-[#006e2a]/40 text-[20px] transition-transform duration-300 group-hover/row:rotate-90 flex-shrink-0">
-              chevron_right
-            </span>
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#006e2a]/10 flex items-center justify-center text-[#006e2a] flex-shrink-0">
-              <span className="material-symbols-outlined text-[20px] sm:text-[22px]">
-                {icon}
+      <>
+        <tr
+          className="bg-[#006e2a]/[0.03] border-b border-[#bfc9c4]/10 group/row cursor-pointer select-none"
+          onClick={() => hasChildren && onToggleExpand(node.ulid)}
+        >
+          <td className="px-6 py-4">
+            <div className="flex items-center gap-4">
+              {/* chevron — rotate saat expand */}
+              <span
+                className={`material-symbols-outlined text-[#006e2a]/40 text-[20px] transition-transform duration-200 flex-shrink-0 ${
+                  isExpanded ? "rotate-90" : "rotate-0"
+                } ${!hasChildren ? "invisible" : ""}`}
+              >
+                chevron_right
               </span>
+              {/* icon kotak */}
+              <div className="w-10 h-10 rounded-xl bg-[#006e2a]/10 flex items-center justify-center text-[#006e2a] flex-shrink-0 group-hover/row:bg-[#006e2a]/20 transition-colors duration-200">
+                <span className="material-symbols-outlined text-[22px]">
+                  {icon}
+                </span>
+              </div>
+              {/* nama + sublabel */}
+              <div className="flex flex-col">
+                <span className="font-bold text-[#00342b] text-lg tracking-tight leading-tight">
+                  {nama}
+                </span>
+                <span className="text-[10px] font-bold text-[#006e2a]/60 uppercase tracking-widest">
+                  Bidang Keahlian
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-bold text-[#00342b] text-base sm:text-lg tracking-tight leading-tight truncate">
-                {nama}
-              </span>
-              <span className="text-[10px] font-bold text-[#006e2a]/60 uppercase tracking-widest">
-                Bidang Keahlian
-              </span>
+          </td>
+          <td className="text-center font-bold text-[#00342b]">{kode ?? ""}</td>
+          {/* Rombel / Siswa / Status kosong di root */}
+          <td colSpan={3} />
+          <td className="pr-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-end">
+              {canManage && (
+                <AksiDropdown
+                  item={node}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onToggleStatus={onToggleStatus}
+                  onAddChild={onAddChild}
+                />
+              )}
             </div>
-          </div>
-        </td>
-        <td className="px-4 sm:px-6 py-4 text-center font-bold text-[#00342b] text-sm">
-          {kode ?? <span className="text-[#bfc9c4]">—</span>}
-        </td>
-        {/* colspan 3: Rombel, Siswa, Status */}
-        <td colSpan={3} />
-        <td className="px-4 sm:px-6 py-4 text-right">
-          {canManage && (
-            <AksiDropdown
-              item={row}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onToggleStatus={onToggleStatus}
-              onAddChild={onAddChild}
-            />
-          )}
-        </td>
-      </tr>
+          </td>
+        </tr>
+        {childRows}
+      </>
     );
+  }
 
   /* ── Depth 1: Program Keahlian ── */
-  if (depth === 1)
+  if (depth === 1) {
     return (
-      <tr className="border-b border-[#bfc9c4]/10 bg-white">
-        <td className="px-4 sm:px-6 py-3 sm:py-4 pl-10 sm:pl-16">
-          <div className="flex items-center gap-2 sm:gap-3 relative">
-            <div className="absolute -left-4 sm:-left-6 top-0 bottom-0 w-px bg-[#bfc9c4]/20" />
-            <span className="material-symbols-outlined text-[#707975]/40 text-[16px] sm:text-[18px] flex-shrink-0">
-              subdirectory_arrow_right
-            </span>
-            <span className="font-semibold text-[#00342b] text-sm sm:text-base truncate">
-              {nama}
-            </span>
-            <span className="hidden sm:inline px-2 py-0.5 rounded bg-[#e6e9e8] text-[9px] font-bold text-[#707975] uppercase tracking-tighter flex-shrink-0">
-              Program
-            </span>
+      <>
+        <tr
+          className={`border-b border-[#bfc9c4]/10 bg-white select-none ${hasChildren ? "cursor-pointer" : ""}`}
+          onClick={() => hasChildren && onToggleExpand(node.ulid)}
+        >
+          <td className="px-6 py-4 pl-16">
+            <div className="flex items-center gap-3 relative">
+              {/* garis vertikal connector */}
+              <div className="absolute left-[-1.5rem] top-0 bottom-0 w-px bg-[#bfc9c4]/20" />
+              {/* ↳ icon sesuai screenshot */}
+              <span className="material-symbols-outlined text-[#707975]/40 text-[18px] flex-shrink-0">
+                subdirectory_arrow_right
+              </span>
+              <span className="font-semibold text-[#00342b]">{nama}</span>
+              {/* pill badge abu-abu sesuai screenshot */}
+              <span className="px-2 py-0.5 rounded bg-[#e6e9e8] text-[9px] font-bold text-[#707975] uppercase tracking-tighter ml-1 flex-shrink-0">
+                {badgeLabel}
+              </span>
+            </div>
+          </td>
+          <td
+            className="text-center font-medium text-[#3f4945]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {kode ?? <span className="text-[#bfc9c4]">—</span>}
+          </td>
+          <td className="text-center font-medium text-[#3f4945]">
+            {kelas_count ?? 0}
+          </td>
+          <td className="text-center font-medium text-[#3f4945]">
+            {siswa_count != null ? (
+              siswa_count
+            ) : (
+              <span className="text-[#bfc9c4]">—</span>
+            )}
+          </td>
+          <td className="text-center">
+            <StatusBadge active={is_active} />
+          </td>
+          <td className="text-right pr-6" onClick={(e) => e.stopPropagation()}>
+            {canManage && (
+              <AksiDropdown
+                item={node}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onToggleStatus={onToggleStatus}
+                onAddChild={onAddChild}
+              />
+            )}
+          </td>
+        </tr>
+        {childRows}
+      </>
+    );
+  }
+
+  /* ── Depth 2+: Konsentrasi / Peminatan / dll ── */
+  /* Garis L vertikal + horizontal sesuai template & screenshot */
+  return (
+    <>
+      <tr className="border-b border-[#bfc9c4]/10 hover:bg-[#006e2a]/[0.02] transition-colors">
+        <td className="px-6 py-3 pl-28">
+          <div className="flex items-center gap-3 relative">
+            {/* garis vertikal */}
+            <div className="absolute left-[-4.5rem] top-0 bottom-0 w-px bg-[#bfc9c4]/20" />
+            {/* garis horizontal L — hanya setengah atas untuk last child */}
+            <div className="absolute left-[-4.5rem] top-1/2 w-6 h-px bg-[#bfc9c4]/20" />
+            <span className="text-[#3f4945] font-medium">{nama}</span>
           </div>
         </td>
-        <td className="px-4 sm:px-6 py-3 sm:py-4 text-center font-medium text-[#3f4945] text-sm">
-          {kode ?? <span className="text-[#bfc9c4]">—</span>}
+        <td className="text-center">
+          {kode ? (
+            <span className="px-2 py-0.5 rounded bg-[#00342b]/5 text-[#00342b] font-black text-[10px] border border-[#00342b]/10">
+              {kode}
+            </span>
+          ) : (
+            <span className="text-[#bfc9c4] text-xs">—</span>
+          )}
         </td>
-        <td className="px-4 sm:px-6 py-3 sm:py-4 text-center font-medium text-[#3f4945] text-sm">
+        <td className="text-center text-[#3f4945] font-medium">
           {kelas_count ?? 0}
         </td>
-        <td className="px-4 sm:px-6 py-3 sm:py-4 text-center font-medium text-[#3f4945] text-sm">
-          —
+        <td className="text-center text-[#3f4945] font-medium">
+          {siswa_count != null ? (
+            siswa_count
+          ) : (
+            <span className="text-[#bfc9c4]">—</span>
+          )}
         </td>
-        <td className="px-4 sm:px-6 py-3 sm:py-4 text-center">
+        <td className="text-center">
           <StatusBadge active={is_active} />
         </td>
-        <td className="px-4 sm:px-6 py-3 sm:py-4 text-right">
+        <td className="text-right pr-6">
           {canManage && (
             <AksiDropdown
-              item={row}
+              item={node}
               onEdit={onEdit}
               onDelete={onDelete}
               onToggleStatus={onToggleStatus}
@@ -894,54 +1020,8 @@ function TreeRow({
           )}
         </td>
       </tr>
-    );
-
-  /* ── Depth 2+: Konsentrasi / Peminatan / dll ── */
-  return (
-    <tr
-      className={`border-b border-[#bfc9c4]/10 hover:bg-[#006e2a]/[0.02] transition-colors ${isLast ? "border-b-0" : ""}`}
-    >
-      <td className="px-4 sm:px-6 py-3 pl-16 sm:pl-28">
-        <div className="flex items-center gap-2 sm:gap-3 relative">
-          {/* garis vertikal */}
-          <div className="absolute -left-[3rem] sm:-left-[4.5rem] top-0 bottom-0 w-px bg-[#bfc9c4]/20" />
-          {/* garis horizontal L */}
-          <div className="absolute -left-[3rem] sm:-left-[4.5rem] top-1/2 w-4 sm:w-6 h-px bg-[#bfc9c4]/20" />
-          <span className="text-[#3f4945] font-medium text-sm truncate">
-            {nama}
-          </span>
-        </div>
-      </td>
-      <td className="px-4 sm:px-6 py-3 text-center">
-        {kode ? (
-          <span className="px-2 py-0.5 rounded bg-[#00342b]/5 text-[#00342b] font-black text-[10px] border border-[#00342b]/10">
-            {kode}
-          </span>
-        ) : (
-          <span className="text-[#bfc9c4] text-xs">—</span>
-        )}
-      </td>
-      <td className="px-4 sm:px-6 py-3 text-center text-[#3f4945] text-sm">
-        {kelas_count ?? 0}
-      </td>
-      <td className="px-4 sm:px-6 py-3 text-center text-[#3f4945] text-sm">
-        —
-      </td>
-      <td className="px-4 sm:px-6 py-3 text-center">
-        <StatusBadge active={is_active} />
-      </td>
-      <td className="px-4 sm:px-6 py-3 text-right">
-        {canManage && (
-          <AksiDropdown
-            item={row}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onToggleStatus={onToggleStatus}
-            onAddChild={onAddChild}
-          />
-        )}
-      </td>
-    </tr>
+      {childRows}
+    </>
   );
 }
 
@@ -1083,6 +1163,18 @@ export default function MasterProgram() {
   const PAGE_SIZE = 12;
   const [page, setPage] = useState(1);
 
+  /* Expanded nodes — Set berisi ulid yang sedang terbuka */
+  const [expandedSet, setExpandedSet] = useState(new Set());
+
+  const handleToggleExpand = (ulid) => {
+    setExpandedSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(ulid)) next.delete(ulid);
+      else next.add(ulid);
+      return next;
+    });
+  };
+
   /* Modal state */
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -1097,7 +1189,21 @@ export default function MasterProgram() {
   );
   const treeNodes = treeData?.data ?? [];
 
-  /* Client-side search filter */
+  /* Saat data pertama kali load, expand semua root node (Bidang Keahlian) */
+  useEffect(() => {
+    if (treeNodes.length > 0 && expandedSet.size === 0) {
+      const rootUlids = new Set(treeNodes.map((n) => n.ulid));
+      setExpandedSet(rootUlids);
+    }
+  }, [treeNodes.length]);
+
+  /* Client-side search filter — saat search aktif, expand semua */
+  useEffect(() => {
+    if (search.trim()) {
+      setExpandedSet(collectAllUlids(treeNodes));
+    }
+  }, [search]);
+
   const filteredNodes = search.trim()
     ? treeNodes.filter((root) => {
         const q = search.toLowerCase();
@@ -1118,14 +1224,13 @@ export default function MasterProgram() {
       })
     : treeNodes;
 
-  /* Pagination */
+  /* Pagination — paginate root nodes saja */
   const totalRoots = filteredNodes.length;
   const totalPages = Math.ceil(totalRoots / PAGE_SIZE);
   const pagedRoots = filteredNodes.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE,
   );
-  const rows = flattenTree(pagedRoots);
 
   /* Stat counts dari seluruh tree */
   const allRows = flattenTree(treeNodes);
@@ -1312,9 +1417,9 @@ export default function MasterProgram() {
       ) : (
         <div className="bg-white rounded-[2rem] shadow-sm border border-[#bfc9c4]/20 overflow-hidden">
           {/* ── Toolbar ── */}
-          <div className="bg-white border-b border-[#bfc9c4]/20 p-4 flex flex-col lg:flex-row gap-3 lg:gap-4 items-stretch lg:items-center shadow-sm">
+          <div className="bg-white border-b border-[#bfc9c4]/20 p-4 flex flex-col lg:flex-row gap-4 items-center shadow-sm">
             {/* Search */}
-            <div className="relative flex-1 group">
+            <div className="relative flex-1 w-full group">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#707975] group-focus-within:text-[#006e2a] transition-colors text-[20px]">
                 search
               </span>
@@ -1329,9 +1434,22 @@ export default function MasterProgram() {
               />
             </div>
 
-            <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
+            <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full lg:w-auto">
+              {/* Filter Program Keahlian — sesuai template */}
+              <div className="relative min-w-[160px] flex-1 lg:flex-none">
+                <select
+                  className="w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 pl-4 pr-10 text-[#191c1c] font-bold text-xs uppercase tracking-wider focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] appearance-none cursor-pointer transition-all outline-none"
+                  defaultValue=""
+                >
+                  <option value="">Program Keahlian</option>
+                </select>
+                <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975] text-[20px]">
+                  expand_more
+                </span>
+              </div>
+
               {/* Filter Status */}
-              <div className="relative min-w-[150px] flex-1 sm:flex-none">
+              <div className="relative min-w-[160px] flex-1 lg:flex-none">
                 <select
                   className="w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 pl-4 pr-10 text-[#191c1c] font-bold text-xs uppercase tracking-wider focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] appearance-none cursor-pointer transition-all outline-none"
                   value={filterStatus}
@@ -1349,7 +1467,7 @@ export default function MasterProgram() {
                 </span>
               </div>
 
-              <div className="hidden lg:block h-10 w-px bg-[#bfc9c4]/20 mx-1" />
+              <div className="h-10 w-px bg-[#bfc9c4]/20 hidden lg:block mx-1" />
 
               {/* Reset */}
               <button
@@ -1369,28 +1487,28 @@ export default function MasterProgram() {
           </div>
 
           {/* ── Table ── */}
-          <div className="p-4 sm:p-6">
+          <div className="space-y-8 p-6">
             <div className="bg-white rounded-2xl border border-[#bfc9c4]/20 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[560px]">
+                <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-[#f2f4f3]/30 border-b border-[#bfc9c4]/10">
-                      <th className="px-4 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945]">
+                      <th className="px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945]">
                         Struktur Pendidikan
                       </th>
-                      <th className="px-4 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945] text-center">
+                      <th className="px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945] text-center">
                         Kode
                       </th>
-                      <th className="px-4 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945] text-center">
+                      <th className="px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945] text-center">
                         Rombel
                       </th>
-                      <th className="px-4 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945] text-center">
+                      <th className="px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945] text-center">
                         Siswa
                       </th>
-                      <th className="px-4 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945] text-center">
+                      <th className="px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945] text-center">
                         Status
                       </th>
-                      <th className="px-4 sm:px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945] text-right">
+                      <th className="px-6 py-4 font-bold text-[10px] uppercase tracking-[0.15em] text-[#3f4945] text-right">
                         Aksi
                       </th>
                     </tr>
@@ -1398,22 +1516,24 @@ export default function MasterProgram() {
                   <tbody className="text-sm">
                     {isLoading ? (
                       <SkeletonRows />
-                    ) : rows.length === 0 ? (
+                    ) : pagedRoots.length === 0 ? (
                       <EmptyState
                         onTambah={handleTambah}
                         canManage={canManage}
                       />
                     ) : (
-                      rows.map((row, idx) => (
-                        <TreeRow
-                          key={row.ulid}
-                          row={row}
+                      pagedRoots.map((node) => (
+                        <TreeNode
+                          key={node.ulid}
+                          node={node}
+                          depth={0}
                           canManage={canManage}
                           onEdit={handleEdit}
                           onDelete={handleDelete}
                           onToggleStatus={handleToggleStatus}
                           onAddChild={handleTambahChild}
-                          isLast={idx === rows.length - 1}
+                          expandedSet={expandedSet}
+                          onToggleExpand={handleToggleExpand}
                         />
                       ))
                     )}
