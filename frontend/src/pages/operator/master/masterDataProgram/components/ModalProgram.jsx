@@ -317,79 +317,7 @@ export default function ModalProgram({
             </div>
           )}
 
-          {/* ── Section 1: Informasi Utama ── */}
-          <section className="space-y-6">
-            <SectionHeader label="Informasi Utama" />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Nama Program */}
-              <div className="md:col-span-2">
-                <FieldLabel htmlFor="nama_program" required>
-                  Nama{" "}
-                  <span className="font-normal text-[#3f4945]">
-                    {jenisLabel}
-                  </span>
-                </FieldLabel>
-                <input
-                  id="nama_program"
-                  type="text"
-                  className={`${inputBase} py-3 text-base font-semibold`}
-                  style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}
-                  placeholder={ctx.namePh}
-                  value={form.nama}
-                  onChange={(e) => set("nama", e.target.value)}
-                />
-              </div>
-
-              {/* Kode */}
-              <div>
-                <FieldLabel htmlFor="kode_program" optional>
-                  Kode Program
-                </FieldLabel>
-                <input
-                  id="kode_program"
-                  type="text"
-                  maxLength={10}
-                  className={`${inputBase} py-2.5 text-sm`}
-                  placeholder={ctx.kodePh}
-                  value={form.kode}
-                  onChange={(e) => set("kode", e.target.value.toUpperCase())}
-                />
-                <p className="mt-1 text-[11px] text-[#707975]">
-                  {ctx.kodeHint}
-                </p>
-              </div>
-
-              {/* Jenjang Sasaran */}
-              <div>
-                <FieldLabel htmlFor="jenjang_sasaran">
-                  Jenjang Sasaran
-                </FieldLabel>
-                <div className="relative">
-                  <select
-                    id="jenjang_sasaran"
-                    className={`${inputBase} py-2.5 text-sm appearance-none cursor-pointer pr-10`}
-                    value={form.jenjang_sasaran}
-                    onChange={(e) => set("jenjang_sasaran", e.target.value)}
-                  >
-                    {JENJANG_LIST.map((j) => (
-                      <option key={j} value={j}>
-                        {j === "semua" ? "Semua Jenjang" : j}
-                      </option>
-                    ))}
-                  </select>
-                  <span
-                    className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#707975]"
-                    style={{ fontSize: 20 }}
-                  >
-                    expand_more
-                  </span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── Section 2: Hierarki & Relasi ── */}
+          {/* ── Section 1: Hierarki & Relasi ── */}
           <section className="space-y-6">
             <SectionHeader label="Hierarki & Relasi" />
 
@@ -468,6 +396,78 @@ export default function ModalProgram({
               )}
 
               {isParentLocked && <input type="hidden" value={form.parent_id} />}
+            </div>
+          </section>
+
+          {/* ── Section 2: Informasi Utama ── */}
+          <section className="space-y-6">
+            <SectionHeader label="Informasi Utama" />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Nama Program */}
+              <div className="md:col-span-2">
+                <FieldLabel htmlFor="nama_program" required>
+                  Nama{" "}
+                  <span className="font-normal text-[#3f4945]">
+                    {jenisLabel}
+                  </span>
+                </FieldLabel>
+                <input
+                  id="nama_program"
+                  type="text"
+                  className={`${inputBase} py-3 text-base font-semibold`}
+                  style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}
+                  placeholder={ctx.namePh}
+                  value={form.nama}
+                  onChange={(e) => set("nama", e.target.value)}
+                />
+              </div>
+
+              {/* Kode */}
+              <div>
+                <FieldLabel htmlFor="kode_program" optional>
+                  Kode Program
+                </FieldLabel>
+                <input
+                  id="kode_program"
+                  type="text"
+                  maxLength={10}
+                  className={`${inputBase} py-2.5 text-sm`}
+                  placeholder={ctx.kodePh}
+                  value={form.kode}
+                  onChange={(e) => set("kode", e.target.value.toUpperCase())}
+                />
+                <p className="mt-1 text-[11px] text-[#707975]">
+                  {ctx.kodeHint}
+                </p>
+              </div>
+
+              {/* Jenjang Sasaran — read-only, sesuai jenis sekolah */}
+              <div>
+                <FieldLabel htmlFor="jenjang_sasaran">
+                  Jenjang Sasaran
+                </FieldLabel>
+                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg border border-[#bfc9c4]/50 bg-[#f2f4f3]">
+                  <span
+                    className="material-symbols-outlined text-[#006e2a] flex-shrink-0"
+                    style={{ fontSize: 18, fontVariationSettings: "'FILL' 1" }}
+                  >
+                    school
+                  </span>
+                  <span className="text-sm font-semibold text-[#00342b]">
+                    {form.jenjang_sasaran === "semua"
+                      ? "Semua Jenjang"
+                      : form.jenjang_sasaran}
+                  </span>
+                  <span className="ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] whitespace-nowrap">
+                    Otomatis
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-[#707975]">
+                  Disesuaikan otomatis berdasarkan jenis sekolah Anda.
+                </p>
+                <input type="hidden" value={form.jenjang_sasaran} />
+              </div>
             </div>
           </section>
 

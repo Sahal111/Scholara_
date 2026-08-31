@@ -54,29 +54,79 @@ const CHILD_LABEL = {
 /* ─── AksiDropdown ────────────────────────────────────────────────────────────── */
 function AksiDropdown({ item, onEdit, onDelete, onToggleStatus, onAddChild }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [pos, setPos] = useState({ top: 0, right: 0, flipUp: false });
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
   const childLabel = CHILD_LABEL[item.jenis];
 
+  /* Render menu dulu tanpa posisi, lalu ukur dan posisikan dengan benar */
+  const handleOpen = () => {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      // Simpan posisi tombol, flip akan dihitung setelah menu ter-render
+      setPos({
+        top: rect.bottom + window.scrollY + 4,
+        right: window.innerWidth - rect.right,
+        btnRect: rect,
+        flipUp: false,
+      });
+    }
+    setOpen((v) => !v);
+  };
+
+  /* Setelah menu ter-render, cek apakah perlu flip ke atas */
   useEffect(() => {
+    if (!open || !menuRef.current || !pos.btnRect) return;
+    const menuH = menuRef.current.offsetHeight;
+    const rect = pos.btnRect;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow < menuH + 8 && rect.top > menuH + 8) {
+      // Tidak muat di bawah & ada ruang di atas — flip
+      setPos((p) => ({
+        ...p,
+        top: rect.top + window.scrollY - menuH - 4,
+        flipUp: true,
+      }));
+    }
+  }, [open]);
+
+  /* Tutup saat klik di luar */
+  useEffect(() => {
+    if (!open) return;
     const h = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (
+        btnRef.current &&
+        !btnRef.current.contains(e.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
+      )
+        setOpen(false);
     };
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
-  }, []);
+  }, [open]);
 
-  return (
-    <div ref={ref} className="relative inline-block">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="text-[#3f4945] hover:text-[#006e2a] p-1.5 rounded-lg hover:bg-[#006e2a]/5 transition-colors"
-      >
-        <span className="material-symbols-outlined text-[20px]">
-          more_horiz
-        </span>
-      </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-[#bfc9c4]/30 z-50 overflow-hidden py-1">
+  /* Tutup saat scroll */
+  useEffect(() => {
+    if (!open) return;
+    const h = () => setOpen(false);
+    window.addEventListener("scroll", h, true);
+    return () => window.removeEventListener("scroll", h, true);
+  }, [open]);
+
+  const menu = open
+    ? createPortal(
+        <div
+          ref={menuRef}
+          style={{
+            position: "absolute",
+            top: pos.top,
+            right: pos.right,
+            zIndex: 9999,
+            minWidth: "13rem",
+          }}
+          className="bg-white rounded-xl shadow-xl border border-[#bfc9c4]/30 overflow-hidden py-1"
+        >
           {childLabel && onAddChild && (
             <>
               <button
@@ -141,8 +191,23 @@ function AksiDropdown({ item, onEdit, onDelete, onToggleStatus, onAddChild }) {
               </button>
             </>
           )}
-        </div>
-      )}
+        </div>,
+        document.body,
+      )
+    : null;
+
+  return (
+    <div className="inline-block">
+      <button
+        ref={btnRef}
+        onClick={handleOpen}
+        className="text-[#3f4945] hover:text-[#006e2a] p-1.5 rounded-lg hover:bg-[#006e2a]/5 transition-colors"
+      >
+        <span className="material-symbols-outlined text-[20px]">
+          more_horiz
+        </span>
+      </button>
+      {menu}
     </div>
   );
 }
