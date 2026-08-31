@@ -849,10 +849,10 @@ export default function MasterProgram() {
     });
   };
 
-  // Tambah dari tombol header — jenis sudah ditentukan, parent bebas
-  const handleTambah = (defaultJenis) => {
+  // Tambah dari tombol header — jenis bebas dipilih di dalam modal
+  const handleTambah = () => {
     setEditData(null);
-    setModalDefaultJenis(defaultJenis ?? programConfig.defaultJenis ?? null);
+    setModalDefaultJenis(null); // null = tidak dikunci, user bebas pilih jenis di modal
     setModalDefaultParentId(null);
     setModalDefaultParentLabel(null);
     setModalOpen(true);
@@ -970,59 +970,32 @@ export default function MasterProgram() {
           </div>
         </div>
 
-        {/* Right — Buttons (dinamis dari programConfig, hanya tampil jika canManage) */}
-        {canManage &&
-          programConfig.hasTabs &&
-          programConfig.addButtons?.length > 0 && (
-            <div className="flex flex-wrap items-center gap-4 relative z-10">
-              {programConfig.addButtons.map((btn) =>
-                btn.variant === "outline" ? (
-                  <button
-                    key={btn.jenis}
-                    onClick={() => handleTambah(btn.jenis)}
-                    className="bg-white text-[#006e2a] border border-[#006e2a]/30 px-6 py-3.5 rounded-full
-                    flex items-center gap-3 shadow-sm hover:shadow-[#006e2a]/20 hover:-translate-y-1
-                    transition-all duration-500 group"
-                  >
-                    <div className="bg-[#006e2a]/10 rounded-full p-1 group-hover:rotate-90 transition-transform duration-500">
-                      <span className="material-symbols-outlined text-[20px] block">
-                        add
-                      </span>
-                    </div>
-                    <span
-                      className="tracking-widest font-black uppercase text-[11px]"
-                      style={{ fontFamily: "'Inter', sans-serif" }}
-                    >
-                      {btn.label}
-                    </span>
-                  </button>
-                ) : (
-                  <button
-                    key={btn.jenis}
-                    onClick={() => handleTambah(btn.jenis)}
-                    className="bg-[#006e2a] text-white px-6 py-3.5 rounded-full
-                    flex items-center gap-3
-                    shadow-[0_8px_16px_rgba(0,110,42,0.15)]
-                    hover:shadow-[0_15px_40px_rgba(0,200,83,0.5)]
-                    hover:-translate-y-1 hover:scale-[1.03]
-                    transition-all duration-500 group border border-white/20"
-                  >
-                    <div className="bg-white/20 rounded-full p-1 group-hover:rotate-90 transition-transform duration-500">
-                      <span className="material-symbols-outlined text-[20px] block">
-                        add
-                      </span>
-                    </div>
-                    <span
-                      className="tracking-widest font-black uppercase text-[11px]"
-                      style={{ fontFamily: "'Inter', sans-serif" }}
-                    >
-                      {btn.label}
-                    </span>
-                  </button>
-                ),
-              )}
-            </div>
-          )}
+        {/* Right — 1 tombol Tambah Program */}
+        {canManage && programConfig.hasTabs && (
+          <div className="relative z-10">
+            <button
+              onClick={handleTambah}
+              className="bg-[#006e2a] text-white px-6 py-3.5 rounded-full
+              flex items-center gap-3
+              shadow-[0_8px_16px_rgba(0,110,42,0.15)]
+              hover:shadow-[0_15px_40px_rgba(0,200,83,0.5)]
+              hover:-translate-y-1 hover:scale-[1.03]
+              transition-all duration-500 group border border-white/20"
+            >
+              <div className="bg-white/20 rounded-full p-1 group-hover:rotate-90 transition-transform duration-500">
+                <span className="material-symbols-outlined text-[20px] block">
+                  add
+                </span>
+              </div>
+              <span
+                className="tracking-widest font-black uppercase text-[11px]"
+                style={{ fontFamily: "'Inter', sans-serif" }}
+              >
+                Tambah Program
+              </span>
+            </button>
+          </div>
+        )}
       </div>
       {/* ════════════════════════════════════════════════════════════════
           MAIN CARD
@@ -1280,7 +1253,7 @@ export default function MasterProgram() {
                         </span>
                         {canManage && (
                           <button
-                            onClick={() => handleTambah(activeTab)}
+                            onClick={handleTambah}
                             className="mt-1 px-5 py-2 rounded-full bg-[#006e2a] text-white text-xs font-bold
                             hover:bg-[#00531e] transition-colors"
                           >
