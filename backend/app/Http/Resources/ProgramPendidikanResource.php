@@ -44,6 +44,13 @@ class ProgramPendidikanResource extends JsonResource
                 fn() => ProgramPendidikanResource::collection($this->children)
             ),
 
+            // Alias untuk tree endpoint — controller load relasi 'descendantsTree'
+            // (recursive children). Frontend baca node.descendantsTree untuk render pohon.
+            'descendantsTree' => $this->whenLoaded(
+                'descendantsTree',
+                fn() => ProgramPendidikanResource::collection($this->descendantsTree)
+            ),
+
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
