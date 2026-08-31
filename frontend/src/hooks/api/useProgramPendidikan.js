@@ -97,6 +97,25 @@ export function useUpdateProgram(ulid) {
   });
 }
 
+/**
+ * Toggle status aktif/nonaktif program.
+ * Pakai endpoint PATCH dedicated — tidak overwrite field lain.
+ */
+export function useToggleProgramStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/toggle-active`),
+    onSuccess: (_, ulid) => {
+      qc.invalidateQueries({ queryKey: programKeys.lists() });
+      qc.invalidateQueries({ queryKey: programKeys.dropdown() });
+      qc.invalidateQueries({ queryKey: programKeys.detail(ulid) });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message ?? "Gagal mengubah status.");
+    },
+  });
+}
+
 // Pakai ulid bukan integer id
 export function useDeleteProgram() {
   const qc = useQueryClient();

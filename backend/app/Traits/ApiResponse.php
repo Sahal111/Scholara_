@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 trait ApiResponse
@@ -10,7 +11,10 @@ trait ApiResponse
     /**
      * Response sukses — single resource atau collection.
      *
-     * Kalau $data adalah LengthAwarePaginator, otomatis tambahkan meta dan links.
+     * Mendukung:
+     *  - LengthAwarePaginator langsung → meta + links otomatis
+     *  - ResourceCollection yang wrap LengthAwarePaginator → sama, dengan transformasi Resource
+     *  - Data biasa (array, model, Resource) → { success, data }
      */
     protected function success(
         mixed $data = null,
@@ -23,7 +27,25 @@ trait ApiResponse
             $response['message'] = $message;
         }
 
-        if ($data instanceof LengthAwarePaginator) {
+        // ResourceCollection yang wrap LengthAwarePaginator
+        if ($data instanceof ResourceCollection && $data->resource instanceof LengthAwarePaginator) {
+            $paginator = $data->resource;
+            $response['data'] = $data->resolve(request());
+            $response['meta'] = [
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'from' => $paginator->firstItem(),
+                'to' => $paginator->lastItem(),
+            ];
+            $response['links'] = [
+                'first' => $paginator->url(1),
+                'last' => $paginator->url($paginator->lastPage()),
+                'prev' => $paginator->previousPageUrl(),
+                'next' => $paginator->nextPageUrl(),
+            ];
+        } elseif ($data instanceof LengthAwarePaginator) {
             $response['data'] = $data->items();
             $response['meta'] = [
                 'current_page' => $data->currentPage(),

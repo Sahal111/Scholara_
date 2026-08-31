@@ -40,7 +40,16 @@ class PermissionMiddleware
             ], 403);
         }
 
-        // User harus punya SALAH SATU dari permission yang disebutkan
+        // User harus punya SALAH SATU dari permission yang disebutkan.
+        // super_admin bypass semua permission check — akses penuh ke semua tenant route.
+        if (!$user->relationLoaded('roles')) {
+            $user->load(['roles' => fn($q) => $q->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class)]);
+        }
+
+        if ($user->hasRole('super_admin')) {
+            return $next($request);
+        }
+
         foreach ($permissions as $permission) {
             if ($user->hasPermission($permission)) {
                 return $next($request);

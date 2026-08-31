@@ -195,6 +195,28 @@ class ProgramPendidikanController extends Controller
         return $this->success(null, 'Program pendidikan berhasil dihapus.');
     }
 
+    // ── Toggle Active ─────────────────────────────────────────────
+
+    /**
+     * Toggle status aktif/nonaktif program.
+     * Dipisah dari update() agar intent jelas dan audit trail lebih granular.
+     */
+    public function toggleActive(string $ulid): JsonResponse
+    {
+        $program = ProgramPendidikan::where('ulid', $ulid)->firstOrFail();
+
+        $this->authorize('update', $program);
+
+        $program->update(['is_active' => !$program->is_active]);
+
+        $status = $program->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        return $this->success(
+            new ProgramPendidikanResource($program),
+            "Program pendidikan berhasil {$status}."
+        );
+    }
+
     // ── Dropdown — ringan untuk select/combobox ───────────────────
 
     /**

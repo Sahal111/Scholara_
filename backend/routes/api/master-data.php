@@ -20,7 +20,7 @@ use App\Http\Controllers\MasterData\NaikKelasController;
 use App\Http\Controllers\MasterData\TahunAjaranController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
+Route::middleware(['auth:sanctum', 'role:operator,kepsek,super_admin'])
     ->prefix('operator/master-data')
     ->group(function () {
 
@@ -295,19 +295,28 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek'])
         // ── PROGRAM PENDIDIKAN ────────────────────────────────────────────────────
         // Menggantikan /jurusan — mendukung hierarki multi-jenjang
         // (Bidang Keahlian → Program Keahlian → Konsentrasi, atau Peminatan SMA/MA)
-        // Static routes (dropdown, tree) SEBELUM wildcard {id}
+        // Static routes (dropdown, tree) SEBELUM wildcard {ulid}
     
-        Route::middleware('permission:master_data.kelas.view')->group(function () {
-            Route::get('/program-pendidikan/dropdown', [ProgramPendidikanController::class, 'dropdown']);
-            Route::get('/program-pendidikan/tree', [ProgramPendidikanController::class, 'tree']);
-            Route::get('/program-pendidikan', [ProgramPendidikanController::class, 'index']);
-            Route::get('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'show']);
+        Route::middleware('permission:master_data.program.view')->group(function () {
+            Route::get('/program-pendidikan/dropdown', [ProgramPendidikanController::class, 'dropdown'])
+                ->name('master-data.program.dropdown');
+            Route::get('/program-pendidikan/tree', [ProgramPendidikanController::class, 'tree'])
+                ->name('master-data.program.tree');
+            Route::get('/program-pendidikan', [ProgramPendidikanController::class, 'index'])
+                ->name('master-data.program.index');
+            Route::get('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'show'])
+                ->name('master-data.program.show');
         });
 
-        Route::middleware('permission:master_data.kelas.manage')->group(function () {
-            Route::post('/program-pendidikan', [ProgramPendidikanController::class, 'store']);
-            Route::put('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'update']);
-            Route::delete('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'destroy']);
+        Route::middleware('permission:master_data.program.manage')->group(function () {
+            Route::post('/program-pendidikan', [ProgramPendidikanController::class, 'store'])
+                ->name('master-data.program.store');
+            Route::put('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'update'])
+                ->name('master-data.program.update');
+            Route::patch('/program-pendidikan/{ulid}/toggle-active', [ProgramPendidikanController::class, 'toggleActive'])
+                ->name('master-data.program.toggle-active');
+            Route::delete('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'destroy'])
+                ->name('master-data.program.destroy');
         });
 
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────

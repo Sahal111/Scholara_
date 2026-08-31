@@ -2,13 +2,13 @@ import { createPortal } from "react-dom";
 import { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import api from "../../../../lib/axios";
 import {
   useProgramList,
   useProgramDropdown,
   useCreateProgram,
   useUpdateProgram,
   useDeleteProgram,
+  useToggleProgramStatus,
 } from "../../../../hooks/api/useProgramPendidikan";
 import { useAuth } from "../../../../contexts/AuthContext";
 import {
@@ -586,6 +586,11 @@ function AksiDropdown({ item, onEdit, onDelete, onToggleStatus, onAddChild }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Tidak ada action yang bisa dilakukan — sembunyikan menu
+  const hasAnyAction =
+    onEdit || onDelete || onToggleStatus || (onAddChild && childLabel);
+  if (!hasAnyAction) return null;
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -596,8 +601,8 @@ function AksiDropdown({ item, onEdit, onDelete, onToggleStatus, onAddChild }) {
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-1 w-56 bg-white rounded-xl shadow-xl border border-[#bfc9c4]/30 z-30 overflow-hidden py-1">
-          {/* Tambah Child — hanya muncul jika item punya jenis child */}
-          {childLabel && (
+          {/* Tambah Child — hanya muncul jika item punya jenis child dan handler ada */}
+          {childLabel && onAddChild && (
             <>
               <button
                 onClick={() => {
@@ -615,45 +620,55 @@ function AksiDropdown({ item, onEdit, onDelete, onToggleStatus, onAddChild }) {
             </>
           )}
 
-          <button
-            onClick={() => {
-              onEdit(item);
-              setOpen(false);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#3f4945] hover:bg-[#f2f4f3] transition-colors"
-          >
-            <span className="material-symbols-outlined text-[18px] text-[#3f4945]">
-              edit
-            </span>
-            Edit
-          </button>
-          <button
-            onClick={() => {
-              onToggleStatus(item);
-              setOpen(false);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#3f4945] hover:bg-[#f2f4f3] transition-colors"
-          >
-            <span
-              className={`material-symbols-outlined text-[18px] ${item.is_active ? "text-amber-500" : "text-[#006e2a]"}`}
+          {onEdit && (
+            <button
+              onClick={() => {
+                onEdit(item);
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#3f4945] hover:bg-[#f2f4f3] transition-colors"
             >
-              {item.is_active ? "pause_circle" : "play_circle"}
-            </span>
-            {item.is_active ? "Nonaktifkan" : "Aktifkan"}
-          </button>
-          <div className="h-px bg-[#bfc9c4]/30 my-1" />
-          <button
-            onClick={() => {
-              onDelete(item);
-              setOpen(false);
-            }}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#ba1a1a] hover:bg-red-50 transition-colors"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              delete
-            </span>
-            Hapus
-          </button>
+              <span className="material-symbols-outlined text-[18px] text-[#3f4945]">
+                edit
+              </span>
+              Edit
+            </button>
+          )}
+
+          {onToggleStatus && (
+            <button
+              onClick={() => {
+                onToggleStatus(item);
+                setOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#3f4945] hover:bg-[#f2f4f3] transition-colors"
+            >
+              <span
+                className={`material-symbols-outlined text-[18px] ${item.is_active ? "text-amber-500" : "text-[#006e2a]"}`}
+              >
+                {item.is_active ? "pause_circle" : "play_circle"}
+              </span>
+              {item.is_active ? "Nonaktifkan" : "Aktifkan"}
+            </button>
+          )}
+
+          {onDelete && (
+            <>
+              <div className="h-px bg-[#bfc9c4]/30 my-1" />
+              <button
+                onClick={() => {
+                  onDelete(item);
+                  setOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-[#ba1a1a] hover:bg-red-50 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  delete
+                </span>
+                Hapus
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -744,7 +759,9 @@ function SkeletonRows() {
 // ── Halaman Utama ─────────────────────────────────────────────────────────────
 export default function MasterProgram() {
   const qc = useQueryClient();
-  const { school } = useAuth();
+  const { school, hasPermission } = useAuth();
+  const canView = hasPermission("master_data.program.view");
+  const canManage = hasPermission("master_data.program.manage");
 
   // Config dinamis berdasarkan jenis + kurikulum + subtipe sekolah dari AuthContext
   // subtipe membedakan MA reguler vs MAN IC / MAN PK / MAN Plus Vokasi
@@ -809,10 +826,11 @@ export default function MasterProgram() {
   // ── Mutations — inisialisasi di level komponen, BUKAN di dalam handler
   const deleteMutation = useDeleteProgram();
   const updateMutation = useUpdateProgram(editData?.ulid);
+  const toggleStatusMutation = useToggleProgramStatus();
 
   const handleEdit = (item) => {
     setEditData(item);
-    setModalDefaultJenis(item.jenis); // saat edit, default jenis dari data
+    setModalDefaultJenis(item.jenis);
     setModalOpen(true);
   };
 
@@ -824,25 +842,11 @@ export default function MasterProgram() {
     });
   };
 
-  // fix: tidak memanggil hook di dalam handler — pakai api instance langsung
   const handleToggleStatus = (item) => {
-    api
-      .put(`/operator/master-data/program-pendidikan/${item.ulid}`, {
-        parent_id: item.parent_id ?? null,
-        nama: item.nama,
-        kode: item.kode ?? null,
-        jenis: item.jenis,
-        jenjang_sasaran: item.jenjang_sasaran,
-        deskripsi: item.deskripsi ?? null,
-        is_active: !item.is_active,
-      })
-      .then(() => {
-        qc.invalidateQueries({ queryKey: ["program-pendidikan"] });
-        toast.success(
-          item.is_active ? "Program dinonaktifkan." : "Program diaktifkan.",
-        );
-      })
-      .catch(() => toast.error("Gagal mengubah status program."));
+    const label = item.is_active ? "dinonaktifkan" : "diaktifkan";
+    toggleStatusMutation.mutate(item.ulid, {
+      onSuccess: () => toast.success(`Program berhasil ${label}.`),
+    });
   };
 
   // Tambah dari tombol header — jenis sudah ditentukan, parent bebas
@@ -966,57 +970,59 @@ export default function MasterProgram() {
           </div>
         </div>
 
-        {/* Right — Buttons (dinamis dari programConfig) */}
-        {programConfig.hasTabs && programConfig.addButtons?.length > 0 && (
-          <div className="flex flex-wrap items-center gap-4 relative z-10">
-            {programConfig.addButtons.map((btn) =>
-              btn.variant === "outline" ? (
-                <button
-                  key={btn.jenis}
-                  onClick={() => handleTambah(btn.jenis)}
-                  className="bg-white text-[#006e2a] border border-[#006e2a]/30 px-6 py-3.5 rounded-full
+        {/* Right — Buttons (dinamis dari programConfig, hanya tampil jika canManage) */}
+        {canManage &&
+          programConfig.hasTabs &&
+          programConfig.addButtons?.length > 0 && (
+            <div className="flex flex-wrap items-center gap-4 relative z-10">
+              {programConfig.addButtons.map((btn) =>
+                btn.variant === "outline" ? (
+                  <button
+                    key={btn.jenis}
+                    onClick={() => handleTambah(btn.jenis)}
+                    className="bg-white text-[#006e2a] border border-[#006e2a]/30 px-6 py-3.5 rounded-full
                     flex items-center gap-3 shadow-sm hover:shadow-[#006e2a]/20 hover:-translate-y-1
                     transition-all duration-500 group"
-                >
-                  <div className="bg-[#006e2a]/10 rounded-full p-1 group-hover:rotate-90 transition-transform duration-500">
-                    <span className="material-symbols-outlined text-[20px] block">
-                      add
-                    </span>
-                  </div>
-                  <span
-                    className="tracking-widest font-black uppercase text-[11px]"
-                    style={{ fontFamily: "'Inter', sans-serif" }}
                   >
-                    {btn.label}
-                  </span>
-                </button>
-              ) : (
-                <button
-                  key={btn.jenis}
-                  onClick={() => handleTambah(btn.jenis)}
-                  className="bg-[#006e2a] text-white px-6 py-3.5 rounded-full
+                    <div className="bg-[#006e2a]/10 rounded-full p-1 group-hover:rotate-90 transition-transform duration-500">
+                      <span className="material-symbols-outlined text-[20px] block">
+                        add
+                      </span>
+                    </div>
+                    <span
+                      className="tracking-widest font-black uppercase text-[11px]"
+                      style={{ fontFamily: "'Inter', sans-serif" }}
+                    >
+                      {btn.label}
+                    </span>
+                  </button>
+                ) : (
+                  <button
+                    key={btn.jenis}
+                    onClick={() => handleTambah(btn.jenis)}
+                    className="bg-[#006e2a] text-white px-6 py-3.5 rounded-full
                     flex items-center gap-3
                     shadow-[0_8px_16px_rgba(0,110,42,0.15)]
                     hover:shadow-[0_15px_40px_rgba(0,200,83,0.5)]
                     hover:-translate-y-1 hover:scale-[1.03]
                     transition-all duration-500 group border border-white/20"
-                >
-                  <div className="bg-white/20 rounded-full p-1 group-hover:rotate-90 transition-transform duration-500">
-                    <span className="material-symbols-outlined text-[20px] block">
-                      add
-                    </span>
-                  </div>
-                  <span
-                    className="tracking-widest font-black uppercase text-[11px]"
-                    style={{ fontFamily: "'Inter', sans-serif" }}
                   >
-                    {btn.label}
-                  </span>
-                </button>
-              ),
-            )}
-          </div>
-        )}
+                    <div className="bg-white/20 rounded-full p-1 group-hover:rotate-90 transition-transform duration-500">
+                      <span className="material-symbols-outlined text-[20px] block">
+                        add
+                      </span>
+                    </div>
+                    <span
+                      className="tracking-widest font-black uppercase text-[11px]"
+                      style={{ fontFamily: "'Inter', sans-serif" }}
+                    >
+                      {btn.label}
+                    </span>
+                  </button>
+                ),
+              )}
+            </div>
+          )}
       </div>
       {/* ════════════════════════════════════════════════════════════════
           MAIN CARD
@@ -1272,13 +1278,15 @@ export default function MasterProgram() {
                         <span className="text-sm font-medium">
                           Belum ada data program pendidikan.
                         </span>
-                        <button
-                          onClick={() => handleTambah(activeTab)}
-                          className="mt-1 px-5 py-2 rounded-full bg-[#006e2a] text-white text-xs font-bold
-                          hover:bg-[#00531e] transition-colors"
-                        >
-                          + Tambah Program
-                        </button>
+                        {canManage && (
+                          <button
+                            onClick={() => handleTambah(activeTab)}
+                            className="mt-1 px-5 py-2 rounded-full bg-[#006e2a] text-white text-xs font-bold
+                            hover:bg-[#00531e] transition-colors"
+                          >
+                            + Tambah Program
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -1370,10 +1378,10 @@ export default function MasterProgram() {
                       <td className="py-4 px-6 text-right">
                         <AksiDropdown
                           item={item}
-                          onEdit={handleEdit}
-                          onDelete={handleDelete}
-                          onToggleStatus={handleToggleStatus}
-                          onAddChild={handleTambahChild}
+                          onEdit={canManage ? handleEdit : null}
+                          onDelete={canManage ? handleDelete : null}
+                          onToggleStatus={canManage ? handleToggleStatus : null}
+                          onAddChild={canManage ? handleTambahChild : null}
                         />
                       </td>
                     </tr>

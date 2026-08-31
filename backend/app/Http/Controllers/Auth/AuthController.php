@@ -74,6 +74,17 @@ class AuthController extends Controller
         $profile = $this->getProfile($user);
         $school = $this->getSchoolData($user);
 
+        // Load permissions untuk response (lazy load jika belum)
+        $user->loadMissing([
+            'roles' => fn($q) => $q->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class),
+            'roles.permissions' => fn($q) => $q->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class),
+        ]);
+
+        $permissions = $user->roles
+            ->flatMap(fn($role) => $role->permissions->pluck('slug'))
+            ->unique()
+            ->values();
+
         $cookie = cookie(
             name: 'auth_token',
             value: $token,
@@ -96,6 +107,8 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'nama' => $user->name,
                     'role' => $user->getRoleSlug(),
+                    'roles' => $user->roles->pluck('slug'),
+                    'permissions' => $permissions,
                     'foto' => $user->foto,
                     'profile' => $profile,
                 ],
@@ -121,9 +134,18 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        $user = $request->user()->load(['roles' => fn($q) => $q->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class)]);
+        $user = $request->user()->load([
+            'roles' => fn($q) => $q->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class),
+            'roles.permissions' => fn($q) => $q->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class),
+        ]);
         $profile = $this->getProfile($user);
         $school = $this->getSchoolData($user);
+
+        // Flatten permission slugs dari semua roles user
+        $permissions = $user->roles
+            ->flatMap(fn($role) => $role->permissions->pluck('slug'))
+            ->unique()
+            ->values();
 
         return response()->json([
             'success' => true,
@@ -134,6 +156,8 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'nama' => $user->name,
                     'role' => $user->getRoleSlug(),
+                    'roles' => $user->roles->pluck('slug'),
+                    'permissions' => $permissions,
                     'foto' => $user->foto,
                     'last_login' => $user->last_login_at,
                     'profile' => $profile,

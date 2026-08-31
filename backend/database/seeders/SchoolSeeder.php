@@ -233,9 +233,11 @@ class SchoolSeeder extends Seeder
             ['slug' => 'master_data.siswa.import', 'nama' => 'Import Data Siswa', 'modul' => 'master_data'],
             ['slug' => 'master_data.siswa.export', 'nama' => 'Export Data Siswa', 'modul' => 'master_data'],
 
-            // master_data — kelas, mapel, tahun ajaran
+            // master_data — kelas, mapel, tahun ajaran, program pendidikan
             ['slug' => 'master_data.kelas.view', 'nama' => 'Lihat Kelas', 'modul' => 'master_data'],
             ['slug' => 'master_data.kelas.manage', 'nama' => 'Kelola Kelas', 'modul' => 'master_data'],
+            ['slug' => 'master_data.program.view', 'nama' => 'Lihat Program Pendidikan', 'modul' => 'master_data'],
+            ['slug' => 'master_data.program.manage', 'nama' => 'Kelola Program Pendidikan', 'modul' => 'master_data'],
             ['slug' => 'master_data.mapel.view', 'nama' => 'Lihat Mata Pelajaran', 'modul' => 'master_data'],
             ['slug' => 'master_data.mapel.manage', 'nama' => 'Kelola Mata Pelajaran', 'modul' => 'master_data'],
             ['slug' => 'master_data.tahun_ajaran.view', 'nama' => 'Lihat Tahun Ajaran', 'modul' => 'master_data'],
@@ -357,6 +359,7 @@ class SchoolSeeder extends Seeder
                 'master_data.mapel.view',
                 'master_data.tahun_ajaran.view',
                 'master_data.orang_tua.view',
+                'master_data.program.view',
                 'absensi.view_all',
                 'absensi.rekap',
                 'dms.view_all',
@@ -456,6 +459,8 @@ class SchoolSeeder extends Seeder
                 'master_data.mapel.manage',
                 'master_data.tahun_ajaran.view',
                 'master_data.orang_tua.view',
+                'master_data.program.view',
+                'master_data.program.manage',
                 'absensi.view_all',
                 'absensi.rekap',
                 'dms.view_all',

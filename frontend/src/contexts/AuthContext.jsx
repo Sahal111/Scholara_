@@ -55,9 +55,29 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /**
+   * Cek apakah user aktif memiliki permission tertentu.
+   * Permission disimpan di user.permissions (array string slug).
+   * Operator mendapat semua permission — shortcircuit via role check.
+   */
+  const hasPermission = (slug) => {
+    if (!user) return false;
+    if (user.roles?.includes("operator")) return true;
+    return Array.isArray(user.permissions) && user.permissions.includes(slug);
+  };
+
   return (
     <AuthContext.Provider
-      value={{ user, school, loading, login, logout, updateUser, updateSchool }}
+      value={{
+        user,
+        school,
+        loading,
+        login,
+        logout,
+        updateUser,
+        updateSchool,
+        hasPermission,
+      }}
     >
       {children}
     </AuthContext.Provider>
