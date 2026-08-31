@@ -89,6 +89,7 @@ return new class extends Migration {
             DB::table('role_permissions')->insertOrIgnore([
                 'role_id' => $roleId,
                 'permission_id' => $permId,
+                'school_id' => $schoolId,
             ]);
         }
     }

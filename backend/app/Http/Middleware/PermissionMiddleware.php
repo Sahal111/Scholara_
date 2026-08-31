@@ -42,8 +42,11 @@ class PermissionMiddleware
 
         // User harus punya SALAH SATU dari permission yang disebutkan.
         // super_admin bypass semua permission check — akses penuh ke semua tenant route.
-        if (!$user->relationLoaded('roles')) {
-            $user->load(['roles' => fn($q) => $q->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class)]);
+        if (!$user->relationLoaded('roles') || !$user->roles->first()?->relationLoaded('permissions')) {
+            $user->load([
+                'roles' => fn($q) => $q->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class),
+                'roles.permissions' => fn($q) => $q->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class),
+            ]);
         }
 
         if ($user->hasRole('super_admin')) {

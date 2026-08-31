@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\MasterData\Guru;
+namespace App\Http\Controllers\Guru;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Guru\RiwayatAbsensiRequest;
