@@ -16,60 +16,28 @@ import {
   JENIS_LABEL,
 } from "../../../../config/programConfig";
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Design tokens — sesuai template
-   ────────────────────────────────────────────────────────────────────────────── */
-const T = {
-  primary: "#00342b",
-  secondary: "#006e2a",
-  surface: "#f8faf9",
-  surfaceLow: "#f2f4f3",
-  surfaceHigh: "#e6e9e8",
-  container: "#eceeed",
-  outlineVar: "#bfc9c4",
-  outline: "#707975",
-  textSec: "#3f4945",
-  onSurface: "#191c1c",
-  error: "#ba1a1a",
-  gold: "#ffdeac",
-};
-
-/* ──────────────────────────────────────────────────────────────────────────────
-   Tailwind CSS custom tambahan (injected via <style> di index.html / App.css)
-   Kita tulis sebagai className string langsung supaya tidak butuh config baru.
-   ────────────────────────────────────────────────────────────────────────────── */
-
-/* ──────────────────────────────────────────────────────────────────────────────
-   Helper: flatten tree → array flat dengan depth info (untuk stat count saja)
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── helpers ────────────────────────────────────────────────────────────────── */
 function flattenTree(nodes, depth = 0, rows = []) {
   if (!nodes) return rows;
   for (const node of nodes) {
     rows.push({ ...node, _depth: depth });
-    if (node.descendantsTree?.length) {
+    if (node.descendantsTree?.length)
       flattenTree(node.descendantsTree, depth + 1, rows);
-    }
   }
   return rows;
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Helper: collect semua ulid dari tree (untuk init expanded state)
-   ────────────────────────────────────────────────────────────────────────────── */
 function collectAllUlids(nodes, result = new Set()) {
   if (!nodes) return result;
   for (const node of nodes) {
     result.add(node.ulid);
-    if (node.descendantsTree?.length) {
+    if (node.descendantsTree?.length)
       collectAllUlids(node.descendantsTree, result);
-    }
   }
   return result;
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Konfigurasi per jenis program
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── config maps ─────────────────────────────────────────────────────────────── */
 const JENIS_ICON = {
   bidang_keahlian: "category",
   program_keahlian: "school",
@@ -178,24 +146,19 @@ const JENJANG_LIST = [
   "SMK",
   "MAK",
 ];
-
 const CHILD_LABEL = {
   bidang_keahlian: "Program Keahlian",
   program_keahlian: "Konsentrasi",
 };
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Shared input/label styles
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── shared input classes ───────────────────────────────────────────────────── */
 const inputCls =
   "w-full px-4 py-2.5 bg-[#f2f4f3] border border-[#bfc9c4]/40 rounded-xl text-sm text-[#191c1c] focus:ring-2 focus:ring-[#006e2a]/30 focus:border-[#006e2a] outline-none transition-all placeholder:text-[#707975]";
 const selectCls = inputCls + " appearance-none cursor-pointer";
 const labelCls =
   "block text-xs font-semibold text-[#3f4945] mb-1.5 uppercase tracking-wide";
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Modal Tambah / Edit
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── ModalProgram ────────────────────────────────────────────────────────────── */
 function ModalProgram({
   open,
   onClose,
@@ -565,9 +528,7 @@ function ModalProgram({
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Dropdown Aksi (three-dot menu)
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── AksiDropdown ────────────────────────────────────────────────────────────── */
 function AksiDropdown({ item, onEdit, onDelete, onToggleStatus, onAddChild }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -580,10 +541,6 @@ function AksiDropdown({ item, onEdit, onDelete, onToggleStatus, onAddChild }) {
     document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
   }, []);
-
-  const hasAny =
-    onEdit || onDelete || onToggleStatus || (onAddChild && childLabel);
-  if (!hasAny) return null;
 
   return (
     <div ref={ref} className="relative inline-block">
@@ -667,9 +624,7 @@ function AksiDropdown({ item, onEdit, onDelete, onToggleStatus, onAddChild }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Modal Hapus
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── ModalHapus ──────────────────────────────────────────────────────────────── */
 function ModalHapus({ item, onClose, onConfirm, isPending }) {
   if (!item) return null;
   return createPortal(
@@ -721,9 +676,7 @@ function ModalHapus({ item, onClose, onConfirm, isPending }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Skeleton loading rows
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── SkeletonRows ────────────────────────────────────────────────────────────── */
 function SkeletonRows() {
   return Array.from({ length: 6 }).map((_, i) => (
     <tr key={i} className="border-b border-[#bfc9c4]/10 animate-pulse">
@@ -755,19 +708,15 @@ function SkeletonRows() {
   ));
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Stat Card — sesuai template
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── StatCard — matches template exactly ────────────────────────────────────── */
 function StatCard({ icon, label, value, unit }) {
   return (
-    <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-[#bfc9c4]/20 shadow-sm group relative overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_10px_25px_-5px_rgba(0,52,43,0.1)]">
-      {/* decorative circle */}
+    <div className="bg-white rounded-[2rem] p-8 border border-[#bfc9c4]/20 shadow-sm group relative overflow-hidden transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_10px_25px_-5px_rgba(0,52,43,0.1)]">
+      {/* decorative blob */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-[#006e2a]/5 rounded-full -mr-16 -mt-16 transition-transform duration-500 group-hover:scale-150 pointer-events-none" />
-      <div className="relative z-10 flex items-center gap-4 sm:gap-6">
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#006e2a]/10 flex items-center justify-center text-[#006e2a] group-hover:bg-[#006e2a] group-hover:text-white transition-all duration-300 flex-shrink-0">
-          <span className="material-symbols-outlined text-2xl sm:text-3xl">
-            {icon}
-          </span>
+      <div className="relative z-10 flex items-center gap-6">
+        <div className="w-16 h-16 rounded-2xl bg-[#006e2a]/10 flex items-center justify-center text-[#006e2a] group-hover:bg-[#006e2a] group-hover:text-white transition-all duration-300 flex-shrink-0">
+          <span className="material-symbols-outlined text-3xl">{icon}</span>
         </div>
         <div>
           <p className="text-xs font-bold text-[#006e2a] uppercase tracking-[0.2em] mb-1">
@@ -775,7 +724,7 @@ function StatCard({ icon, label, value, unit }) {
           </p>
           <div className="flex items-baseline gap-2">
             <h3
-              className="text-3xl sm:text-4xl font-extrabold text-[#00342b] tracking-tighter"
+              className="text-4xl font-extrabold text-[#00342b] tracking-tighter"
               style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}
             >
               {value}
@@ -790,9 +739,7 @@ function StatCard({ icon, label, value, unit }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Badge status
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── StatusBadge ─────────────────────────────────────────────────────────────── */
 function StatusBadge({ active }) {
   return active ? (
     <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-[#006e2a]/5 text-[#006e2a] border border-[#006e2a]/10 uppercase tracking-wider">
@@ -805,21 +752,7 @@ function StatusBadge({ active }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Badge label per jenis (untuk depth 1 ke bawah)
-   ────────────────────────────────────────────────────────────────────────────── */
-const JENIS_BADGE = {
-  program_keahlian: { label: "Program Keahlian" },
-  konsentrasi_keahlian: { label: "Konsentrasi" },
-  peminatan: { label: "Peminatan" },
-  mata_pelajaran_pilihan: { label: "Mapel Pilihan" },
-  keagamaan: { label: "Keagamaan" },
-  umum: { label: "Program" },
-};
-
-/* ──────────────────────────────────────────────────────────────────────────────
-   TreeNode — recursive, collapsible, pixel-perfect sesuai template HTML
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── TreeNode — 3 depth levels, pixel-perfect to template ───────────────────── */
 function TreeNode({
   node,
   depth,
@@ -836,9 +769,7 @@ function TreeNode({
   const isExpanded = expandedSet.has(node.ulid);
   const { jenis, nama, kode, kelas_count, siswa_count, is_active } = node;
   const icon = JENIS_ICON[jenis] ?? "circle";
-  const badgeLabel = JENIS_BADGE[jenis]?.label ?? "Program";
 
-  /* shared children renderer */
   const childRows = isExpanded
     ? children.map((child) => (
         <TreeNode
@@ -856,6 +787,16 @@ function TreeNode({
       ))
     : null;
 
+  const aksi = canManage ? (
+    <AksiDropdown
+      item={node}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      onToggleStatus={onToggleStatus}
+      onAddChild={onAddChild}
+    />
+  ) : null;
+
   /* ── Depth 0: Bidang Keahlian ── */
   if (depth === 0) {
     return (
@@ -866,21 +807,16 @@ function TreeNode({
         >
           <td className="px-6 py-4">
             <div className="flex items-center gap-4">
-              {/* chevron — rotate saat expand */}
               <span
-                className={`material-symbols-outlined text-[#006e2a]/40 text-[20px] transition-transform duration-200 flex-shrink-0 ${
-                  isExpanded ? "rotate-90" : "rotate-0"
-                } ${!hasChildren ? "invisible" : ""}`}
+                className={`material-symbols-outlined text-[#006e2a]/40 text-[20px] transition-transform duration-200 flex-shrink-0 ${isExpanded ? "rotate-90" : "rotate-0"} ${!hasChildren ? "invisible" : ""}`}
               >
                 chevron_right
               </span>
-              {/* icon kotak */}
               <div className="w-10 h-10 rounded-xl bg-[#006e2a]/10 flex items-center justify-center text-[#006e2a] flex-shrink-0 group-hover/row:bg-[#006e2a]/20 transition-colors duration-200">
                 <span className="material-symbols-outlined text-[22px]">
                   {icon}
                 </span>
               </div>
-              {/* nama + sublabel */}
               <div className="flex flex-col">
                 <span className="font-bold text-[#00342b] text-lg tracking-tight leading-tight">
                   {nama}
@@ -891,21 +827,13 @@ function TreeNode({
               </div>
             </div>
           </td>
-          <td className="text-center font-bold text-[#00342b]">{kode ?? ""}</td>
-          {/* Rombel / Siswa / Status kosong di root */}
+          <td className="text-center font-bold text-[#00342b] px-6 py-4">
+            {kode ?? ""}
+          </td>
+          {/* Rombel / Siswa / Status — intentionally empty at root, matching template */}
           <td colSpan={3} />
-          <td className="pr-6" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-end">
-              {canManage && (
-                <AksiDropdown
-                  item={node}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onToggleStatus={onToggleStatus}
-                  onAddChild={onAddChild}
-                />
-              )}
-            </div>
+          <td className="pr-6 py-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-end">{aksi}</div>
           </td>
         </tr>
         {childRows}
@@ -921,23 +849,21 @@ function TreeNode({
           className={`border-b border-[#bfc9c4]/10 bg-white select-none ${hasChildren ? "cursor-pointer" : ""}`}
           onClick={() => hasChildren && onToggleExpand(node.ulid)}
         >
+          {/* pl-16 matches template pl-16 */}
           <td className="px-6 py-4 pl-16">
             <div className="flex items-center gap-3 relative">
-              {/* garis vertikal connector */}
               <div className="absolute left-[-1.5rem] top-0 bottom-0 w-px bg-[#bfc9c4]/20" />
-              {/* ↳ icon sesuai screenshot */}
               <span className="material-symbols-outlined text-[#707975]/40 text-[18px] flex-shrink-0">
                 subdirectory_arrow_right
               </span>
               <span className="font-semibold text-[#00342b]">{nama}</span>
-              {/* pill badge abu-abu sesuai screenshot */}
               <span className="px-2 py-0.5 rounded bg-[#e6e9e8] text-[9px] font-bold text-[#707975] uppercase tracking-tighter ml-1 flex-shrink-0">
-                {badgeLabel}
+                Program Keahlian
               </span>
             </div>
           </td>
           <td
-            className="text-center font-medium text-[#3f4945]"
+            className="text-center font-medium text-[#3f4945] px-6"
             onClick={(e) => e.stopPropagation()}
           >
             {kode ?? <span className="text-[#bfc9c4]">—</span>}
@@ -956,15 +882,7 @@ function TreeNode({
             <StatusBadge active={is_active} />
           </td>
           <td className="text-right pr-6" onClick={(e) => e.stopPropagation()}>
-            {canManage && (
-              <AksiDropdown
-                item={node}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onToggleStatus={onToggleStatus}
-                onAddChild={onAddChild}
-              />
-            )}
+            {aksi}
           </td>
         </tr>
         {childRows}
@@ -973,15 +891,13 @@ function TreeNode({
   }
 
   /* ── Depth 2+: Konsentrasi / Peminatan / dll ── */
-  /* Garis L vertikal + horizontal sesuai template & screenshot */
   return (
     <>
       <tr className="border-b border-[#bfc9c4]/10 hover:bg-[#006e2a]/[0.02] transition-colors">
+        {/* pl-28 matches template pl-28 */}
         <td className="px-6 py-3 pl-28">
           <div className="flex items-center gap-3 relative">
-            {/* garis vertikal */}
             <div className="absolute left-[-4.5rem] top-0 bottom-0 w-px bg-[#bfc9c4]/20" />
-            {/* garis horizontal L — hanya setengah atas untuk last child */}
             <div className="absolute left-[-4.5rem] top-1/2 w-6 h-px bg-[#bfc9c4]/20" />
             <span className="text-[#3f4945] font-medium">{nama}</span>
           </div>
@@ -1008,27 +924,15 @@ function TreeNode({
         <td className="text-center">
           <StatusBadge active={is_active} />
         </td>
-        <td className="text-right pr-6">
-          {canManage && (
-            <AksiDropdown
-              item={node}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onToggleStatus={onToggleStatus}
-              onAddChild={onAddChild}
-            />
-          )}
-        </td>
+        <td className="text-right pr-6">{aksi}</td>
       </tr>
       {childRows}
     </>
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Paginasi custom — sesuai template
-   ────────────────────────────────────────────────────────────────────────────── */
-function PaginasiCustom({ page, setPage, totalPages, from, to, total }) {
+/* ─── Pagination — matches template exactly ──────────────────────────────────── */
+function Paginasi({ page, setPage, totalPages, from, to, total }) {
   if (totalPages <= 1) return null;
   const pages = Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
     let start = Math.max(1, page - 2);
@@ -1038,7 +942,7 @@ function PaginasiCustom({ page, setPage, totalPages, from, to, total }) {
   }).filter((p) => p <= totalPages);
 
   return (
-    <div className="px-4 sm:px-6 py-5 border-t border-[#bfc9c4]/10 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white rounded-b-[2rem]">
+    <div className="px-6 py-5 border-t border-[#bfc9c4]/10 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white rounded-b-[2rem]">
       <p className="text-sm text-[#3f4945] order-2 sm:order-1">
         Menampilkan <span className="font-semibold text-[#00342b]">{from}</span>{" "}
         sampai <span className="font-semibold text-[#00342b]">{to}</span> dari{" "}
@@ -1058,7 +962,11 @@ function PaginasiCustom({ page, setPage, totalPages, from, to, total }) {
           <button
             key={p}
             onClick={() => setPage(p)}
-            className={`w-8 h-8 rounded-lg font-medium text-sm flex items-center justify-center transition-all ${p === page ? "bg-[#006e2a] text-white shadow-sm" : "border border-[#bfc9c4]/30 text-[#3f4945] hover:border-[#006e2a] hover:text-[#006e2a]"}`}
+            className={`w-8 h-8 rounded-lg font-medium text-sm flex items-center justify-center transition-all ${
+              p === page
+                ? "bg-[#006e2a] text-white shadow-sm"
+                : "border border-[#bfc9c4]/30 text-[#3f4945] hover:border-[#006e2a] hover:text-[#006e2a]"
+            }`}
           >
             {p}
           </button>
@@ -1077,9 +985,7 @@ function PaginasiCustom({ page, setPage, totalPages, from, to, total }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Empty State
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── EmptyState ──────────────────────────────────────────────────────────────── */
 function EmptyState({ onTambah, canManage }) {
   return (
     <tr>
@@ -1105,9 +1011,7 @@ function EmptyState({ onTambah, canManage }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Empty state jenjang tanpa program
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── JenjangEmptyState ───────────────────────────────────────────────────────── */
 function JenjangEmptyState({ school }) {
   return (
     <div className="bg-white rounded-[2rem] shadow-sm border border-[#bfc9c4]/20 overflow-hidden">
@@ -1137,9 +1041,7 @@ function JenjangEmptyState({ school }) {
   );
 }
 
-/* ──────────────────────────────────────────────────────────────────────────────
-   Halaman Utama — MasterProgram
-   ────────────────────────────────────────────────────────────────────────────── */
+/* ─── MasterProgram ───────────────────────────────────────────────────────────── */
 export default function MasterProgram() {
   const { school, hasPermission } = useAuth();
   const canManage = hasPermission("master_data.program.manage");
@@ -1155,17 +1057,16 @@ export default function MasterProgram() {
     school?.subtipe,
   );
 
-  /* State filter */
+  /* filter state */
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
-  /* Pagination sisi klien */
+  /* pagination */
   const PAGE_SIZE = 12;
   const [page, setPage] = useState(1);
 
-  /* Expanded nodes — Set berisi ulid yang sedang terbuka */
+  /* expand state */
   const [expandedSet, setExpandedSet] = useState(new Set());
-
   const handleToggleExpand = (ulid) => {
     setExpandedSet((prev) => {
       const next = new Set(prev);
@@ -1175,7 +1076,7 @@ export default function MasterProgram() {
     });
   };
 
-  /* Modal state */
+  /* modal state */
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [modalDefaultJenis, setModalDefaultJenis] = useState(null);
@@ -1183,25 +1084,20 @@ export default function MasterProgram() {
   const [modalDefaultParentLabel, setModalDefaultParentLabel] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
 
-  /* Data */
+  /* data */
   const { data: treeData, isLoading } = useProgramTree(
     filterStatus !== "" ? { is_active: filterStatus } : {},
   );
   const treeNodes = treeData?.data ?? [];
 
-  /* Saat data pertama kali load, expand semua root node (Bidang Keahlian) */
   useEffect(() => {
     if (treeNodes.length > 0 && expandedSet.size === 0) {
-      const rootUlids = new Set(treeNodes.map((n) => n.ulid));
-      setExpandedSet(rootUlids);
+      setExpandedSet(new Set(treeNodes.map((n) => n.ulid)));
     }
   }, [treeNodes.length]);
 
-  /* Client-side search filter — saat search aktif, expand semua */
   useEffect(() => {
-    if (search.trim()) {
-      setExpandedSet(collectAllUlids(treeNodes));
-    }
+    if (search.trim()) setExpandedSet(collectAllUlids(treeNodes));
   }, [search]);
 
   const filteredNodes = search.trim()
@@ -1224,7 +1120,6 @@ export default function MasterProgram() {
       })
     : treeNodes;
 
-  /* Pagination — paginate root nodes saja */
   const totalRoots = filteredNodes.length;
   const totalPages = Math.ceil(totalRoots / PAGE_SIZE);
   const pagedRoots = filteredNodes.slice(
@@ -1232,7 +1127,6 @@ export default function MasterProgram() {
     page * PAGE_SIZE,
   );
 
-  /* Stat counts dari seluruh tree */
   const allRows = flattenTree(treeNodes);
   const statBidang = allRows.filter(
     (r) => r.jenis === "bidang_keahlian",
@@ -1247,7 +1141,6 @@ export default function MasterProgram() {
   const from = totalRoots === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const to = Math.min(page * PAGE_SIZE, totalRoots);
 
-  /* Mutations */
   const deleteMut = useDeleteProgram();
   const toggleMut = useToggleProgramStatus();
 
@@ -1299,7 +1192,6 @@ export default function MasterProgram() {
     setModalDefaultParentLabel(null);
   };
 
-  /* ── Render ── */
   return (
     <>
       <ModalProgram
@@ -1319,13 +1211,10 @@ export default function MasterProgram() {
         isPending={deleteMut.isPending}
       />
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          HEADER
-          ══════════════════════════════════════════════════════════════════════ */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-8 mb-10 md:mb-12 relative">
-        {/* Left: judul & deskripsi */}
+      {/* ── Header ── */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12 relative">
         <div className="relative flex-1">
-          {/* Badge MASTER DATA */}
+          {/* Badge */}
           <div className="flex items-center gap-3 mb-4">
             <div className="px-4 py-1.5 rounded-full bg-[#006e2a]/10 border border-[#006e2a]/20 flex items-center gap-2 shadow-sm">
               <span className="w-2 h-2 rounded-full bg-[#006e2a] animate-pulse" />
@@ -1336,11 +1225,11 @@ export default function MasterProgram() {
                 MASTER DATA
               </span>
             </div>
-            <div className="h-px w-24 md:w-32 bg-gradient-to-r from-[#006e2a]/20 to-transparent" />
+            <div className="h-px w-32 bg-gradient-to-r from-[#006e2a]/20 to-transparent" />
           </div>
-          {/* Judul */}
+          {/* Title */}
           <h1
-            className="text-[32px] sm:text-[40px] md:text-[48px] font-extrabold text-[#00342b] leading-tight tracking-tighter mb-3"
+            className="text-[48px] font-extrabold text-[#00342b] leading-tight tracking-tighter mb-3"
             style={{ fontFamily: "'Plus Jakarta Sans',sans-serif" }}
           >
             Program{" "}
@@ -1352,7 +1241,7 @@ export default function MasterProgram() {
             </span>
           </h1>
           <p
-            className="text-base sm:text-lg text-[#3f4945] max-w-2xl leading-relaxed opacity-80"
+            className="text-lg text-[#3f4945] max-w-2xl leading-relaxed opacity-80"
             style={{ fontFamily: "'Inter',sans-serif" }}
           >
             Kelola program keahlian, konsentrasi keahlian, bidang keahlian, dan
@@ -1360,12 +1249,12 @@ export default function MasterProgram() {
           </p>
         </div>
 
-        {/* Right: tombol Tambah */}
+        {/* CTA button — shown only when school type supports programs */}
         {canManage && programConfig.hasTabs && (
           <div className="shrink-0 w-full md:w-auto">
             <button
               onClick={handleTambah}
-              className="w-full md:w-auto bg-[#006e2a] text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-full flex items-center justify-center gap-3
+              className="w-full md:w-auto bg-[#006e2a] text-white px-8 py-4 rounded-full flex items-center justify-center gap-3
                 shadow-[0_8px_16px_rgba(0,110,42,0.15)] hover:shadow-[0_15px_40px_rgba(0,200,83,0.5)]
                 hover:-translate-y-1 hover:scale-[1.05] transition-all duration-500 group border border-white/20"
             >
@@ -1385,10 +1274,8 @@ export default function MasterProgram() {
         )}
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          STAT CARDS
-          ══════════════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 md:gap-8 mb-10 md:mb-12">
+      {/* ── Stat Cards ── */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
         <StatCard
           icon="category"
           label="Bidang Keahlian"
@@ -1409,14 +1296,12 @@ export default function MasterProgram() {
         />
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════════
-          MAIN CONTENT
-          ══════════════════════════════════════════════════════════════════════ */}
+      {/* ── Main Content ── */}
       {!programConfig.hasTabs ? (
         <JenjangEmptyState school={school} />
       ) : (
         <div className="bg-white rounded-[2rem] shadow-sm border border-[#bfc9c4]/20 overflow-hidden">
-          {/* ── Toolbar ── */}
+          {/* Toolbar */}
           <div className="bg-white border-b border-[#bfc9c4]/20 p-4 flex flex-col lg:flex-row gap-4 items-center shadow-sm">
             {/* Search */}
             <div className="relative flex-1 w-full group">
@@ -1435,7 +1320,7 @@ export default function MasterProgram() {
             </div>
 
             <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full lg:w-auto">
-              {/* Filter Program Keahlian — sesuai template */}
+              {/* Filter Program Keahlian — placeholder, wired to future feature */}
               <div className="relative min-w-[160px] flex-1 lg:flex-none">
                 <select
                   className="w-full bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-2xl py-3.5 pl-4 pr-10 text-[#191c1c] font-bold text-xs uppercase tracking-wider focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] appearance-none cursor-pointer transition-all outline-none"
@@ -1486,7 +1371,7 @@ export default function MasterProgram() {
             </div>
           </div>
 
-          {/* ── Table ── */}
+          {/* Table */}
           <div className="space-y-8 p-6">
             <div className="bg-white rounded-2xl border border-[#bfc9c4]/20 overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
@@ -1543,9 +1428,9 @@ export default function MasterProgram() {
             </div>
           </div>
 
-          {/* ── Pagination ── */}
+          {/* Pagination */}
           {!isLoading && totalRoots > 0 && (
-            <PaginasiCustom
+            <Paginasi
               page={page}
               setPage={setPage}
               totalPages={totalPages}
