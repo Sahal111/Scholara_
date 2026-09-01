@@ -15,7 +15,8 @@ class StoreProgramPendidikanRequest extends FormRequest
 
     public function rules(): array
     {
-        $schoolId = app('current_school_id');
+        $schoolId = app()->bound('current_school_id') ? app('current_school_id') : null;
+        $schoolId ??= $this->user()?->school_id;
 
         return [
             // parent_id dikirim frontend sebagai ULID string (bukan integer)

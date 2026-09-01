@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Kelas;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateKelasRequest extends FormRequest
 {
@@ -13,12 +14,21 @@ class UpdateKelasRequest extends FormRequest
 
     public function rules(): array
     {
+        $schoolId = app()->bound('current_school_id') ? app('current_school_id') : null;
+        $schoolId ??= $this->user()?->school_id;
+
         return [
             'tahun_ajaran_id' => 'nullable|integer|exists:tahun_ajarans,id',
             'semester_id' => 'nullable|integer|exists:semesters,id',
             'nama_kelas' => 'required|string|max:20',
             'tingkat' => 'required|integer|in:1,2,3,4,5,6,7,8,9,10,11,12',
-            'program_pendidikan_id' => 'nullable|integer|exists:program_pendidikans,id',
+            'program_pendidikan_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('program_pendidikans', 'id')
+                    ->where('school_id', $schoolId)
+                    ->whereNull('deleted_at'),
+            ],
             'kurikulum' => 'required|string|max:50',
             'wali_kelas_id' => 'nullable|integer|exists:gurus,id',
             'kapasitas' => 'required|integer|min:1|max:60',

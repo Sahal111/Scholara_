@@ -187,17 +187,17 @@ export default function MasterProgram() {
     page * PAGE_SIZE,
   );
 
-  /* stat cards — selalu dari data lengkap (tanpa filter) */
+  /* stat cards — derive dari programConfig tabs, tidak hardcode SMK */
   const allRows = flattenTree(treeNodesAll);
-  const statBidang = allRows.filter(
-    (r) => r.jenis === "bidang_keahlian",
-  ).length;
-  const statProgram = allRows.filter(
-    (r) => r.jenis === "program_keahlian" && r.is_active,
-  ).length;
-  const statKonsen = allRows.filter(
-    (r) => r.jenis === "konsentrasi_keahlian" && r.is_active,
-  ).length;
+  const activeJenisTabs = (programConfig.tabs ?? []).filter(
+    (t) => t.value !== "semua",
+  );
+  // Tiga slot: ambil tab pertama, kedua, ketiga dari config aktif sekolah
+  const statSlots = activeJenisTabs.slice(0, 3).map((tab) => ({
+    icon: tab.icon,
+    label: tab.label,
+    count: allRows.filter((r) => r.jenis === tab.value).length,
+  }));
 
   const from = totalRoots === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const to = Math.min(page * PAGE_SIZE, totalRoots);
@@ -344,24 +344,15 @@ export default function MasterProgram() {
 
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-        <StatCard
-          icon="category"
-          label="Bidang Keahlian"
-          value={isLoading ? "—" : statBidang}
-          unit="Kategori"
-        />
-        <StatCard
-          icon="school"
-          label="Program Aktif"
-          value={isLoading ? "—" : statProgram}
-          unit="Jurusan"
-        />
-        <StatCard
-          icon="account_tree"
-          label="Konsentrasi"
-          value={isLoading ? "—" : statKonsen}
-          unit="Spesialisasi"
-        />
+        {statSlots.map((slot) => (
+          <StatCard
+            key={slot.label}
+            icon={slot.icon}
+            label={slot.label}
+            value={isLoading ? "—" : slot.count}
+            unit="Program"
+          />
+        ))}
       </div>
 
       {/* ── Main Content ── */}

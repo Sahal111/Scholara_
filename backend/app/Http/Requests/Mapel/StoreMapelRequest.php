@@ -29,7 +29,13 @@ class StoreMapelRequest extends FormRequest
             'kelompok' => 'required|in:' . implode(',', self::KELOMPOK_VALID),
             'tingkat' => 'nullable|array',
             'tingkat.*' => 'in:1,2,3,4,5,6,7,8,9,10,11,12',
-            'program_pendidikan_id' => 'nullable|integer|exists:program_pendidikans,id',
+            'program_pendidikan_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('program_pendidikans', 'id')
+                    ->where('school_id', app()->bound('current_school_id') ? app('current_school_id') : $this->user()?->school_id)
+                    ->whereNull('deleted_at'),
+            ],
             'jam_per_minggu' => 'required|integer|min:1|max:40',
             'kurikulum' => 'required|in:' . implode(',', self::KURIKULUM_VALID),
         ];

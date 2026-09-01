@@ -31,6 +31,7 @@ class ProgramPendidikanResource extends JsonResource
             'kelas_count' => $this->whenCounted('kelas'),
             'children_count' => $this->whenCounted('children'),
             'mapels_count' => $this->whenCounted('mapels'),
+            'siswa_count' => $this->whenCounted('siswas'),
 
             // Relasi — hanya ada jika di-with()
             'parent' => $this->whenLoaded('parent', fn() => [

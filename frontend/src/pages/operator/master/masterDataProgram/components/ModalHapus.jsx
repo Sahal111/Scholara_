@@ -27,7 +27,8 @@ export default function ModalHapus({ item, onClose, onConfirm, isPending }) {
             </h3>
             <p className="text-sm text-[#707975]">
               <span className="font-semibold text-[#00342b]">{item.nama}</span>{" "}
-              akan dihapus. Kelas yang terhubung tidak akan ikut terhapus.
+              akan dihapus. Program tidak dapat dihapus jika masih memiliki
+              kelas atau sub-program terkait.
             </p>
           </div>
           <div className="flex gap-3 w-full">

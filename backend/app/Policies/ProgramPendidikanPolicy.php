@@ -18,19 +18,6 @@ use App\Models\User;
  */
 class ProgramPendidikanPolicy
 {
-    /**
-     * Operator bisa melakukan apapun pada program di sekolahnya.
-     * Dipanggil otomatis oleh Gate sebelum method lain.
-     */
-    public function before(User $user, string $ability): ?bool
-    {
-        if ($user->hasRole('operator')) {
-            return true;
-        }
-
-        return null;
-    }
-
     /** Lihat daftar program — siapapun yang punya permission view. */
     public function viewAny(User $user): bool
     {
@@ -43,13 +30,16 @@ class ProgramPendidikanPolicy
         return $this->sameSchool($user, $program);
     }
 
-    /** Tambah program baru — hanya operator (dijaga before()). */
+    /**
+     * Tambah program baru — hanya operator (dijaga permission middleware).
+     * Tidak pakai before() agar pengecekan school_id tetap aktif di semua role.
+     */
     public function create(User $user): bool
     {
-        return false; // hanya operator — ditangani before()
+        return $user->hasRole('operator');
     }
 
-    /** Edit program — harus sekolah yang sama. */
+    /** Edit program — harus sekolah yang sama. Operator pun harus pass cek ini. */
     public function update(User $user, ProgramPendidikan $program): bool
     {
         return $this->sameSchool($user, $program);

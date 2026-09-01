@@ -7,6 +7,7 @@ use App\Traits\HasUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -138,6 +139,22 @@ class ProgramPendidikan extends Model
     public function mapels(): HasMany
     {
         return $this->hasMany(MataPelajaran::class, 'program_pendidikan_id');
+    }
+
+    /**
+     * Siswa aktif yang terdaftar di kelas-kelas program ini.
+     * Digunakan untuk withCount('siswas') pada index/tree endpoint.
+     */
+    public function siswas(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            \App\Models\RiwayatKelas::class,
+            Kelas::class,
+            'program_pendidikan_id', // FK di kelas
+            'kelas_id',              // FK di riwayat_kelas
+            'id',                    // PK di program_pendidikans
+            'id'                     // PK di kelas
+        )->whereNull('riwayat_kelas.tanggal_keluar');
     }
 
     // ── Accessor ─────────────────────────────────────────────────

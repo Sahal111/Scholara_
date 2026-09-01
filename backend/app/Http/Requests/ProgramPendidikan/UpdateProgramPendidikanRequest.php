@@ -15,7 +15,8 @@ class UpdateProgramPendidikanRequest extends FormRequest
 
     public function rules(): array
     {
-        $schoolId = app('current_school_id');
+        $schoolId = app()->bound('current_school_id') ? app('current_school_id') : null;
+        $schoolId ??= $this->user()?->school_id;
         $ulid = $this->route('ulid');
 
         // Resolve integer id dari ulid untuk keperluan Rule::notIn dan ignore()

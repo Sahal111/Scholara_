@@ -17,7 +17,7 @@ class ProgramPendidikanController extends Controller
     public function index(Request $request): JsonResponse
     {
         $data = ProgramPendidikan::query()
-            ->with('parent:id,nama,kode,jenis')
+            ->with('parent:id,ulid,nama,kode,jenis')
             ->when(
                 $request->search,
                 fn($q) => $q
@@ -42,7 +42,7 @@ class ProgramPendidikanController extends Controller
                 $request->is_active !== null && $request->is_active !== '',
                 fn($q) => $q->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN))
             )
-            ->withCount(['kelas', 'children'])
+            ->withCount(['kelas', 'children', 'siswas'])
             ->orderByRaw('ISNULL(parent_id) DESC') // root dulu
             ->orderBy('nama')
             ->paginate((int) ($request->per_page ?? 15));
@@ -61,15 +61,28 @@ class ProgramPendidikanController extends Controller
      */
     public function tree(Request $request): JsonResponse
     {
+        $filterActive = $request->is_active !== null && $request->is_active !== ''
+            ? filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN)
+            : null;
+
+        // Closure reusable agar filter status aktif propagate ke semua level tree
+        $activeConstraint = $filterActive !== null
+            ? fn($q) => $q->where('is_active', $filterActive)
+            : fn($q) => $q;
+
         $data = ProgramPendidikan::query()
             ->root()
-            ->when(
-                $request->is_active !== null && $request->is_active !== '',
-                fn($q) =>
-                $q->where('is_active', filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN))
-            )
-            ->with('descendantsTree')
-            ->withCount('kelas')
+            ->when($filterActive !== null, fn($q) => $q->where('is_active', $filterActive))
+            ->with([
+                'descendantsTree' => function ($q) use ($activeConstraint) {
+                    $activeConstraint($q)->with([
+                        'descendantsTree' => function ($q2) use ($activeConstraint) {
+                            $activeConstraint($q2)->with('descendantsTree');
+                        },
+                    ]);
+                },
+            ])
+            ->withCount(['kelas', 'siswas'])
             ->orderBy('nama')
             ->get();
 

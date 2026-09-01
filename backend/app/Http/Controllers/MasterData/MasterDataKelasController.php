@@ -21,7 +21,7 @@ class MasterDataKelasController extends Controller
         $filterTaId = $request->tahun_ajaran_id ?? $tahunAjaranAktif;
         $perPage = (int) ($request->per_page ?? 10);
 
-        $kelas = Kelas::with(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'jurusan:id,nama,kode'])
+        $kelas = Kelas::with(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'programPendidikan:id,ulid,nama,kode'])
             ->when($filterTaId, fn($q) => $q->where('tahun_ajaran_id', $filterTaId))
             ->when($request->tingkat, fn($q) => $q->where('tingkat', $request->tingkat))
             ->when($request->semester, fn($q) => $q->whereHas('semester', fn($s) => $s->where('nama', $request->semester)))
@@ -41,7 +41,7 @@ class MasterDataKelasController extends Controller
 
     public function show($id)
     {
-        $kelas = Kelas::with(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'jurusan:id,nama,kode'])->findOrFail($id);
+        $kelas = Kelas::with(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'programPendidikan:id,ulid,nama,kode'])->findOrFail($id);
 
         $siswaAktif = RiwayatKelas::with('siswa')->where('kelas_id', $id)->aktif()->orderBy('no_absen')->get();
         $siswaKeluar = RiwayatKelas::with('siswa')->where('kelas_id', $id)->whereNotNull('tanggal_keluar')->orderByDesc('tanggal_keluar')->get();
@@ -67,7 +67,7 @@ class MasterDataKelasController extends Controller
             'semester_id' => $request->semester_id ?? $semesterAktif?->id,
             'nama_kelas' => $request->nama_kelas,
             'tingkat' => $request->tingkat,
-            'jurusan_id' => $request->jurusan_id,
+            'program_pendidikan_id' => $request->program_pendidikan_id,
             'kurikulum' => $request->kurikulum,
             'wali_kelas_id' => $request->wali_kelas_id,
             'kapasitas' => $request->kapasitas,
@@ -87,8 +87,8 @@ class MasterDataKelasController extends Controller
             'semester_id' => $request->semester_id ?? $kelas->semester_id,
             'nama_kelas' => $request->nama_kelas,
             'tingkat' => $request->tingkat,
-            // jurusan_id boleh di-null-kan (sekolah ubah jenjang kelas)
-            'jurusan_id' => $request->has('jurusan_id') ? $request->jurusan_id : $kelas->jurusan_id,
+            // program_pendidikan_id boleh di-null-kan (sekolah ubah jenjang kelas)
+            'program_pendidikan_id' => $request->has('program_pendidikan_id') ? $request->program_pendidikan_id : $kelas->program_pendidikan_id,
             'kurikulum' => $request->kurikulum,
             'wali_kelas_id' => $request->has('wali_kelas_id') ? $request->wali_kelas_id : $kelas->wali_kelas_id,
             'kapasitas' => $request->kapasitas ?? $kelas->kapasitas,
@@ -97,7 +97,7 @@ class MasterDataKelasController extends Controller
         ]);
 
         return $this->success(
-            $kelas->fresh(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'jurusan:id,nama,kode']),
+            $kelas->fresh(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'programPendidikan:id,ulid,nama,kode']),
             'Kelas berhasil diperbarui.'
         );
     }

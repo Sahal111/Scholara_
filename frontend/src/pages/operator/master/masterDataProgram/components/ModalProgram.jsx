@@ -164,7 +164,7 @@ export default function ModalProgram({
     setForm(
       editData
         ? {
-            parent_id: editData.parent_id ?? "",
+            parent_id: editData.parent_ulid ?? "",
             nama: editData.nama ?? "",
             kode: editData.kode ?? "",
             jenis: editData.jenis ?? resolveJenis(),

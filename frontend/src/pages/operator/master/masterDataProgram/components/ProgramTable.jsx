@@ -292,7 +292,7 @@ function TreeNode({
     />
   ) : null;
 
-  /* ── Depth 0: Bidang Keahlian ── */
+  /* ── Depth 0: Root program (Bidang Keahlian / Peminatan / dll) ── */
   if (depth === 0) {
     return (
       <>
@@ -317,7 +317,7 @@ function TreeNode({
                   {nama}
                 </span>
                 <span className="text-[10px] font-bold text-[#006e2a]/60 uppercase tracking-widest">
-                  Bidang Keahlian
+                  {node.jenis_label ?? jenis}
                 </span>
               </div>
             </div>
@@ -325,8 +325,15 @@ function TreeNode({
           <td className="text-center font-bold text-[#00342b] px-6 py-4">
             {kode ?? ""}
           </td>
-          {/* Rombel / Siswa / Status — intentionally empty at root, matching template */}
-          <td colSpan={3} />
+          <td className="text-center font-medium text-[#3f4945]">
+            {kelas_count ?? 0}
+          </td>
+          <td className="text-center">
+            <span className="text-[#bfc9c4]">—</span>
+          </td>
+          <td className="text-center">
+            <StatusBadge active={is_active} />
+          </td>
           <td className="pr-6 py-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-end">{aksi}</div>
           </td>
