@@ -10,8 +10,8 @@ export const mapelKeys = {
   lists: () => [...mapelKeys.all, "list"],
   list: (filters) => [...mapelKeys.lists(), filters],
   details: () => [...mapelKeys.all, "detail"],
-  detail: (id) => [...mapelKeys.details(), id],
-  dropdown: (params) => [...mapelKeys.all, "dropdown", params],
+  detail: (ulid) => [...mapelKeys.details(), ulid],
+  dropdown: () => [...mapelKeys.all, "dropdown"],
 };
 
 /* ── Queries ─────────────────────────────────────────────────── */
@@ -41,16 +41,16 @@ export function useMapelList(filters = {}) {
 }
 
 /**
- * Detail satu mapel by ID.
+ * Detail satu mapel by ULID.
  */
-export function useMapelDetail(id) {
+export function useMapelDetail(ulid) {
   return useQuery({
-    queryKey: mapelKeys.detail(id),
+    queryKey: mapelKeys.detail(ulid),
     queryFn: async () => {
-      const { data } = await api.get(`${BASE}/${id}`);
+      const { data } = await api.get(`${BASE}/${ulid}`);
       return data?.data ?? data;
     },
-    enabled: Boolean(id),
+    enabled: Boolean(ulid),
     staleTime: 60_000,
   });
 }
@@ -70,6 +70,21 @@ export function useMapelDropdown(params = {}) {
   });
 }
 
+/**
+ * Statistik ringkasan mapel — total, aktif, non-aktif, kelompok.
+ * Dihitung dari SELURUH data di backend (bukan per-halaman).
+ */
+export function useMapelStats() {
+  return useQuery({
+    queryKey: [...mapelKeys.all, "stats"],
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/stats`);
+      return data?.data ?? data;
+    },
+    staleTime: 60_000,
+  });
+}
+
 /* ── Mutations ───────────────────────────────────────────────── */
 
 /**
@@ -81,7 +96,7 @@ export function useCreateMapel() {
     mutationFn: (payload) => api.post(BASE, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: mapelKeys.lists() });
-      qc.invalidateQueries({ queryKey: mapelKeys.dropdown({}) });
+      qc.invalidateQueries({ queryKey: mapelKeys.all }); // invalidate dropdown juga
       toast.success("Mata pelajaran berhasil ditambahkan.");
     },
     onError: (err) => {
@@ -98,7 +113,8 @@ export function useCreateMapel() {
 }
 
 /**
- * Edit mata pelajaran. Perlu ID di payload: { id, ...fields }
+ * Edit mata pelajaran. Perlu ulid di payload: { id: ulid, ...fields }
+ * 'id' di sini adalah ULID yang dikembalikan oleh MapelResource.
  */
 export function useUpdateMapel() {
   const qc = useQueryClient();
@@ -107,7 +123,7 @@ export function useUpdateMapel() {
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: mapelKeys.detail(id) });
       qc.invalidateQueries({ queryKey: mapelKeys.lists() });
-      qc.invalidateQueries({ queryKey: mapelKeys.dropdown({}) });
+      qc.invalidateQueries({ queryKey: mapelKeys.all }); // invalidate dropdown juga
       toast.success("Mata pelajaran berhasil diperbarui.");
     },
     onError: (err) => {
@@ -125,14 +141,15 @@ export function useUpdateMapel() {
 
 /**
  * Toggle status aktif/non-aktif.
+ * Param: ulid (string) — id yang dikembalikan API sudah ulid.
  */
 export function useToggleMapel() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id) => api.patch(`${BASE}/${id}/toggle-active`),
+    mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/toggle-active`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: mapelKeys.lists() });
-      qc.invalidateQueries({ queryKey: mapelKeys.dropdown({}) });
+      qc.invalidateQueries({ queryKey: mapelKeys.all });
       toast.success("Status mata pelajaran berhasil diubah.");
     },
     onError: (err) => {
@@ -143,14 +160,15 @@ export function useToggleMapel() {
 
 /**
  * Hapus (soft delete) mata pelajaran.
+ * Param: ulid (string).
  */
 export function useDeleteMapel() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id) => api.delete(`${BASE}/${id}`),
+    mutationFn: (ulid) => api.delete(`${BASE}/${ulid}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: mapelKeys.lists() });
-      qc.invalidateQueries({ queryKey: mapelKeys.dropdown({}) });
+      qc.invalidateQueries({ queryKey: mapelKeys.all });
       toast.success("Mata pelajaran berhasil dihapus.");
     },
     onError: (err) => {

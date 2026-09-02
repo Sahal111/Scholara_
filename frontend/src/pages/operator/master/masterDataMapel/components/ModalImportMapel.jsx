@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { UploadCloud, FileSpreadsheet, X, Download } from "lucide-react";
 import Modal from "../../../../components/ui/Modal";
+import toast from "react-hot-toast";
 import {
   useImportMapel,
   downloadTemplateMapel,
@@ -29,7 +30,7 @@ export default function ModalImportMapel({ isOpen, onClose }) {
       "application/vnd.ms-excel",
     ];
     if (!allowed.includes(f.type) && !f.name.endsWith(".xlsx")) {
-      alert("Hanya file .xlsx yang diizinkan.");
+      toast.error("Hanya file .xlsx yang diizinkan.");
       return;
     }
     setFile(f);
@@ -38,13 +39,16 @@ export default function ModalImportMapel({ isOpen, onClose }) {
   const handleDrop = (e) => {
     e.preventDefault();
     const f = e.dataTransfer.files?.[0];
-    if (f) {
-      setFile(f);
-      // Sync ke input hidden agar validasi type berjalan
-      const dt = new DataTransfer();
-      dt.items.add(f);
-      if (fileInputRef.current) fileInputRef.current.files = dt.files;
+    if (!f) return;
+    if (!f.name.endsWith(".xlsx")) {
+      toast.error("Hanya file .xlsx yang diizinkan.");
+      return;
     }
+    setFile(f);
+    // Sync ke input hidden
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    if (fileInputRef.current) fileInputRef.current.files = dt.files;
   };
 
   const handleUpload = () => {

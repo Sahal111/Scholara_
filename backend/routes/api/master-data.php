@@ -270,26 +270,38 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,super_admin'])
         });
 
         // ── MATA PELAJARAN ────────────────────────────────────────────────────────
-        // PENTING: static routes (dropdown, export, template) HARUS sebelum wildcard {id}
+        // PENTING: static routes (dropdown, export, template) HARUS sebelum wildcard {ulid}
     
         Route::middleware('permission:master_data.mapel.view')->group(function () {
-            Route::get('/mapel/dropdown', [MasterDataMapelController::class, 'dropdown']);
-            Route::get('/mapel', [MasterDataMapelController::class, 'index']);
+            Route::get('/mapel/dropdown', [MasterDataMapelController::class, 'dropdown'])
+                ->name('master-data.mapel.dropdown');
+            Route::get('/mapel/stats', [MasterDataMapelController::class, 'stats'])
+                ->name('master-data.mapel.stats');
+            Route::get('/mapel', [MasterDataMapelController::class, 'index'])
+                ->name('master-data.mapel.index');
         });
 
         Route::middleware('permission:master_data.mapel.manage')->group(function () {
-            Route::get('/mapel/export', [MasterDataMapelController::class, 'export']);
-            Route::get('/mapel/template', [MasterDataMapelController::class, 'downloadTemplate']);
-            Route::post('/mapel/import', [MasterDataMapelController::class, 'import']);
-            Route::post('/mapel', [MasterDataMapelController::class, 'store']);
-            Route::put('/mapel/{id}', [MasterDataMapelController::class, 'update']);
-            Route::patch('/mapel/{id}/toggle-active', [MasterDataMapelController::class, 'toggleActive']);
-            Route::delete('/mapel/{id}', [MasterDataMapelController::class, 'destroy']);
+            Route::get('/mapel/export', [MasterDataMapelController::class, 'export'])
+                ->name('master-data.mapel.export');
+            Route::get('/mapel/template', [MasterDataMapelController::class, 'downloadTemplate'])
+                ->name('master-data.mapel.template');
+            Route::post('/mapel/import', [MasterDataMapelController::class, 'import'])
+                ->name('master-data.mapel.import');
+            Route::post('/mapel', [MasterDataMapelController::class, 'store'])
+                ->name('master-data.mapel.store');
+            Route::put('/mapel/{ulid}', [MasterDataMapelController::class, 'update'])
+                ->name('master-data.mapel.update');
+            Route::patch('/mapel/{ulid}/toggle-active', [MasterDataMapelController::class, 'toggleActive'])
+                ->name('master-data.mapel.toggle-active');
+            Route::delete('/mapel/{ulid}', [MasterDataMapelController::class, 'destroy'])
+                ->name('master-data.mapel.destroy');
         });
 
         // Wildcard TERAKHIR — setelah semua static GET routes
         Route::middleware('permission:master_data.mapel.view')->group(function () {
-            Route::get('/mapel/{id}', [MasterDataMapelController::class, 'show']);
+            Route::get('/mapel/{ulid}', [MasterDataMapelController::class, 'show'])
+                ->name('master-data.mapel.show');
         });
 
         // ── PROGRAM PENDIDIKAN ────────────────────────────────────────────────────

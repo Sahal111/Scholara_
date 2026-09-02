@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasSchoolScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class MataPelajaran extends Model
 {
@@ -16,6 +17,7 @@ class MataPelajaran extends Model
 
     protected $fillable = [
         // school_id diisi otomatis oleh HasSchoolScope (bootHasSchoolScope)
+        'ulid',
         'kode',
         'nama_mapel',
         'kelompok',
@@ -25,15 +27,14 @@ class MataPelajaran extends Model
         'jam_per_minggu',
         'is_active',
         'urutan_rapor',
-        // Audit columns — TIDAK boleh di-set langsung dari request user
-        // Di-set otomatis via boot() di bawah
-        'created_by',
-        'updated_by',
-        'deleted_by',
+        // Audit columns TIDAK di $fillable — di-set otomatis via boot()
     ];
 
     protected $hidden = [
-        // Jangan expose audit user ID mentah — tampilkan via resource jika perlu
+        'deleted_at',
+        'deleted_by',
+        'created_by',
+        'updated_by',
     ];
 
     protected $casts = [
@@ -47,7 +48,9 @@ class MataPelajaran extends Model
     {
         parent::boot();
 
+        // Auto-generate ULID untuk public identifier
         static::creating(function (self $model) {
+            $model->ulid ??= (string) Str::ulid();
             $model->created_by = auth()->id();
             $model->updated_by = auth()->id();
         });

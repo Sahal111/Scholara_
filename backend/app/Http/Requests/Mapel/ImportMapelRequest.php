@@ -11,7 +11,7 @@ class ImportMapelRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|max:5120',
+            'file' => 'required|file|max:5120|mimes:xlsx',
         ];
     }
 

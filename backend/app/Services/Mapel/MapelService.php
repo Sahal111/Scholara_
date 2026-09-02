@@ -26,7 +26,10 @@ class MapelService
                     ->orWhere('kode', 'like', "%{$search}%");
             }))
             ->when($filters['kelompok'] ?? null, fn($q, $v) => $q->where('kelompok', $v))
-            ->when($filters['tingkat'] ?? null, fn($q, $v) => $q->where('tingkat', 'LIKE', "%{$v}%"))
+            ->when(
+                $filters['tingkat'] ?? null,
+                fn($q, $v) => $q->whereRaw('FIND_IN_SET(?, tingkat)', [$v])
+            )
             ->when(
                 isset($filters['is_active']) && $filters['is_active'] !== '',
                 fn($q) => $q->where('is_active', (bool) $filters['is_active'])
@@ -46,15 +49,39 @@ class MapelService
             ->with('programPendidikan')
             ->orderBy('kelompok')
             ->orderBy('nama_mapel')
-            ->get(['id', 'kode', 'nama_mapel', 'kelompok', 'tingkat', 'program_pendidikan_id']);
+            ->get(['id', 'ulid', 'kode', 'nama_mapel', 'kelompok', 'tingkat', 'program_pendidikan_id']);
     }
 
     /**
-     * Temukan mapel by ID, pastikan milik school yang sama (via SchoolScope).
+     * Statistik ringkasan mapel untuk header page.
+     * Menghitung dari SELURUH data (bukan per-halaman).
+     */
+    public function getStats(): array
+    {
+        return [
+            'total'       => MataPelajaran::count(),
+            'total_aktif' => MataPelajaran::where('is_active', true)->count(),
+            'total_non_aktif' => MataPelajaran::where('is_active', false)->count(),
+            'total_kelompok'  => MataPelajaran::distinct('kelompok')->count('kelompok'),
+        ];
+    }
+
+    /**
+     * Temukan mapel by integer ID (internal), pastikan milik school yang sama (via SchoolScope).
      */
     public function findOrFail(int|string $id): MataPelajaran
     {
         return MataPelajaran::with('programPendidikan')->findOrFail($id);
+    }
+
+    /**
+     * Temukan mapel by ULID (public identifier).
+     */
+    public function findByUlid(string $ulid): MataPelajaran
+    {
+        return MataPelajaran::where('ulid', $ulid)
+            ->with('programPendidikan')
+            ->firstOrFail();
     }
 
     /**
@@ -123,7 +150,10 @@ class MapelService
     {
         return MataPelajaran::query()
             ->when($filters['kelompok'] ?? null, fn($q, $v) => $q->where('kelompok', $v))
-            ->when($filters['tingkat'] ?? null, fn($q, $v) => $q->where('tingkat', 'LIKE', "%{$v}%"))
+            ->when(
+                $filters['tingkat'] ?? null,
+                fn($q, $v) => $q->whereRaw('FIND_IN_SET(?, tingkat)', [$v])
+            )
             ->when(
                 isset($filters['is_active']) && $filters['is_active'] !== '',
                 fn($q) => $q->where('is_active', (bool) $filters['is_active'])

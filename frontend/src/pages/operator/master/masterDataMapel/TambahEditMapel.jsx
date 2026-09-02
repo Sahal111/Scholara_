@@ -3,31 +3,13 @@ import { BookOpen, Hash, Clock, Layers } from "lucide-react";
 import Modal from "../../../../components/ui/Modal";
 import { useCreateMapel, useUpdateMapel } from "../../../../hooks/api/useMapel";
 import { useAuth } from "../../../../contexts/AuthContext";
+import {
+  KELOMPOK_OPTIONS,
+  KURIKULUM_OPTIONS,
+  getTingkatByJenjang,
+  getLabelTingkat,
+} from "../../../../constants/mapel";
 
-/* ── Konstanta ──────────────────────────────────────────────── */
-const KELOMPOK_OPTIONS = [
-  "A - Wajib",
-  "B - Wajib",
-  "C - Muatan Lokal",
-  "Pengembangan Diri",
-  "Ekstrakurikuler",
-  "Lainnya",
-];
-const KURIKULUM_OPTIONS = ["Kurikulum 2013", "Kurikulum Merdeka", "Keduanya"];
-
-function getTingkatByJenjang(jenjang) {
-  if (jenjang === "dasar") return ["1", "2", "3", "4", "5", "6"];
-  if (jenjang === "menengah_pertama") return ["7", "8", "9"];
-  if (jenjang === "menengah_atas") return ["10", "11", "12"];
-  return ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
-}
-
-function getLabelTingkat(jenjang) {
-  if (jenjang === "dasar") return "Kelas (SD/MI)";
-  if (jenjang === "menengah_pertama") return "Kelas (SMP/MTs)";
-  if (jenjang === "menengah_atas") return "Kelas (SMA/SMK/MA)";
-  return "Kelas";
-}
 
 const emptyForm = {
   kode: "",

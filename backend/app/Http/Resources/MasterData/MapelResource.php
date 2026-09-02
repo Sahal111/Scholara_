@@ -28,7 +28,7 @@ class MapelResource extends JsonResource
             : [];
 
         return [
-            'id' => $this->id,
+            'id' => $this->ulid,
             'kode' => $this->kode,
             'nama_mapel' => $this->nama_mapel,
             'kelompok' => $this->kelompok,
