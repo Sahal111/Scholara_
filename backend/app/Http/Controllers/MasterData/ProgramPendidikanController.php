@@ -65,23 +65,28 @@ class ProgramPendidikanController extends Controller
             ? filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN)
             : null;
 
-        // Closure reusable agar filter status aktif propagate ke semua level tree
-        $activeConstraint = $filterActive !== null
-            ? fn($q) => $q->where('is_active', $filterActive)
-            : fn($q) => $q;
+        // Resolve school_id aktif untuk isolasi tenant yang eksplisit
+        // SchoolScope global sudah handle query utama, tapi kita explicit
+        // di setiap level eager load 'descendantsTree' agar tidak bocor.
+        $schoolId = app()->bound('current_school_id') ? app('current_school_id') : null;
+        $schoolId ??= auth('sanctum')->user()?->school_id;
+
+        // PENTING: eager load closure di Laravel hanya mengandalkan SIDE EFFECT
+        // pada $q, bukan return value. Semua modifikasi harus langsung ke $q.
+        $buildDescendantQuery = function ($q) use ($filterActive, $schoolId, &$buildDescendantQuery): void {
+            if ($filterActive !== null) {
+                $q->where('is_active', $filterActive);
+            }
+            if ($schoolId) {
+                $q->where('school_id', $schoolId);
+            }
+            $q->with(['descendantsTree' => $buildDescendantQuery]);
+        };
 
         $data = ProgramPendidikan::query()
             ->root()
             ->when($filterActive !== null, fn($q) => $q->where('is_active', $filterActive))
-            ->with([
-                'descendantsTree' => function ($q) use ($activeConstraint) {
-                    $activeConstraint($q)->with([
-                        'descendantsTree' => function ($q2) use ($activeConstraint) {
-                            $activeConstraint($q2)->with('descendantsTree');
-                        },
-                    ]);
-                },
-            ])
+            ->with(['descendantsTree' => $buildDescendantQuery])
             ->withCount(['kelas', 'siswas'])
             ->orderBy('nama')
             ->get();

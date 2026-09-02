@@ -196,6 +196,7 @@ export default function MasterProgram() {
   const statSlots = activeJenisTabs.slice(0, 3).map((tab) => ({
     icon: tab.icon,
     label: tab.label,
+    unit: tab.unit ?? "Program",
     count: allRows.filter((r) => r.jenis === tab.value).length,
   }));
 
@@ -312,8 +313,8 @@ export default function MasterProgram() {
             className="text-lg text-[#3f4945] max-w-2xl leading-relaxed opacity-80"
             style={{ fontFamily: "'Inter',sans-serif" }}
           >
-            Kelola program keahlian, konsentrasi keahlian, bidang keahlian, dan
-            peminatan sekolah secara terpadu.
+            {programConfig.description ??
+              "Kelola program pendidikan sekolah secara terpadu."}
           </p>
         </div>
 
@@ -343,17 +344,27 @@ export default function MasterProgram() {
       </div>
 
       {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-        {statSlots.map((slot) => (
-          <StatCard
-            key={slot.label}
-            icon={slot.icon}
-            label={slot.label}
-            value={isLoading ? "—" : slot.count}
-            unit="Program"
-          />
-        ))}
-      </div>
+      {statSlots.length > 0 && (
+        <div
+          className={`grid grid-cols-1 gap-8 mb-12 ${
+            statSlots.length === 1
+              ? "md:grid-cols-1 max-w-sm"
+              : statSlots.length === 2
+                ? "md:grid-cols-2"
+                : "md:grid-cols-3"
+          }`}
+        >
+          {statSlots.map((slot) => (
+            <StatCard
+              key={slot.label}
+              icon={slot.icon}
+              label={slot.label}
+              value={isLoading ? "—" : slot.count}
+              unit={slot.unit}
+            />
+          ))}
+        </div>
+      )}
 
       {/* ── Main Content ── */}
       {!programConfig.hasTabs ? (

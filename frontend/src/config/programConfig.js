@@ -22,34 +22,54 @@
 
 // ─── Helper internal ──────────────────────────────────────────────────────────
 
-const TAB_SEMUA = { value: "semua", label: "Semua", icon: "list" };
+const TAB_SEMUA = {
+  value: "semua",
+  label: "Semua",
+  icon: "list",
+  unit: "Program",
+};
 const TAB_BIDANG = {
   value: "bidang_keahlian",
   label: "Bidang Keahlian",
   icon: "category",
+  unit: "Bidang",
 };
 const TAB_PROGRAM = {
   value: "program_keahlian",
   label: "Program Keahlian",
   icon: "school",
+  unit: "Program",
 };
 const TAB_KONSEN = {
   value: "konsentrasi_keahlian",
   label: "Konsentrasi Keahlian",
   icon: "account_tree",
+  unit: "Konsentrasi",
 };
 const TAB_MINAT = {
   value: "peminatan",
   label: "Peminatan",
   icon: "psychology",
+  unit: "Peminatan",
 };
 const TAB_MAPIL = {
   value: "mata_pelajaran_pilihan",
   label: "Mata Pelajaran Pilihan",
   icon: "menu_book",
+  unit: "Kelompok",
 };
-const TAB_AGAMA = { value: "keagamaan", label: "Keagamaan", icon: "mosque" };
-const TAB_UMUM = { value: "umum", label: "Umum", icon: "star" };
+const TAB_AGAMA = {
+  value: "keagamaan",
+  label: "Keagamaan",
+  icon: "mosque",
+  unit: "Program",
+};
+const TAB_UMUM = {
+  value: "umum",
+  label: "Umum",
+  icon: "star",
+  unit: "Program",
+};
 
 // ─── Config per skenario ──────────────────────────────────────────────────────
 
