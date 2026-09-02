@@ -8,10 +8,15 @@ export const programKeys = {
   all: ["program-pendidikan"],
   lists: () => [...programKeys.all, "list"],
   list: (filters) => [...programKeys.lists(), filters],
-  tree: (filters) => [...programKeys.all, "tree", filters],
+  // trees() = prefix untuk invalidate SEMUA varian tree sekaligus
+  trees: () => [...programKeys.all, "tree"],
+  tree: (filters) => [...programKeys.trees(), filters],
   details: () => [...programKeys.all, "detail"],
   detail: (id) => [...programKeys.details(), id],
-  dropdown: (params) => [...programKeys.all, "dropdown", params],
+  // dropdowns() = prefix untuk invalidate semua varian dropdown
+  dropdowns: () => [...programKeys.all, "dropdown"],
+  dropdown: (params) => [...programKeys.dropdowns(), params],
+  trash: () => [...programKeys.all, "trash"],
 };
 
 export function useProgramList(params = {}) {
@@ -67,7 +72,7 @@ export function useCreateProgram() {
     mutationFn: (payload) => api.post(BASE, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: programKeys.lists() });
-      qc.invalidateQueries({ queryKey: programKeys.tree() });
+      qc.invalidateQueries({ queryKey: programKeys.trees() });
       toast.success("Program pendidikan berhasil ditambahkan.");
     },
     onError: (err) => {
@@ -85,7 +90,7 @@ export function useUpdateProgram(ulid) {
     mutationFn: (payload) => api.put(`${BASE}/${ulid}`, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: programKeys.lists() });
-      qc.invalidateQueries({ queryKey: programKeys.tree() });
+      qc.invalidateQueries({ queryKey: programKeys.trees() });
       qc.invalidateQueries({ queryKey: programKeys.detail(ulid) });
       toast.success("Program pendidikan berhasil diperbarui.");
     },
@@ -107,8 +112,8 @@ export function useToggleProgramStatus() {
     mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/toggle-active`),
     onSuccess: (_, ulid) => {
       qc.invalidateQueries({ queryKey: programKeys.lists() });
-      qc.invalidateQueries({ queryKey: programKeys.tree() });
-      qc.invalidateQueries({ queryKey: programKeys.dropdown() });
+      qc.invalidateQueries({ queryKey: programKeys.trees() });
+      qc.invalidateQueries({ queryKey: programKeys.dropdowns() });
       qc.invalidateQueries({ queryKey: programKeys.detail(ulid) });
     },
     onError: (err) => {
@@ -124,11 +129,54 @@ export function useDeleteProgram() {
     mutationFn: (ulid) => api.delete(`${BASE}/${ulid}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: programKeys.lists() });
-      qc.invalidateQueries({ queryKey: programKeys.tree() });
+      qc.invalidateQueries({ queryKey: programKeys.trees() });
+      qc.invalidateQueries({ queryKey: programKeys.trash() });
       toast.success("Program pendidikan berhasil dihapus.");
     },
     onError: (err) => {
       toast.error(err.response?.data?.message ?? "Gagal menghapus.");
+    },
+  });
+}
+
+// ── Recycle Bin ───────────────────────────────────────────────────────────────
+
+export function useTrashProgram() {
+  return useQuery({
+    queryKey: programKeys.trash(),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/trash`);
+      return data.data ?? [];
+    },
+    staleTime: 30_000,
+  });
+}
+
+export function useRestoreProgram() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/restore`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: programKeys.trash() });
+      qc.invalidateQueries({ queryKey: programKeys.lists() });
+      qc.invalidateQueries({ queryKey: programKeys.trees() });
+      qc.invalidateQueries({ queryKey: programKeys.dropdowns() });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message ?? "Gagal memulihkan program.");
+    },
+  });
+}
+
+export function useForceDeleteProgram() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid) => api.delete(`${BASE}/${ulid}/force-delete`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: programKeys.trash() });
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message ?? "Gagal menghapus permanen.");
     },
   });
 }

@@ -45,10 +45,22 @@ class ProgramPendidikanPolicy
         return $this->sameSchool($user, $program);
     }
 
-    /** Hapus program — harus sekolah yang sama. */
+    /** Hapus program (soft delete) — harus sekolah yang sama. */
     public function delete(User $user, ProgramPendidikan $program): bool
     {
         return $this->sameSchool($user, $program);
+    }
+
+    /** Pulihkan program dari recycle bin — harus sekolah yang sama. */
+    public function restore(User $user, ProgramPendidikan $program): bool
+    {
+        return $this->sameSchool($user, $program);
+    }
+
+    /** Hapus permanen — hanya operator, harus sekolah yang sama. */
+    public function forceDelete(User $user, ProgramPendidikan $program): bool
+    {
+        return $user->hasRole('operator') && $this->sameSchool($user, $program);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   useProgramTree,
@@ -318,27 +319,44 @@ export default function MasterProgram() {
           </p>
         </div>
 
-        {/* CTA button — shown only when school type supports programs */}
-        {canManage && programConfig.hasTabs && (
-          <div className="shrink-0 w-full md:w-auto">
-            <button
-              onClick={handleTambah}
-              className="w-full md:w-auto bg-[#006e2a] text-white px-8 py-4 rounded-full flex items-center justify-center gap-3
-                shadow-[0_8px_16px_rgba(0,110,42,0.15)] hover:shadow-[0_15px_40px_rgba(0,200,83,0.5)]
-                hover:-translate-y-1 hover:scale-[1.05] transition-all duration-500 group border border-white/20"
+        {/* CTA area */}
+        {programConfig.hasTabs && (
+          <div className="shrink-0 flex items-center gap-3 w-full md:w-auto">
+            {/* Recycle Bin */}
+            <Link
+              to="/operator/master/program-pendidikan/recycle-bin"
+              className="flex items-center gap-2 px-5 py-3.5 rounded-full bg-white/80 border border-[#bfc9c4]/40 text-[#3f4945] hover:text-red-500 hover:border-red-200 hover:bg-red-50 transition-all shadow-sm group"
+              title="Recycle Bin"
             >
-              <div className="bg-white/20 rounded-full p-1 group-hover:rotate-90 transition-transform duration-500">
-                <span className="material-symbols-outlined text-[20px] block">
-                  add
-                </span>
-              </div>
-              <span
-                className="tracking-widest font-black uppercase text-[11px]"
-                style={{ fontFamily: "'Inter',sans-serif" }}
-              >
-                Tambah Program
+              <span className="material-symbols-outlined text-[20px] group-hover:animate-bounce">
+                delete_sweep
               </span>
-            </button>
+              <span className="text-[11px] font-black uppercase tracking-widest hidden sm:inline">
+                Recycle Bin
+              </span>
+            </Link>
+
+            {/* Tambah Program */}
+            {canManage && (
+              <button
+                onClick={handleTambah}
+                className="flex-1 md:flex-none bg-[#006e2a] text-white px-8 py-4 rounded-full flex items-center justify-center gap-3
+                  shadow-[0_8px_16px_rgba(0,110,42,0.15)] hover:shadow-[0_15px_40px_rgba(0,200,83,0.5)]
+                  hover:-translate-y-1 hover:scale-[1.05] transition-all duration-500 group border border-white/20"
+              >
+                <div className="bg-white/20 rounded-full p-1 group-hover:rotate-90 transition-transform duration-500">
+                  <span className="material-symbols-outlined text-[20px] block">
+                    add
+                  </span>
+                </div>
+                <span
+                  className="tracking-widest font-black uppercase text-[11px]"
+                  style={{ fontFamily: "'Inter',sans-serif" }}
+                >
+                  Tambah Program
+                </span>
+              </button>
+            )}
           </div>
         )}
       </div>

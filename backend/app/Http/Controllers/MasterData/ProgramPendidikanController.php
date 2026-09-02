@@ -269,6 +269,102 @@ class ProgramPendidikanController extends Controller
         return $this->success($mapped);
     }
 
+    // ── Recycle Bin ───────────────────────────────────────────────
+
+    /**
+     * Daftar program yang sudah di-soft delete (recycle bin).
+     * Hanya tampilkan milik sekolah aktif — SchoolScope tetap berlaku
+     * pada onlyTrashed() query.
+     */
+    public function trash(Request $request): JsonResponse
+    {
+        $data = ProgramPendidikan::onlyTrashed()
+            ->with('parent')
+            ->withCount(['kelas', 'children'])
+            ->orderByDesc('deleted_at')
+            ->get();
+
+        return $this->success(ProgramPendidikanResource::collection($data));
+    }
+
+    /**
+     * Pulihkan satu program dari recycle bin.
+     * Guard: tidak boleh restore jika parent-nya masih di recycle bin.
+     */
+    public function restore(string $ulid): JsonResponse
+    {
+        $program = ProgramPendidikan::onlyTrashed()
+            ->where('ulid', $ulid)
+            ->firstOrFail();
+
+        $this->authorize('restore', $program);
+
+        // Cegah restore jika parent sudah dihapus dan belum dipulihkan
+        if ($program->parent_id !== null) {
+            $parentExists = ProgramPendidikan::withoutTrashed()
+                ->where('id', $program->parent_id)
+                ->exists();
+
+            if (!$parentExists) {
+                return $this->error(
+                    'Program induk sudah dihapus. Pulihkan program induk terlebih dahulu sebelum memulihkan program ini.',
+                    'PARENT_TRASHED',
+                    422
+                );
+            }
+        }
+
+        $program->restore();
+
+        return $this->success(
+            new ProgramPendidikanResource($program->fresh('parent')),
+            'Program pendidikan berhasil dipulihkan.'
+        );
+    }
+
+    /**
+     * Hapus permanen dari database.
+     * Blokir jika masih ada children (aktif maupun di trash) atau kelas.
+     */
+    public function forceDelete(string $ulid): JsonResponse
+    {
+        $program = ProgramPendidikan::onlyTrashed()
+            ->where('ulid', $ulid)
+            ->firstOrFail();
+
+        $this->authorize('forceDelete', $program);
+
+        // Cek apakah masih punya children (aktif maupun di-trash)
+        $hasChildren = ProgramPendidikan::withTrashed()
+            ->where('parent_id', $program->id)
+            ->exists();
+
+        if ($hasChildren) {
+            return $this->error(
+                'Tidak dapat dihapus permanen — program ini masih memiliki sub-program (aktif atau di recycle bin). Hapus atau pulihkan sub-program terlebih dahulu.',
+                'PROGRAM_HAS_CHILDREN',
+                422
+            );
+        }
+
+        // Cek apakah masih dipakai kelas (termasuk yang soft-deleted)
+        $kelasCount = \App\Models\Kelas::withoutGlobalScope(\App\Models\Scopes\SchoolScope::class)
+            ->where('program_pendidikan_id', $program->id)
+            ->count();
+
+        if ($kelasCount > 0) {
+            return $this->error(
+                "Tidak dapat dihapus permanen — program masih digunakan oleh {$kelasCount} kelas.",
+                'PROGRAM_HAS_KELAS',
+                422
+            );
+        }
+
+        $program->forceDelete();
+
+        return $this->success(null, 'Program pendidikan dihapus secara permanen.');
+    }
+
     // ── Helper ────────────────────────────────────────────────────
 
     /**

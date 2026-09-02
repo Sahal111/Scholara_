@@ -302,6 +302,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,super_admin'])
                 ->name('master-data.program.dropdown');
             Route::get('/program-pendidikan/tree', [ProgramPendidikanController::class, 'tree'])
                 ->name('master-data.program.tree');
+            Route::get('/program-pendidikan/trash', [ProgramPendidikanController::class, 'trash'])
+                ->name('master-data.program.trash');
             Route::get('/program-pendidikan', [ProgramPendidikanController::class, 'index'])
                 ->name('master-data.program.index');
             Route::get('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'show'])
@@ -317,6 +319,11 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,super_admin'])
                 ->name('master-data.program.toggle-active');
             Route::delete('/program-pendidikan/{ulid}', [ProgramPendidikanController::class, 'destroy'])
                 ->name('master-data.program.destroy');
+            // Recycle bin — static routes SEBELUM {ulid} wildcard
+            Route::patch('/program-pendidikan/{ulid}/restore', [ProgramPendidikanController::class, 'restore'])
+                ->name('master-data.program.restore');
+            Route::delete('/program-pendidikan/{ulid}/force-delete', [ProgramPendidikanController::class, 'forceDelete'])
+                ->name('master-data.program.force-delete');
         });
 
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────
