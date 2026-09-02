@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasSchoolScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\MataPelajaran;
 
 class Assignment extends Model
 {
@@ -46,7 +47,7 @@ class Assignment extends Model
 
     public function mapel()
     {
-        return $this->belongsTo(Mapel::class, 'mapel_id');
+        return $this->belongsTo(MataPelajaran::class, 'mapel_id');
     }
 
     public function kelas()

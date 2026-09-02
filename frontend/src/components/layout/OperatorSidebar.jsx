@@ -63,6 +63,12 @@ const MENU_SECTIONS = [
     icon: "school",
     items: [
       {
+        to: "/operator/akademik/kurikulum",
+        icon: "school",
+        label: "Kurikulum",
+        soon: true,
+      },
+      {
         to: "/operator/akademik/penempatan-siswa",
         icon: "transfer_within_a_station",
         label: "Penempatan Siswa",
@@ -86,12 +92,6 @@ const MENU_SECTIONS = [
         soon: true,
       },
       {
-        to: "/operator/master/absensi",
-        icon: "checklist",
-        label: "Absensi",
-        soon: true,
-      },
-      {
         to: "/operator/master/penilaian",
         icon: "grade",
         label: "Penilaian",
@@ -109,15 +109,52 @@ const MENU_SECTIONS = [
         label: "Kenaikan Kelas",
       },
       {
+        to: "/operator/akademik/kelulusan",
+        icon: "workspace_premium",
+        label: "Kelulusan",
+        soon: true,
+      },
+    ],
+  },
+  {
+    key: "kesiswaan",
+    label: "Kesiswaan",
+    icon: "school",
+    items: [
+      {
+        to: "/operator/master/absensi",
+        icon: "checklist",
+        label: "Absensi",
+        soon: true,
+      },
+      {
         to: "/operator/master/siswa/mutasi",
         icon: "swap_horiz",
         label: "Mutasi Siswa",
         soon: true,
       },
       {
-        to: "/operator/akademik/kelulusan",
-        icon: "workspace_premium",
-        label: "Kelulusan",
+        to: "/operator/kesiswaan/ekstrakurikuler",
+        icon: "school",
+        label: "Ekstrakurikuler",
+        soon: true,
+      },
+      {
+        to: "/operator/kesiswaan/organisasi",
+        icon: "school",
+        label: "Organisasi",
+        soon: true,
+      },
+      {
+        to: "/operator/kesiswaan/kegiatan",
+        icon: "school",
+        label: "Kegiatan",
+        soon: true,
+      },
+      {
+        to: "/operator/kesiswaan/prestasi",
+        icon: "school",
+        label: "Prestasi",
         soon: true,
       },
     ],
@@ -191,7 +228,7 @@ const MENU_SECTIONS = [
       {
         to: "/operator/roles",
         icon: "shield",
-        label: "Role & Permission",
+        label: "Role & Hak Akses",
         soon: true,
       },
       {
@@ -290,12 +327,6 @@ const MENU_SECTIONS = [
         icon: "notification_important",
         label: "Pengumuman",
       },
-      {
-        to: "/operator/rapor-online",
-        icon: "description",
-        label: "Rapor Online",
-        soon: true,
-      },
       { to: "/operator/master/galeri", icon: "photo_library", label: "Galeri" },
     ],
   },
@@ -332,12 +363,6 @@ const MENU_SECTIONS = [
         to: "/operator/notifikasi",
         icon: "notifications",
         label: "Notifikasi",
-        soon: true,
-      },
-      {
-        to: "/operator/settings",
-        icon: "tune",
-        label: "Pengaturan",
         soon: true,
       },
     ],

@@ -23,7 +23,8 @@ class StoreMapelRequest extends FormRequest
                 'string',
                 'max:20',
                 Rule::unique('mapels', 'kode')
-                    ->where('school_id', app('current_school_id')),
+                    ->where('school_id', app('current_school_id'))
+                    ->whereNull('deleted_at'),
             ],
             'nama_mapel' => 'required|string|max:150',
             'kelompok' => 'required|in:' . implode(',', self::KELOMPOK_VALID),

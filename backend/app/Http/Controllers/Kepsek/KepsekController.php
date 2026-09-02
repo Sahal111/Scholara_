@@ -245,9 +245,11 @@ class KepsekController extends Controller
     {
         $query = Guru::query()
             ->when($request->search, function ($q) use ($request) {
-                $q->where('nama', 'like', "%{$request->search}%")
-                    ->orWhere('nuptk', 'like', "%{$request->search}%")
-                    ->orWhere('nip', 'like', "%{$request->search}%");
+                $q->where(function ($sub) use ($request) {
+                    $sub->where('nama', 'like', "%{$request->search}%")
+                        ->orWhere('nuptk', 'like', "%{$request->search}%")
+                        ->orWhere('nip', 'like', "%{$request->search}%");
+                });
             })
             ->when($request->jenis_ptk, function ($q) use ($request) {
                 $q->where('jenis_ptk', $request->jenis_ptk);
@@ -267,21 +269,21 @@ class KepsekController extends Controller
     // -------------------------------------------------------
     // DETAIL GURU (read-only, khusus kepsek) + mapel yang diampu
     // -------------------------------------------------------
-    public function detailGuru($nuptk)
+    public function detailGuru($ulid)
     {
-        $guru = Guru::where('nuptk', $nuptk)->firstOrFail();
+        // Cari guru by ulid (public identifier), fallback ke nuptk untuk backward compat
+        $guru = Guru::where('ulid', $ulid)->firstOr(fn() => Guru::where('nuptk', $ulid)->firstOrFail());
 
         $mapelDiampu = JadwalPelajaran::with(['mataPelajaran', 'kelas'])
-            ->where('nuptk', $nuptk)
+            ->where('guru_id', $guru->id)
             ->get()
             ->groupBy('mapel_id')
-
             ->map(function ($items) {
                 $first = $items->first();
                 return [
                     'mapel_id' => $first->mapel_id,
                     'nama_mapel' => $first->mataPelajaran?->nama_mapel,
-                    'kode_mapel' => $first->mataPelajaran?->kode_mapel,
+                    'kode_mapel' => $first->mataPelajaran?->kode,   // kolom aktual: kode, bukan kode_mapel
                     'kelas_diampu' => $items->pluck('kelas.nama_kelas')->filter()->unique()->values(),
                 ];
             })

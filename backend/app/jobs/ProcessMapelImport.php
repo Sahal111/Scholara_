@@ -99,9 +99,11 @@ class ProcessMapelImport implements ShouldQueue
                     $tingkatRaw = $get($row, 'tingkat');
                     $tingkat = null;
                     if ($tingkatRaw && strtolower($tingkatRaw) !== 'semua') {
+                        // Mendukung semua jenjang: SD (1-6), SMP/MTs (7-9), SMA/SMK/MA (10-12)
+                        $allLevels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
                         $tingkat = implode(',', array_filter(
                             array_map('trim', explode(',', $tingkatRaw)),
-                            fn($t) => in_array($t, ['1', '2', '3', '4', '5', '6'])
+                            fn($t) => in_array($t, $allLevels)
                         ));
                         if ($tingkat === '') {
                             $tingkat = null;

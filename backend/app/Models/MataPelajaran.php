@@ -25,6 +25,15 @@ class MataPelajaran extends Model
         'jam_per_minggu',
         'is_active',
         'urutan_rapor',
+        // Audit columns — TIDAK boleh di-set langsung dari request user
+        // Di-set otomatis via boot() di bawah
+        'created_by',
+        'updated_by',
+        'deleted_by',
+    ];
+
+    protected $hidden = [
+        // Jangan expose audit user ID mentah — tampilkan via resource jika perlu
     ];
 
     protected $casts = [
@@ -33,6 +42,25 @@ class MataPelajaran extends Model
         'tingkat' => 'string',
         'urutan_rapor' => 'integer',
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (self $model) {
+            $model->created_by = auth()->id();
+            $model->updated_by = auth()->id();
+        });
+
+        static::updating(function (self $model) {
+            $model->updated_by = auth()->id();
+        });
+
+        static::deleting(function (self $model) {
+            $model->deleted_by = auth()->id();
+            $model->saveQuietly();
+        });
+    }
 
     public function scopeAktif($query)
     {

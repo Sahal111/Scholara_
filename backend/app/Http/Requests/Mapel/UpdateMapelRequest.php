@@ -26,6 +26,7 @@ class UpdateMapelRequest extends FormRequest
                 'max:20',
                 Rule::unique('mapels', 'kode')
                     ->where('school_id', app('current_school_id'))
+                    ->whereNull('deleted_at')
                     ->ignore($id),
             ],
             'nama_mapel' => 'required|string|max:150',
