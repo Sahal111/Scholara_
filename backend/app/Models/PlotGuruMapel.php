@@ -2,13 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\HasSchoolScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PlotGuruMapel extends Model
 {
+    use HasSchoolScope, SoftDeletes;
+
     protected $table = 'plot_guru_mapels';
 
     protected $fillable = [
+        // school_id diisi otomatis oleh HasSchoolScope (bootHasSchoolScope)
         'guru_id',
         'mapel_id',
         'kelas_id',
@@ -22,6 +27,7 @@ class PlotGuruMapel extends Model
         'is_active' => 'boolean',
         'beban_jam' => 'integer',
     ];
+
 
     // ── Relasi ──────────────────────────────────────────────
 
