@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\HasSchoolScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Kelas extends Model
@@ -22,7 +23,8 @@ class Kelas extends Model
         'nama_kelas',
         'tingkat',
         'program_pendidikan_id',
-        'kurikulum',
+        'kurikulum',      // legacy — dipertahankan sementara, akan dihapus setelah migrasi selesai
+        'kurikulum_id',   // FK baru ke tabel kurikulums
         'wali_kelas_id',
         'kapasitas',
         'ruangan',
@@ -42,9 +44,27 @@ class Kelas extends Model
 
     // ── Relasi ──────────────────────────────────────────────
 
-    public function programPendidikan()
+    public function programPendidikan(): BelongsTo
     {
         return $this->belongsTo(ProgramPendidikan::class, 'program_pendidikan_id');
+    }
+
+    /**
+     * Relasi ke kurikulum yang digunakan kelas ini.
+     * Menggunakan FK kurikulum_id (bukan kolom enum lama).
+     */
+    public function kurikulum(): BelongsTo
+    {
+        return $this->belongsTo(Kurikulum::class, 'kurikulum_id');
+    }
+
+    /**
+     * Nama kurikulum — ambil dari relasi baru jika ada, fallback ke kolom lama.
+     * Digunakan selama masa transisi migrasi.
+     */
+    public function getNamaKurikulumAttribute(): string
+    {
+        return $this->kurikulum?->nama ?? $this->getOriginal('kurikulum') ?? '-';
     }
 
     public function tahunAjaran()

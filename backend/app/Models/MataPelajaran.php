@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\HasSchoolScope;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -23,7 +24,8 @@ class MataPelajaran extends Model
         'kelompok',
         'tingkat',
         'program_pendidikan_id',
-        'kurikulum',
+        'kurikulum',      // legacy — dipertahankan sementara
+        'kurikulum_id',   // FK baru ke tabel kurikulums. NULL = berlaku semua kurikulum
         'jam_per_minggu',
         'is_active',
         'urutan_rapor',
@@ -72,9 +74,19 @@ class MataPelajaran extends Model
 
     // ── Relasi ──────────────────────────────────────────────
 
-    public function programPendidikan()
+    public function programPendidikan(): BelongsTo
     {
         return $this->belongsTo(ProgramPendidikan::class, 'program_pendidikan_id');
+    }
+
+    /**
+     * Kurikulum spesifik mapel ini.
+     * NULL = mapel berlaku untuk semua kurikulum (mapel umum seperti Matematika, B.Indonesia).
+     * non-NULL = mapel hanya ada di kurikulum tertentu (misal: P5 hanya ada di Merdeka).
+     */
+    public function kurikulum(): BelongsTo
+    {
+        return $this->belongsTo(Kurikulum::class, 'kurikulum_id');
     }
 
     public function plotGuruMapels()

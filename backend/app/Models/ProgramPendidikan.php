@@ -6,6 +6,7 @@ use App\Traits\HasSchoolScope;
 use App\Traits\HasUlid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -139,6 +140,23 @@ class ProgramPendidikan extends Model
     public function mapels(): HasMany
     {
         return $this->hasMany(MataPelajaran::class, 'program_pendidikan_id');
+    }
+
+    /**
+     * Kurikulum yang kompatibel dengan program pendidikan ini.
+     * Many-to-many via pivot kurikulum_program_pendidikans.
+     * Dipakai untuk validasi saat operator pilih program+kurikulum di form kelas.
+     */
+    public function kurikulums(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Kurikulum::class,
+            'kurikulum_program_pendidikans',
+            'program_pendidikan_id',
+            'kurikulum_id'
+        )->withPivot(['catatan', 'is_active'])
+            ->withTimestamps()
+            ->wherePivot('is_active', true);
     }
 
     /**

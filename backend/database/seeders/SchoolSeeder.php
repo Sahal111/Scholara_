@@ -233,7 +233,7 @@ class SchoolSeeder extends Seeder
             ['slug' => 'master_data.siswa.import', 'nama' => 'Import Data Siswa', 'modul' => 'master_data'],
             ['slug' => 'master_data.siswa.export', 'nama' => 'Export Data Siswa', 'modul' => 'master_data'],
 
-            // master_data — kelas, mapel, tahun ajaran, program pendidikan
+            // master_data — kelas, mapel, tahun ajaran, program pendidikan, kurikulum
             ['slug' => 'master_data.kelas.view', 'nama' => 'Lihat Kelas', 'modul' => 'master_data'],
             ['slug' => 'master_data.kelas.manage', 'nama' => 'Kelola Kelas', 'modul' => 'master_data'],
             ['slug' => 'master_data.program.view', 'nama' => 'Lihat Program Pendidikan', 'modul' => 'master_data'],
@@ -244,6 +244,9 @@ class SchoolSeeder extends Seeder
             ['slug' => 'master_data.tahun_ajaran.manage', 'nama' => 'Kelola Tahun Ajaran', 'modul' => 'master_data'],
             ['slug' => 'master_data.orang_tua.view', 'nama' => 'Lihat Data Orang Tua', 'modul' => 'master_data'],
             ['slug' => 'master_data.orang_tua.manage', 'nama' => 'Kelola Data Orang Tua', 'modul' => 'master_data'],
+            // kurikulum — fleksibel per sekolah, bisa custom atau pakai platform default
+            ['slug' => 'master_data.kurikulum.view', 'nama' => 'Lihat Kurikulum', 'modul' => 'master_data'],
+            ['slug' => 'master_data.kurikulum.manage', 'nama' => 'Kelola Kurikulum', 'modul' => 'master_data'],
 
             // absensi
             ['slug' => 'absensi.input', 'nama' => 'Input Absensi', 'modul' => 'absensi'],
@@ -360,6 +363,7 @@ class SchoolSeeder extends Seeder
                 'master_data.tahun_ajaran.view',
                 'master_data.orang_tua.view',
                 'master_data.program.view',
+                'master_data.kurikulum.view',
                 'absensi.view_all',
                 'absensi.rekap',
                 'dms.view_all',
@@ -382,6 +386,7 @@ class SchoolSeeder extends Seeder
 
             'guru' => [
                 'master_data.siswa.view',
+                'master_data.kurikulum.view',
                 'absensi.input',
                 'absensi.edit',
                 'absensi.view_kelas_sendiri',
@@ -395,6 +400,7 @@ class SchoolSeeder extends Seeder
 
             'wali_kelas' => [
                 'master_data.siswa.view',
+                'master_data.kurikulum.view',
                 'absensi.input',
                 'absensi.edit',
                 'absensi.view_kelas_sendiri',
@@ -461,6 +467,8 @@ class SchoolSeeder extends Seeder
                 'master_data.orang_tua.view',
                 'master_data.program.view',
                 'master_data.program.manage',
+                'master_data.kurikulum.view',
+                'master_data.kurikulum.manage',
                 'absensi.view_all',
                 'absensi.rekap',
                 'dms.view_all',

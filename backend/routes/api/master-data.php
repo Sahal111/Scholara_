@@ -11,6 +11,7 @@ use App\Http\Controllers\MasterData\Guru\GuruKompetensiController;
 use App\Http\Controllers\MasterData\Guru\GuruMutasiController;
 use App\Http\Controllers\MasterData\GuruCutiController;
 use App\Http\Controllers\MasterData\JadwalPelajaranController;
+use App\Http\Controllers\MasterData\KurikulumController;
 use App\Http\Controllers\MasterData\ProgramPendidikanController;
 use App\Http\Controllers\MasterData\MasterDataKelasController;
 use App\Http\Controllers\MasterData\MasterDataMapelController;
@@ -336,6 +337,28 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,super_admin'])
                 ->name('master-data.program.restore');
             Route::delete('/program-pendidikan/{ulid}/force-delete', [ProgramPendidikanController::class, 'forceDelete'])
                 ->name('master-data.program.force-delete');
+        });
+
+        // ── KURIKULUM ─────────────────────────────────────────────────────────────
+        // Static routes SEBELUM {ulid} wildcard (aturan Scholara)
+        Route::middleware('permission:master_data.kurikulum.view')->group(function () {
+            Route::get('/kurikulum/dropdown', [KurikulumController::class, 'dropdown'])
+                ->name('master-data.kurikulum.dropdown');
+            Route::get('/kurikulum', [KurikulumController::class, 'index'])
+                ->name('master-data.kurikulum.index');
+            Route::get('/kurikulum/{ulid}', [KurikulumController::class, 'show'])
+                ->name('master-data.kurikulum.show');
+        });
+
+        Route::middleware('permission:master_data.kurikulum.manage')->group(function () {
+            Route::post('/kurikulum', [KurikulumController::class, 'store'])
+                ->name('master-data.kurikulum.store');
+            Route::put('/kurikulum/{ulid}', [KurikulumController::class, 'update'])
+                ->name('master-data.kurikulum.update');
+            Route::patch('/kurikulum/{ulid}/deactivate', [KurikulumController::class, 'deactivate'])
+                ->name('master-data.kurikulum.deactivate');
+            Route::delete('/kurikulum/{ulid}', [KurikulumController::class, 'destroy'])
+                ->name('master-data.kurikulum.destroy');
         });
 
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────
