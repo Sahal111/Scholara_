@@ -5,7 +5,9 @@ namespace App\Http\Controllers\MasterData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Kurikulum\StoreKurikulumRequest;
 use App\Http\Requests\Kurikulum\UpdateKurikulumRequest;
-use App\Services\KurikulumService;
+use App\Http\Resources\KurikulumDetailResource;
+use App\Http\Resources\KurikulumResource;
+use App\Services\Kurikulum\KurikulumService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,10 +24,14 @@ class KurikulumController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $schoolId = app('current_school_id');
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
         $kurikulums = $this->kurikulumService->availableForSchool($schoolId, $request->all());
 
-        return $this->success($kurikulums);
+        return $this->success(KurikulumResource::collection($kurikulums));
     }
 
     /**
@@ -34,7 +40,11 @@ class KurikulumController extends Controller
      */
     public function dropdown(): JsonResponse
     {
-        $schoolId = app('current_school_id');
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
         $data = $this->kurikulumService->dropdownForSchool($schoolId);
 
         return $this->success($data);
@@ -46,10 +56,14 @@ class KurikulumController extends Controller
      */
     public function show(string $ulid): JsonResponse
     {
-        $schoolId = app('current_school_id');
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
         $kurikulum = $this->kurikulumService->findByUlid($ulid, $schoolId);
 
-        return $this->success($kurikulum);
+        return $this->success(new KurikulumDetailResource($kurikulum));
     }
 
     /**
@@ -58,10 +72,14 @@ class KurikulumController extends Controller
      */
     public function store(StoreKurikulumRequest $request): JsonResponse
     {
-        $schoolId = app('current_school_id');
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
         $kurikulum = $this->kurikulumService->createForSchool($schoolId, $request->validated());
 
-        return $this->created($kurikulum, 'Kurikulum berhasil ditambahkan.');
+        return $this->created(new KurikulumDetailResource($kurikulum), 'Kurikulum berhasil ditambahkan.');
     }
 
     /**
@@ -71,10 +89,14 @@ class KurikulumController extends Controller
      */
     public function update(UpdateKurikulumRequest $request, string $ulid): JsonResponse
     {
-        $schoolId = app('current_school_id');
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
         $kurikulum = $this->kurikulumService->updateForSchool($ulid, $schoolId, $request->validated());
 
-        return $this->success($kurikulum, 'Kurikulum berhasil diperbarui.');
+        return $this->success(new KurikulumDetailResource($kurikulum), 'Kurikulum berhasil diperbarui.');
     }
 
     /**
@@ -83,7 +105,11 @@ class KurikulumController extends Controller
      */
     public function destroy(string $ulid): JsonResponse
     {
-        $schoolId = app('current_school_id');
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
         $this->kurikulumService->delete($ulid, $schoolId);
 
         return $this->success(message: 'Kurikulum berhasil dihapus.');
@@ -95,9 +121,18 @@ class KurikulumController extends Controller
      */
     public function deactivate(string $ulid): JsonResponse
     {
-        $schoolId = app('current_school_id');
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
         $this->kurikulumService->deactivate($ulid, $schoolId);
 
         return $this->success(message: 'Kurikulum berhasil dinonaktifkan.');
+    }
+
+    private function resolveSchoolId(): ?int
+    {
+        return app()->bound('current_school_id') ? app('current_school_id') : null;
     }
 }

@@ -14,7 +14,7 @@ class StoreKurikulumRequest extends FormRequest
 
     public function rules(): array
     {
-        $schoolId = app('current_school_id');
+        $schoolId = app()->bound('current_school_id') ? app('current_school_id') : null;
 
         return [
             'nama' => ['required', 'string', 'max:100'],
@@ -31,6 +31,7 @@ class StoreKurikulumRequest extends FormRequest
             'jenis' => ['required', Rule::in(['nasional', 'internasional', 'khusus', 'custom'])],
             'penerbit' => ['nullable', 'string', 'max:100'],
             'deskripsi' => ['nullable', 'string', 'max:1000'],
+            'is_active' => ['nullable', 'boolean'],
             'metadata' => ['nullable', 'array'],
 
             // Komponen nilai opsional saat create

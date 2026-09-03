@@ -179,7 +179,6 @@ class KurikulumService
             ->where('kurikulum_id', $kurikulumId)
             ->where('program_pendidikan_id', $programPendidikanId)
             ->where('is_active', true)
-            ->whereNull('deleted_at') // soft-delete aman
             ->exists();
 
         if (!$kompatibel) {

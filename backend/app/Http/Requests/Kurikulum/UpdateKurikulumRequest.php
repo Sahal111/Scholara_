@@ -14,7 +14,7 @@ class UpdateKurikulumRequest extends FormRequest
 
     public function rules(): array
     {
-        $schoolId = app('current_school_id');
+        $schoolId = app()->bound('current_school_id') ? app('current_school_id') : null;
         $ulid = $this->route('ulid');
 
         // Ambil id dari ulid untuk ignore diri sendiri di unique check
