@@ -8,8 +8,7 @@ import {
   KURIKULUM_OPTIONS,
   getTingkatByJenjang,
   getLabelTingkat,
-} from "../../../../constants/mapel";
-
+} from "@/constants/mapel";
 
 const emptyForm = {
   kode: "",

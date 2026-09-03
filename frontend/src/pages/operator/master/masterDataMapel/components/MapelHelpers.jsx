@@ -1,7 +1,9 @@
-import { BookOpen } from "lucide-react";
-import { Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
-import { KELOMPOK_BADGE_CLASSES } from "../../../../../constants/mapel";
-import { renderTingkat, renderKurikulum } from "./MapelHelpers";
+import { BookOpen, Search, X } from "lucide-react";
+import {
+  KELOMPOK_BADGE_CLASSES,
+  KELOMPOK_OPTIONS,
+  TINGKAT_OPTIONS,
+} from "../../../../../constants/mapel";
 
 /* ── Helper render tingkat ─────────────────────────────────── */
 export function renderTingkat(tingkat) {
@@ -64,8 +66,18 @@ export function MapelStatsGrid({ isLoading, stats }) {
     },
     {
       icon: (
-        <svg className="w-5 h-5 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          className="w-5 h-5 text-emerald-700"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       ),
       label: "Status Aktif",
@@ -74,8 +86,18 @@ export function MapelStatsGrid({ isLoading, stats }) {
     },
     {
       icon: (
-        <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <svg
+          className="w-5 h-5 text-gray-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
         </svg>
       ),
       label: "Non-Aktif",
@@ -84,8 +106,18 @@ export function MapelStatsGrid({ isLoading, stats }) {
     },
     {
       icon: (
-        <svg className="w-5 h-5 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+        <svg
+          className="w-5 h-5 text-emerald-700"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+          />
         </svg>
       ),
       label: "Kelompok Mapel",
@@ -121,11 +153,7 @@ export function MapelStatsGrid({ isLoading, stats }) {
   );
 }
 
-
 /* ── MapelToolbar ──────────────────────────────────────────── */
-import { Search, X } from "lucide-react";
-import { KELOMPOK_OPTIONS, TINGKAT_OPTIONS } from "../../../../constants/mapel";
-
 export function MapelToolbar({
   search,
   setSearch,
@@ -139,7 +167,6 @@ export function MapelToolbar({
 }) {
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col lg:flex-row gap-4 items-center shadow-sm">
-      {/* Search */}
       <div className="relative flex-1 w-full">
         <Search
           size={18}
@@ -155,7 +182,6 @@ export function MapelToolbar({
       </div>
 
       <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 w-full lg:w-auto">
-        {/* Status */}
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
@@ -166,7 +192,6 @@ export function MapelToolbar({
           <option value="0">Nonaktif</option>
         </select>
 
-        {/* Kelompok */}
         <select
           value={filterKelompok}
           onChange={(e) => setFilterKelompok(e.target.value)}
@@ -180,7 +205,6 @@ export function MapelToolbar({
           ))}
         </select>
 
-        {/* Tingkat */}
         <select
           value={filterTingkat}
           onChange={(e) => setFilterTingkat(e.target.value)}

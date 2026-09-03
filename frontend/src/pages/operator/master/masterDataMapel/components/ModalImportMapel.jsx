@@ -1,11 +1,11 @@
 import { useState, useRef } from "react";
 import { UploadCloud, FileSpreadsheet, X, Download } from "lucide-react";
-import Modal from "../../../../components/ui/Modal";
+import Modal from "../../../../../components/ui/Modal";
 import toast from "react-hot-toast";
 import {
   useImportMapel,
   downloadTemplateMapel,
-} from "../../../../hooks/api/useMapel";
+} from "../../../../../hooks/api/useMapel";
 
 /**
  * ModalImportMapel — dialog upload file Excel untuk import mata pelajaran.
