@@ -3,7 +3,7 @@ import { X, Plus, Trash2 } from "lucide-react";
 import {
   useCreateKurikulum,
   useUpdateKurikulum,
-} from "../../../../../../hooks/api/useKurikulum";
+} from "@/hooks/api/useKurikulum";
 
 const JENIS_OPTIONS = [
   { value: "nasional", label: "Nasional" },

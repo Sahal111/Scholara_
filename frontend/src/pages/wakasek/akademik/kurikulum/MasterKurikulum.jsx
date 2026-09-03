@@ -11,8 +11,8 @@ import {
   useKurikulumList,
   useDeleteKurikulum,
   useDeactivateKurikulum,
-} from "../../../../../../hooks/api/useKurikulum";  
-import ModalKurikulum from "./kurikulum/components/ModalKurikulum";
+} from "@/hooks/api/useKurikulum";
+import ModalKurikulum from "@/pages/wakasek/akademik/kurikulum/components/ModalKurikulum";
 
 // ── Badge status ──────────────────────────────────────────────────────────────
 function StatusBadge({ active }) {
