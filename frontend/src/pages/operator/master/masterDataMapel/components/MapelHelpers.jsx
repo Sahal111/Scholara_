@@ -1,5 +1,7 @@
 import { BookOpen } from "lucide-react";
-import { KELOMPOK_BADGE_CLASSES } from "../../../../constants/mapel";
+import { Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { KELOMPOK_BADGE_CLASSES } from "../../../../../constants/mapel";
+import { renderTingkat, renderKurikulum } from "./MapelHelpers";
 
 /* ── Helper render tingkat ─────────────────────────────────── */
 export function renderTingkat(tingkat) {
