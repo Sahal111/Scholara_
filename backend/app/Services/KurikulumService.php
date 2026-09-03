@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Kurikulum;
 
 use App\Models\Kurikulum;
 use App\Models\KurikulumKomponenNilai;
@@ -201,10 +201,12 @@ class KurikulumService
     public function assertKurikulumTerdaftarDiTahunAjaran(
         int $kurikulumId,
         int $tahunAjaranId,
+        int $schoolId,
         ?int $semesterId = null,
         ?int $tingkat = null
     ): void {
         $query = \DB::table('kurikulum_tahun_ajarans')
+            ->where('school_id', $schoolId)
             ->where('kurikulum_id', $kurikulumId)
             ->where('tahun_ajaran_id', $tahunAjaranId)
             ->where('is_active', true);
@@ -354,8 +356,11 @@ class KurikulumService
 
     private function syncKomponenNilais(Kurikulum $kurikulum, int $schoolId, array $komponens): void
     {
-        // Hapus yang lama (custom sekolah saja — jangan hapus platform defaults)
+        // Soft delete yang lama (custom sekolah saja — jangan hapus platform defaults)
         $kurikulum->komponenNilais()->where('school_id', $schoolId)->delete();
+
+        $now = now();
+        $userId = auth()->id();
 
         $insert = collect($komponens)->map(fn($k, $idx) => [
             'school_id' => $schoolId,
@@ -367,8 +372,9 @@ class KurikulumService
             'urutan' => $k['urutan'] ?? ($idx + 1),
             'is_wajib' => $k['is_wajib'] ?? true,
             'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
+            'created_by' => $userId,
+            'created_at' => $now,
+            'updated_at' => $now,
         ])->toArray();
 
         KurikulumKomponenNilai::insert($insert);

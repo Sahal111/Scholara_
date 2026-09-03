@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Guru;
 use App\Models\Kelas;
+use App\Models\Kurikulum;
 use App\Models\MataPelajaran;
 use App\Models\ProgramPendidikan;
 use App\Models\Siswa;
@@ -11,6 +12,7 @@ use App\Models\TahunAjaran;
 use App\Models\Scopes\SchoolScope;
 use App\Observers\GuruObserver;
 use App\Observers\KelasObserver;
+use App\Observers\KurikulumObserver;
 use App\Observers\SiswaObserver;
 use App\Policies\GuruPolicy;
 use App\Policies\KelasPolicy;
@@ -48,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
         Guru::observe(GuruObserver::class);
         Siswa::observe(SiswaObserver::class);
         Kelas::observe(KelasObserver::class);
+        Kurikulum::observe(KurikulumObserver::class);
 
         // Pakai custom PersonalAccessToken yang bypass SchoolScope
         \Laravel\Sanctum\Sanctum::usePersonalAccessTokenModel(

@@ -131,6 +131,47 @@ class KurikulumController extends Controller
         return $this->success(message: 'Kurikulum berhasil dinonaktifkan.');
     }
 
+    /**
+     * POST /v1/master-data/kurikulum/tahun-ajaran/daftarkan
+     * Daftarkan kurikulum ke tahun ajaran sekolah.
+     */
+    public function daftarkanKeTahunAjaran(Request $request): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $data = $request->validate([
+            'kurikulum_id' => ['required', 'integer', 'exists:kurikulums,id'],
+            'tahun_ajaran_id' => ['required', 'integer', 'exists:tahun_ajarans,id'],
+            'semester_id' => ['nullable', 'integer', 'exists:semesters,id'],
+            'tingkat_kelas' => ['nullable', 'array'],
+            'tingkat_kelas.*' => ['integer', 'min:1', 'max:12'],
+            'catatan' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $this->kurikulumService->daftarkanKeTahunAjaran($schoolId, $data);
+
+        return $this->success(message: 'Kurikulum berhasil didaftarkan ke tahun ajaran.');
+    }
+
+    /**
+     * GET /v1/master-data/kurikulum/tahun-ajaran/{tahunAjaranId}
+     * Daftar kurikulum yang berlaku di tahun ajaran tertentu.
+     */
+    public function kurikulumUntukTahunAjaran(int $tahunAjaranId): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $data = $this->kurikulumService->kurikulumUntukTahunAjaran($schoolId, $tahunAjaranId);
+
+        return $this->success($data);
+    }
+
     private function resolveSchoolId(): ?int
     {
         return app()->bound('current_school_id') ? app('current_school_id') : null;

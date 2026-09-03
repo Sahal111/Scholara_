@@ -7,10 +7,12 @@ import {
   ClipboardList,
   FileText,
   UserCircle,
+  GraduationCap,
 } from "lucide-react";
 
 const menus = [
   { path: "/wakasek", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { path: "/wakasek/kurikulum", label: "Kurikulum", icon: GraduationCap },
   { path: "/wakasek/guru", label: "Data Guru", icon: Users },
   { path: "/wakasek/siswa", label: "Data Siswa", icon: Users },
   { path: "/wakasek/jadwal", label: "Jadwal Pelajaran", icon: CalendarDays },

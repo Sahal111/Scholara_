@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Komponen penilaian yang berlaku per kurikulum.
@@ -29,6 +30,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class KurikulumKomponenNilai extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'kurikulum_komponen_nilaians';
 
     protected $fillable = [
@@ -41,6 +44,7 @@ class KurikulumKomponenNilai extends Model
         'urutan',
         'is_wajib',
         'is_active',
+        'created_by',
     ];
 
     protected $casts = [

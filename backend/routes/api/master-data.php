@@ -359,6 +359,15 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,super_admin'])
                 ->name('master-data.kurikulum.deactivate');
             Route::delete('/kurikulum/{ulid}', [KurikulumController::class, 'destroy'])
                 ->name('master-data.kurikulum.destroy');
+
+            // Pivot: kurikulum ↔ tahun ajaran
+            Route::post('/kurikulum/tahun-ajaran/daftarkan', [KurikulumController::class, 'daftarkanKeTahunAjaran'])
+                ->name('master-data.kurikulum.tahun-ajaran.daftarkan');
+        });
+
+        Route::middleware('permission:master_data.kurikulum.view')->group(function () {
+            Route::get('/kurikulum/tahun-ajaran/{tahunAjaranId}', [KurikulumController::class, 'kurikulumUntukTahunAjaran'])
+                ->name('master-data.kurikulum.tahun-ajaran.index');
         });
 
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────

@@ -104,6 +104,7 @@ import DashboardSuperAdmin from "./pages/superadmin/DashboardSuperAdmin";
 // Wakasek
 import WakasekLayout from "./pages/wakasek/WakasekLayout";
 import DashboardWakasek from "./pages/wakasek/DashboardWakasek";
+import MasterKurikulum from "./pages/wakasek/akademik/kurikulum/MasterKurikulum";
 
 // Guru BK
 import GuruBkLayout from "./pages/guru-bk/GuruBkLayout";
@@ -336,6 +337,7 @@ export default function App() {
         }
       >
         <Route index element={<DashboardWakasek />} />
+        <Route path="kurikulum" element={<MasterKurikulum />} />
       </Route>
 
       {/* Guru BK */}
