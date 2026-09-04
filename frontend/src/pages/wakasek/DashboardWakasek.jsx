@@ -122,14 +122,12 @@ export default function DashboardWakasek() {
               icon="account_tree"
               label="Program Pendidikan"
               desc="Jurusan & konsentrasi"
-              available={false}
             />
             <QuickCard
               to="/wakasek/mapel"
               icon="menu_book"
               label="Mata Pelajaran"
               desc="Daftar mapel & beban JP"
-              available={false}
             />
           </div>
         </div>

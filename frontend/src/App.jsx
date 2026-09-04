@@ -105,11 +105,23 @@ import DashboardSuperAdmin from "./pages/superadmin/DashboardSuperAdmin";
 import WakasekLayout from "./pages/wakasek/WakasekLayout";
 import DashboardWakasek from "./pages/wakasek/DashboardWakasek";
 import MasterKurikulum from "./pages/wakasek/akademik/kurikulum/MasterKurikulum";
+import MasterProgramWakasek from "./pages/wakasek/akademik/program-pendidikan/MasterProgramWakasek";
+import RecycleBinProgramWakasek from "./pages/wakasek/akademik/program-pendidikan/RecycleBinProgramWakasek";
+import MasterMapelWakasek from "./pages/wakasek/akademik/mapel/MasterMapelWakasek";
 // Wakasek reuse komponen operator untuk modul yang identik secara fungsional
 import TahunAjaranSemester from "./pages/operator/master/masterDataTahunAjaranSemester/TahunAjaranSemester";
 import DetailTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailTahunAjaran";
 import DetailSemester from "./pages/operator/master/masterDataTahunAjaranSemester/DetailSemester";
 import DetailArsipTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailArsipTahunAjaran";
+// Wakasek halaman khusus (view-only / wakasek API prefix)
+import DataGuruWakasek from "./pages/wakasek/DataGuruWakasek";
+import DetailGuruWakasek from "./pages/wakasek/DetailGuruWakasek";
+import DataSiswaWakasek from "./pages/wakasek/DataSiswaWakasek";
+import DetailSiswaWakasek from "./pages/wakasek/DetailSiswaWakasek";
+import MonitoringAbsensiWakasek from "./pages/wakasek/MonitoringAbsensiWakasek";
+import PengumumanWakasek from "./pages/wakasek/PengumumanWakasek";
+import LaporanWakasek from "./pages/wakasek/LaporanWakasek";
+import ProfilWakasek from "./pages/wakasek/ProfilWakasek";
 
 // Guru BK
 import GuruBkLayout from "./pages/guru-bk/GuruBkLayout";
@@ -355,6 +367,30 @@ export default function App() {
           path="tahun-ajaran/arsip/:id"
           element={<DetailArsipTahunAjaran />}
         />
+        <Route path="program-pendidikan" element={<MasterProgramWakasek />} />
+        <Route
+          path="program-pendidikan/recycle-bin"
+          element={<RecycleBinProgramWakasek />}
+        />
+        <Route path="mapel" element={<MasterMapelWakasek />} />
+
+        {/* Pengawasan — Data Guru (view-only) */}
+        <Route path="guru" element={<DataGuruWakasek />} />
+        <Route path="guru/:nuptk" element={<DetailGuruWakasek />} />
+
+        {/* Pengawasan — Data Siswa (view-only) */}
+        <Route path="siswa" element={<DataSiswaWakasek />} />
+        <Route path="siswa/:nisn" element={<DetailSiswaWakasek />} />
+
+        {/* Pengawasan — Monitoring Absensi */}
+        <Route path="absensi" element={<MonitoringAbsensiWakasek />} />
+
+        {/* Informasi */}
+        <Route path="pengumuman" element={<PengumumanWakasek />} />
+        <Route path="laporan" element={<LaporanWakasek />} />
+
+        {/* Profil */}
+        <Route path="profil" element={<ProfilWakasek />} />
       </Route>
 
       {/* Guru BK */}

@@ -27,13 +27,11 @@ const MENU_SECTIONS = [
         to: "/wakasek/program-pendidikan",
         icon: "account_tree",
         label: "Program Pendidikan",
-        soon: true,
       },
       {
         to: "/wakasek/mapel",
         icon: "menu_book",
         label: "Mata Pelajaran",
-        soon: true,
       },
     ],
   },

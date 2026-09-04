@@ -21,7 +21,7 @@ use App\Http\Controllers\MasterData\NaikKelasController;
 use App\Http\Controllers\MasterData\TahunAjaranController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth:sanctum', 'role:operator,kepsek,super_admin'])
+Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
     ->prefix('operator/master-data')
     ->group(function () {
 
