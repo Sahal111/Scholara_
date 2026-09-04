@@ -44,7 +44,6 @@ const MENU_SECTIONS = [
         to: "/wakasek/kelas",
         icon: "meeting_room",
         label: "Kelas & Rombel",
-        soon: true,
       },
       {
         to: "/wakasek/penempatan-siswa",

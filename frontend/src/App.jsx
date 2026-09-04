@@ -108,6 +108,9 @@ import MasterKurikulum from "./pages/wakasek/akademik/kurikulum/MasterKurikulum"
 import MasterProgramWakasek from "./pages/wakasek/akademik/program-pendidikan/MasterProgramWakasek";
 import RecycleBinProgramWakasek from "./pages/wakasek/akademik/program-pendidikan/RecycleBinProgramWakasek";
 import MasterMapelWakasek from "./pages/wakasek/akademik/mapel/MasterMapelWakasek";
+import MasterKelasWakasek from "./pages/wakasek/akademik/kelas/MasterKelasWakasek";
+import DetailKelasWakasek from "./pages/wakasek/akademik/kelas/DetailKelasWakasek";
+import DetailKelasPeriodeAkademikWakasek from "./pages/wakasek/akademik/kelas/DetailKelasPeriodeAkademikWakasek";
 // Wakasek reuse komponen operator untuk modul yang identik secara fungsional
 import TahunAjaranSemester from "./pages/operator/master/masterDataTahunAjaranSemester/TahunAjaranSemester";
 import DetailTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailTahunAjaran";
@@ -373,6 +376,12 @@ export default function App() {
           element={<RecycleBinProgramWakasek />}
         />
         <Route path="mapel" element={<MasterMapelWakasek />} />
+        <Route path="kelas" element={<MasterKelasWakasek />} />
+        <Route path="kelas/:id" element={<DetailKelasWakasek />} />
+        <Route
+          path="kelas/:id/periode/:periodeId"
+          element={<DetailKelasPeriodeAkademikWakasek />}
+        />
 
         {/* Pengawasan — Data Guru (view-only) */}
         <Route path="guru" element={<DataGuruWakasek />} />
