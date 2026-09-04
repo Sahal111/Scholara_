@@ -137,7 +137,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-export default function MonitoringAbsensi() {
+export default function MonitoringAbsensiWakasek() {
   const now = new Date();
 
   // Filter state

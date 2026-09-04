@@ -6,13 +6,13 @@ import {
   useDeleteMapel,
 } from "../../../../hooks/api/useMapel";
 // Reuse komponen UI dari operator — tidak duplikasi
-import TambahEditMapel from "../../operator/master/masterDataMapel/TambahEditMapel";
+import TambahEditMapel from "../../../operator/master/masterDataMapel/TambahEditMapel";
 import Confirm from "../../../../components/ui/Confirm";
-import MapelTable from "../../operator/master/masterDataMapel/components/MapelTable";
+import MapelTable from "../../../operator/master/masterDataMapel/components/MapelTable";
 import {
   MapelStatsGrid,
   MapelToolbar,
-} from "../../operator/master/masterDataMapel/components/MapelHelpers";
+} from "../../../operator/master/masterDataMapel/components/MapelHelpers";
 import { BookOpen, Plus } from "lucide-react";
 
 /* ─── MasterMapelWakasek ──────────────────────────────────────────────────── */

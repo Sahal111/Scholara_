@@ -112,10 +112,8 @@ import MasterKelasWakasek from "./pages/wakasek/akademik/kelas/MasterKelasWakase
 import DetailKelasWakasek from "./pages/wakasek/akademik/kelas/DetailKelasWakasek";
 import DetailKelasPeriodeAkademikWakasek from "./pages/wakasek/akademik/kelas/DetailKelasPeriodeAkademikWakasek";
 // Wakasek reuse komponen operator untuk modul yang identik secara fungsional
+// DetailTahunAjaran, DetailSemester, DetailArsipTahunAjaran sudah di-import di blok operator (baris ~39-44)
 import TahunAjaranSemester from "./pages/operator/master/masterDataTahunAjaranSemester/TahunAjaranSemester";
-import DetailTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailTahunAjaran";
-import DetailSemester from "./pages/operator/master/masterDataTahunAjaranSemester/DetailSemester";
-import DetailArsipTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailArsipTahunAjaran";
 // Wakasek halaman khusus (view-only / wakasek API prefix)
 import DataGuruWakasek from "./pages/wakasek/DataGuruWakasek";
 import DetailGuruWakasek from "./pages/wakasek/DetailGuruWakasek";

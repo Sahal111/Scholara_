@@ -6,7 +6,7 @@ import {
   useRestoreProgram,
   useForceDeleteProgram,
 } from "../../../../hooks/api/useProgramPendidikan";
-import { JENIS_ICON } from "./components/ProgramTable";
+import { JENIS_ICON } from "../../../operator/master/masterDataProgram/components/ProgramTable";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

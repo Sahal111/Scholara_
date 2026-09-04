@@ -12,10 +12,10 @@ import {
   getProgramJenisOptions,
 } from "../../../../config/programConfig";
 // Reuse komponen UI dari operator — tidak duplikasi
-import ModalProgram from "../../operator/master/masterDataProgram/components/ModalProgram";
-import ModalHapus from "../../operator/master/masterDataProgram/components/ModalHapus";
-import FilterToolbar from "../../operator/master/masterDataProgram/components/FilterToolbar";
-import ProgramTable from "../../operator/master/masterDataProgram/components/ProgramTable";
+import ModalProgram from "../../../operator/master/masterDataProgram/components/ModalProgram";
+import ModalHapus from "../../../operator/master/masterDataProgram/components/ModalHapus";
+import FilterToolbar from "../../../operator/master/masterDataProgram/components/FilterToolbar";
+import ProgramTable from "../../../operator/master/masterDataProgram/components/ProgramTable";
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
 function flattenTree(nodes, depth = 0, rows = []) {
