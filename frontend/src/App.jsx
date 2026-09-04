@@ -105,6 +105,11 @@ import DashboardSuperAdmin from "./pages/superadmin/DashboardSuperAdmin";
 import WakasekLayout from "./pages/wakasek/WakasekLayout";
 import DashboardWakasek from "./pages/wakasek/DashboardWakasek";
 import MasterKurikulum from "./pages/wakasek/akademik/kurikulum/MasterKurikulum";
+// Wakasek reuse komponen operator untuk modul yang identik secara fungsional
+import TahunAjaranSemester from "./pages/operator/master/masterDataTahunAjaranSemester/TahunAjaranSemester";
+import DetailTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailTahunAjaran";
+import DetailSemester from "./pages/operator/master/masterDataTahunAjaranSemester/DetailSemester";
+import DetailArsipTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailArsipTahunAjaran";
 
 // Guru BK
 import GuruBkLayout from "./pages/guru-bk/GuruBkLayout";
@@ -337,7 +342,19 @@ export default function App() {
         }
       >
         <Route index element={<DashboardWakasek />} />
+
+        {/* Kebijakan Akademik */}
         <Route path="kurikulum" element={<MasterKurikulum />} />
+        <Route path="tahun-ajaran" element={<TahunAjaranSemester />} />
+        <Route path="tahun-ajaran/:id" element={<DetailTahunAjaran />} />
+        <Route
+          path="tahun-ajaran/:tahunAjaranId/semester/:semesterId"
+          element={<DetailSemester />}
+        />
+        <Route
+          path="tahun-ajaran/arsip/:id"
+          element={<DetailArsipTahunAjaran />}
+        />
       </Route>
 
       {/* Guru BK */}

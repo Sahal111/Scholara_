@@ -1,27 +1,22 @@
 import AppLayout from "../../components/layout/AppLayout";
-import {
-  LayoutDashboard,
-  Users,
-  BookOpen,
-  CalendarDays,
-  ClipboardList,
-  FileText,
-  UserCircle,
-  GraduationCap,
-} from "lucide-react";
-
-const menus = [
-  { path: "/wakasek", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { path: "/wakasek/kurikulum", label: "Kurikulum", icon: GraduationCap },
-  { path: "/wakasek/guru", label: "Data Guru", icon: Users },
-  { path: "/wakasek/siswa", label: "Data Siswa", icon: Users },
-  { path: "/wakasek/jadwal", label: "Jadwal Pelajaran", icon: CalendarDays },
-  { path: "/wakasek/absensi", label: "Rekap Absensi", icon: ClipboardList },
-  { path: "/wakasek/laporan", label: "Laporan", icon: FileText },
-  { path: "/wakasek/pengumuman", label: "Pengumuman", icon: BookOpen },
-  { path: "/wakasek/profil", label: "Profil", icon: UserCircle },
-];
+import { WakasekSidebarContent } from "../../components/layout/WakasekSidebar";
+import { Outlet } from "react-router-dom";
 
 export default function WakasekLayout() {
-  return <AppLayout menus={menus} />;
+  return (
+    <AppLayout
+      sidebar={<WakasekSidebarContent />}
+      className="bg-[#f5f3ff] text-[#1e1b4b]"
+      sidebarWidth={272}
+      renderContent={(location) =>
+        location.pathname === "/wakasek" ? (
+          <Outlet />
+        ) : (
+          <div className="p-4 sm:p-5 md:p-7 w-full max-w-[1600px] mx-auto flex-1">
+            <Outlet />
+          </div>
+        )
+      }
+    />
+  );
 }

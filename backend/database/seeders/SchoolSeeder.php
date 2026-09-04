@@ -272,7 +272,10 @@ class SchoolSeeder extends Seeder
             // akademik
             ['slug' => 'akademik.nilai.input', 'nama' => 'Input Nilai', 'modul' => 'akademik'],
             ['slug' => 'akademik.nilai.view', 'nama' => 'Lihat Nilai', 'modul' => 'akademik'],
+            ['slug' => 'akademik.nilai.view_all', 'nama' => 'Lihat Nilai Semua Kelas', 'modul' => 'akademik'],
             ['slug' => 'akademik.rapor.view', 'nama' => 'Lihat Rapor', 'modul' => 'akademik'],
+            ['slug' => 'akademik.rapor.manage', 'nama' => 'Kelola & Finalisasi Rapor', 'modul' => 'akademik'],
+            ['slug' => 'akademik.jadwal.view', 'nama' => 'Lihat Jadwal Pelajaran', 'modul' => 'akademik'],
             ['slug' => 'akademik.jadwal.manage', 'nama' => 'Kelola Jadwal', 'modul' => 'akademik'],
             ['slug' => 'akademik.kalender.manage', 'nama' => 'Kelola Kalender Akademik', 'modul' => 'akademik'],
 
@@ -350,9 +353,34 @@ class SchoolSeeder extends Seeder
         $all = array_column($this->permissionDefinitions(), 'slug');
 
         return [
-            'operator' => $all,
+            // ─────────────────────────────────────────────────────────────────
+            // OPERATOR — pelaksana administrasi & pengelola data teknis.
+            // Operator dapat semua permission KECUALI permission kebijakan
+            // akademik (manage kurikulum, tahun ajaran, program, mapel, jadwal,
+            // kalender) — itu domain Wakasek Kurikulum.
+            // Operator tetap bisa VIEW semua data akademik agar bisa membantu
+            // dan mengerjakan tugas administratif sehari-hari.
+            // ─────────────────────────────────────────────────────────────────
+            'operator' => array_values(array_filter(
+                $all,
+                fn($slug) => !in_array($slug, [
+                    'master_data.kelas.manage',
+                    'master_data.mapel.manage',
+                    'master_data.tahun_ajaran.manage',
+                    'master_data.program.manage',
+                    'master_data.kurikulum.manage',
+                    'akademik.jadwal.manage',
+                    'akademik.kalender.manage',
+                    'akademik.rapor.manage',
+                ])
+            )),
 
+            // ─────────────────────────────────────────────────────────────────
+            // KEPALA SEKOLAH — oversight penuh, tidak menginput langsung.
+            // Approve kebijakan, pantau semua laporan, tidak ubah data teknis.
+            // ─────────────────────────────────────────────────────────────────
             'kepsek' => [
+                // Master data — view only
                 'master_data.guru.view',
                 'master_data.guru.export',
                 'master_data.guru.verify',
@@ -364,8 +392,23 @@ class SchoolSeeder extends Seeder
                 'master_data.orang_tua.view',
                 'master_data.program.view',
                 'master_data.kurikulum.view',
+
+                // Akademik — pantau semua, tidak kelola
+                'akademik.jadwal.view',
+                'akademik.nilai.view_all',
+                'akademik.rapor.view',
+                'akademik.kalender.manage',          // kepsek bisa set kalender akademik
+
+                // Absensi & laporan lengkap
                 'absensi.view_all',
                 'absensi.rekap',
+                'laporan.guru.view',
+                'laporan.siswa.view',
+                'laporan.absensi.view',
+                'laporan.keuangan.view',
+                'laporan.export',
+
+                // Dokumen & pengumuman
                 'dms.view_all',
                 'dms.approve',
                 'dms.download',
@@ -374,13 +417,7 @@ class SchoolSeeder extends Seeder
                 'pengumuman.create',
                 'pengumuman.update',
                 'pengumuman.delete',
-                'laporan.guru.view',
-                'laporan.siswa.view',
-                'laporan.absensi.view',
-                'laporan.keuangan.view',
-                'laporan.export',
-                'akademik.rapor.view',
-                'akademik.kalender.manage',
+
                 'pengaturan.view',
             ],
 
@@ -394,6 +431,7 @@ class SchoolSeeder extends Seeder
                 'dms.view_own',
                 'dms.download',
                 'pengumuman.view',
+                'akademik.jadwal.view',
                 'akademik.nilai.input',
                 'akademik.nilai.view',
             ],
@@ -408,8 +446,10 @@ class SchoolSeeder extends Seeder
                 'dms.view_own',
                 'dms.download',
                 'pengumuman.view',
+                'akademik.jadwal.view',
                 'akademik.nilai.input',
                 'akademik.nilai.view',
+                'akademik.nilai.view_all',           // wali kelas pantau semua nilai di kelasnya
                 'akademik.rapor.view',
             ],
 
@@ -453,24 +493,51 @@ class SchoolSeeder extends Seeder
                 'ppdb.pengaturan.manage',
             ],
 
+            // ─────────────────────────────────────────────────────────────────
+            // WAKASEK KURIKULUM — pemilik & penanggung jawab kebijakan akademik.
+            // Mengelola seluruh struktur akademik: tahun ajaran, semester,
+            // kurikulum, program pendidikan, mapel, kelas, jadwal.
+            // Read-only untuk data guru & siswa (administrasi milik operator).
+            // ─────────────────────────────────────────────────────────────────
             'wakasek' => [
+                // ── Data guru & siswa — hanya view & export (bukan CRUD) ──
                 'master_data.guru.view',
                 'master_data.guru.export',
                 'master_data.guru.verify',
                 'master_data.siswa.view',
                 'master_data.siswa.export',
+                'master_data.orang_tua.view',
+
+                // ── Kebijakan akademik — FULL manage (domain utama wakasek) ──
                 'master_data.kelas.view',
                 'master_data.kelas.manage',
                 'master_data.mapel.view',
                 'master_data.mapel.manage',
                 'master_data.tahun_ajaran.view',
-                'master_data.orang_tua.view',
+                'master_data.tahun_ajaran.manage',   // ← fix: sebelumnya tidak ada!
                 'master_data.program.view',
                 'master_data.program.manage',
                 'master_data.kurikulum.view',
                 'master_data.kurikulum.manage',
+
+                // ── Akademik operasional ──
+                'akademik.jadwal.view',
+                'akademik.jadwal.manage',
+                'akademik.kalender.manage',
+                'akademik.nilai.view',
+                'akademik.nilai.view_all',           // ← baru: pantau semua kelas
+                'akademik.rapor.view',
+                'akademik.rapor.manage',             // ← baru: finalisasi rapor
+
+                // ── Absensi & laporan — oversight ──
                 'absensi.view_all',
                 'absensi.rekap',
+                'laporan.guru.view',
+                'laporan.siswa.view',
+                'laporan.absensi.view',
+                'laporan.export',
+
+                // ── Dokumen & pengumuman ──
                 'dms.view_all',
                 'dms.approve',
                 'dms.download',
@@ -479,13 +546,8 @@ class SchoolSeeder extends Seeder
                 'pengumuman.create',
                 'pengumuman.update',
                 'pengumuman.delete',
-                'laporan.guru.view',
-                'laporan.siswa.view',
-                'laporan.absensi.view',
-                'laporan.export',
-                'akademik.jadwal.manage',
-                'akademik.rapor.view',
-                'akademik.kalender.manage',
+
+                // ── Pengaturan — hanya view (bukan RBAC manage) ──
                 'pengaturan.view',
             ],
 
