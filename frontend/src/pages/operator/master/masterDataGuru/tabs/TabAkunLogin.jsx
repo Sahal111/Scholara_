@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "../../../../../contexts/AuthContext";
 import toast from "react-hot-toast";
 import { InfoRow, SectionTitle, fmtDate } from "./helpers";
 
@@ -13,6 +14,10 @@ export default function TabAkunLogin({
   resetPassword,
   hapusAkun,
 }) {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("master_data.guru.create");
+  const canUpdate = hasPermission("master_data.guru.update");
+  const canDelete = hasPermission("master_data.guru.delete");
   const [showResetModal, setShowResetModal] = useState(false);
   const [newPassword, setNewPassword] = useState("");
 
@@ -187,7 +192,8 @@ export default function TabAkunLogin({
               </span>{" "}
               {akunGuru.is_active ? "Nonaktifkan Akun" : "Aktifkan Akun"}
             </button>
-            <button
+            {canDelete && (
+             <button
               onClick={() => {
                 if (
                   confirm(
@@ -203,6 +209,7 @@ export default function TabAkunLogin({
               </span>{" "}
               Hapus Akun
             </button>
+            )}
           </div>
         </div>
       </div>

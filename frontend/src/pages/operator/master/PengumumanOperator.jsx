@@ -1,18 +1,37 @@
 import { useState } from "react";
+import { useAuth } from "../../../contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../lib/axios";
-import { Megaphone, Plus, Edit2, Trash2, X, Clock, CalendarDays, Users, Calendar, AlertTriangle, Info } from "lucide-react";
+import {
+  Megaphone,
+  Plus,
+  Edit2,
+  Trash2,
+  X,
+  Clock,
+  CalendarDays,
+  Users,
+  Calendar,
+  AlertTriangle,
+  Info,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 const KATEGORI_CONFIG = {
-  "Libur": { color: "bg-green-100 text-green-700 border-green-200" },
-  "Rapat": { color: "bg-blue-100 text-blue-700 border-blue-200" },
+  Libur: { color: "bg-green-100 text-green-700 border-green-200" },
+  Rapat: { color: "bg-blue-100 text-blue-700 border-blue-200" },
   "Jadwal Ujian": { color: "bg-purple-100 text-purple-700 border-purple-200" },
-  "Penting": { color: "bg-red-100 text-red-700 border-red-200" },
-  "Informasi": { color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+  Penting: { color: "bg-red-100 text-red-700 border-red-200" },
+  Informasi: { color: "bg-indigo-100 text-indigo-700 border-indigo-200" },
 };
 
-const KATEGORI_OPTIONS = ["Informasi", "Penting", "Libur", "Rapat", "Jadwal Ujian"];
+const KATEGORI_OPTIONS = [
+  "Informasi",
+  "Penting",
+  "Libur",
+  "Rapat",
+  "Jadwal Ujian",
+];
 
 const formatWaktu = (dateStr) => {
   const d = new Date(dateStr);
@@ -105,7 +124,7 @@ export default function PengumumanOperator() {
       toast.error("Judul dan konten harus diisi");
       return;
     }
-    
+
     if (editItem) {
       editMutation.mutate(formData);
     } else {
@@ -123,7 +142,8 @@ export default function PengumumanOperator() {
             Kelola Pengumuman
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Buat dan atur informasi yang akan dilihat oleh seluruh guru dan staf.
+            Buat dan atur informasi yang akan dilihat oleh seluruh guru dan
+            staf.
           </p>
         </div>
         <button
@@ -147,15 +167,21 @@ export default function PengumumanOperator() {
       {!isLoading && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {pengumuman?.map((item) => {
-            const cfg = KATEGORI_CONFIG[item.kategori] || KATEGORI_CONFIG["Informasi"];
-            
+            const cfg =
+              KATEGORI_CONFIG[item.kategori] || KATEGORI_CONFIG["Informasi"];
+
             return (
-              <div key={item.id} className="card p-6 flex flex-col h-full border border-gray-100 hover:border-indigo-100 transition-colors group">
+              <div
+                key={item.id}
+                className="card p-6 flex flex-col h-full border border-gray-100 hover:border-indigo-100 transition-colors group"
+              >
                 <div className="flex justify-between items-start mb-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${cfg.color}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${cfg.color}`}
+                  >
                     {item.kategori}
                   </span>
-                  
+
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => openModal(item)}
@@ -196,7 +222,9 @@ export default function PengumumanOperator() {
             <div className="col-span-full card p-16 text-center border-dashed">
               <Megaphone className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">Belum ada pengumuman</p>
-              <p className="text-sm text-gray-400 mt-1">Klik tombol 'Pengumuman Baru' untuk membuat.</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Klik tombol 'Pengumuman Baru' untuk membuat.
+              </p>
             </div>
           )}
         </div>
@@ -209,9 +237,14 @@ export default function PengumumanOperator() {
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                 {editItem ? (
-                  <><Edit2 className="w-5 h-5 text-blue-600" /> Edit Pengumuman</>
+                  <>
+                    <Edit2 className="w-5 h-5 text-blue-600" /> Edit Pengumuman
+                  </>
                 ) : (
-                  <><Plus className="w-5 h-5 text-indigo-600" /> Buat Pengumuman Baru</>
+                  <>
+                    <Plus className="w-5 h-5 text-indigo-600" /> Buat Pengumuman
+                    Baru
+                  </>
                 )}
               </h2>
               <button
@@ -231,7 +264,9 @@ export default function PengumumanOperator() {
                   type="text"
                   required
                   value={formData.judul}
-                  onChange={(e) => setFormData({ ...formData, judul: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, judul: e.target.value })
+                  }
                   className="input-field"
                   placeholder="Contoh: Libur Hari Raya"
                 />
@@ -243,11 +278,15 @@ export default function PengumumanOperator() {
                 </label>
                 <select
                   value={formData.kategori}
-                  onChange={(e) => setFormData({ ...formData, kategori: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, kategori: e.target.value })
+                  }
                   className="input-field"
                 >
                   {KATEGORI_OPTIONS.map((kat) => (
-                    <option key={kat} value={kat}>{kat}</option>
+                    <option key={kat} value={kat}>
+                      {kat}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -260,7 +299,9 @@ export default function PengumumanOperator() {
                   required
                   rows="5"
                   value={formData.konten}
-                  onChange={(e) => setFormData({ ...formData, konten: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, konten: e.target.value })
+                  }
                   className="input-field resize-none"
                   placeholder="Tulis rincian pengumuman di sini..."
                 ></textarea>
@@ -279,7 +320,9 @@ export default function PengumumanOperator() {
                   disabled={addMutation.isPending || editMutation.isPending}
                   className="btn-primary"
                 >
-                  {addMutation.isPending || editMutation.isPending ? "Menyimpan..." : "Simpan Pengumuman"}
+                  {addMutation.isPending || editMutation.isPending
+                    ? "Menyimpan..."
+                    : "Simpan Pengumuman"}
                 </button>
               </div>
             </form>

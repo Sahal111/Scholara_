@@ -31,29 +31,40 @@ const MENU_SECTIONS = [
         icon: "family_restroom",
         label: "Orang Tua",
       },
+    ],
+  },
+  {
+    key: "referensi",
+    label: "Referensi Akademik",
+    icon: "library_books",
+    items: [
+      {
+        to: "/operator/master/tahun-ajaran",
+        end: false,
+        icon: "calendar_today",
+        label: "Tahun Ajaran",
+        readonly: true,
+      },
       {
         to: "/operator/master/kelas",
         end: false,
         icon: "meeting_room",
-        label: "Kelas",
+        label: "Kelas & Rombel",
+        readonly: true,
       },
       {
         to: "/operator/master/mapel",
         end: true,
         icon: "menu_book",
         label: "Mata Pelajaran",
+        readonly: true,
       },
       {
         to: "/operator/master/program-pendidikan",
         end: false,
         icon: "account_tree",
         label: "Program Pendidikan",
-      },
-      {
-        to: "/operator/master/tahun-ajaran",
-        end: false,
-        icon: "calendar_today",
-        label: "Tahun Ajaran & Semester",
+        readonly: true,
       },
     ],
   },
@@ -62,12 +73,6 @@ const MENU_SECTIONS = [
     label: "Akademik",
     icon: "school",
     items: [
-      {
-        to: "/operator/akademik/kurikulum",
-        icon: "school",
-        label: "Kurikulum",
-        soon: true,
-      },
       {
         to: "/operator/akademik/penempatan-siswa",
         icon: "transfer_within_a_station",
@@ -84,6 +89,7 @@ const MENU_SECTIONS = [
         to: "/operator/master/jadwal-pelajaran",
         icon: "event_note",
         label: "Jadwal Pelajaran",
+        soon: true,
       },
       {
         to: "/operator/master/kalender",
@@ -431,6 +437,28 @@ function SidebarItem({ item, onClose }) {
           Soon
         </span>
       </div>
+    );
+  }
+
+  if (item.readonly) {
+    return (
+      <NavLink
+        to={item.to}
+        end={item.end ?? false}
+        onClick={onClose}
+        className={({ isActive }) =>
+          `px-4 py-2 transition-all duration-300 text-sm rounded-lg flex items-center gap-2 ${
+            isActive
+              ? "text-[#69ff87] bg-white/10 font-semibold"
+              : "text-white/40 hover:text-white/70 hover:bg-white/5"
+          }`
+        }
+      >
+        <span className="flex-1">{item.label}</span>
+        <span className="text-[9px] font-bold bg-[#a78bfa]/20 text-[#a78bfa] px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0">
+          Waka
+        </span>
+      </NavLink>
     );
   }
 

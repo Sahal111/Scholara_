@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useAuth } from "../../../../contexts/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../../lib/axios";
@@ -672,8 +673,12 @@ export default function DetailTahunAjaran() {
               if (!rekap) {
                 return (
                   <div className="flex-1 flex flex-col items-center justify-center h-40 sm:h-48 text-[#3f4945]/40 gap-2">
-                    <span className="material-symbols-outlined text-4xl text-[#bfc9c4]">bar_chart_off</span>
-                    <p className="text-xs font-medium">Belum ada data absensi</p>
+                    <span className="material-symbols-outlined text-4xl text-[#bfc9c4]">
+                      bar_chart_off
+                    </span>
+                    <p className="text-xs font-medium">
+                      Belum ada data absensi
+                    </p>
                   </div>
                 );
               }

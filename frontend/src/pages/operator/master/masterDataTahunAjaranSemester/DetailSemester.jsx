@@ -1,6 +1,7 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { useAuth } from "../../../../contexts/AuthContext";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
 import { tahunAjaranKeys } from "../../../../hooks/api/useTahunAjaran";
@@ -959,10 +960,9 @@ export default function DetailSemester() {
                 },
               ];
               const cs = colorSets[i % colorSets.length];
-              const initials =
-                (mp.kode || mp.nama_mapel || "??")
-                  .slice(0, 2)
-                  .toUpperCase();
+              const initials = (mp.kode || mp.nama_mapel || "??")
+                .slice(0, 2)
+                .toUpperCase();
               return (
                 <div
                   key={mp.id}
@@ -999,7 +999,9 @@ export default function DetailSemester() {
                         {mp.kelompok ? `Kelompok ${mp.kelompok}` : "Mapel"}
                       </span>
                       <span className="text-sm font-bold text-[#00342b]">
-                        {mp.jam_per_minggu ? `${mp.jam_per_minggu} jam/minggu` : "-"}
+                        {mp.jam_per_minggu
+                          ? `${mp.jam_per_minggu} jam/minggu`
+                          : "-"}
                       </span>
                     </div>
                   </div>
@@ -1063,7 +1065,9 @@ export default function DetailSemester() {
                       door_front
                     </span>
                   </div>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${k.is_active !== false ? "text-[#006e2a] bg-[#006e2a]/10" : "text-[#3f4945]/60 bg-[#eceeed]"}`}>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${k.is_active !== false ? "text-[#006e2a] bg-[#006e2a]/10" : "text-[#3f4945]/60 bg-[#eceeed]"}`}
+                  >
                     {k.is_active !== false ? "Aktif" : "Nonaktif"}
                   </span>
                 </div>
@@ -1244,13 +1248,19 @@ export default function DetailSemester() {
                       : "Pengaturan jadwal pelajaran belum selesai.",
                   },
                   {
-                    icon: checklist.mapel_lengkap ? "verified" : "pending_actions",
+                    icon: checklist.mapel_lengkap
+                      ? "verified"
+                      : "pending_actions",
                     badge: checklist.mapel_lengkap ? "Verified" : "Pending",
                     badgeCls: checklist.mapel_lengkap
                       ? "bg-[#006e2a]/10 text-[#006e2a] border-[#006e2a]/20"
                       : "bg-[#eaa300]/10 text-[#eaa300] border-[#eaa300]/20",
-                    iconBg: checklist.mapel_lengkap ? "bg-[#006e2a]/10" : "bg-[#eaa300]/10",
-                    iconColor: checklist.mapel_lengkap ? "text-[#006e2a]" : "text-[#eaa300]",
+                    iconBg: checklist.mapel_lengkap
+                      ? "bg-[#006e2a]/10"
+                      : "bg-[#eaa300]/10",
+                    iconColor: checklist.mapel_lengkap
+                      ? "text-[#006e2a]"
+                      : "text-[#eaa300]",
                     title: "Kurikulum Inti",
                     desc: checklist.mapel_lengkap
                       ? "Semua mata pelajaran inti telah dikonfigurasi untuk semester ini."
@@ -2397,7 +2407,9 @@ export default function DetailSemester() {
                     className="group flex items-center gap-5 p-6 bg-[#f2f4f3]/50 border border-[#bfc9c4]/20 rounded-3xl hover:border-[#006e2a]/30 hover:bg-white hover:shadow-xl hover:-translate-y-1 transition-all duration-500"
                   >
                     <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-[#3f4945] group-hover:text-[#006e2a] group-hover:scale-110 transition-all duration-500 shadow-sm">
-                      <span className="material-symbols-outlined">arrow_back</span>
+                      <span className="material-symbols-outlined">
+                        arrow_back
+                      </span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-[#3f4945]/50 uppercase tracking-[0.2em] mb-1">
@@ -2427,7 +2439,9 @@ export default function DetailSemester() {
                       </span>
                     </div>
                     <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-[#3f4945] group-hover:text-[#006e2a] group-hover:scale-110 transition-all duration-500 shadow-sm">
-                      <span className="material-symbols-outlined">arrow_forward</span>
+                      <span className="material-symbols-outlined">
+                        arrow_forward
+                      </span>
                     </div>
                   </Link>
                 ) : (

@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useAuth } from "../../../contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../lib/axios";
 import {
@@ -489,11 +490,14 @@ export default function GaleriOperator() {
                 )}
                 <p className="text-xs text-gray-400 mt-2">
                   Diupload:{" "}
-                  {new Date(previewItem.created_at).toLocaleDateString("id-ID", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  })}
+                  {new Date(previewItem.created_at).toLocaleDateString(
+                    "id-ID",
+                    {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    },
+                  )}
                 </p>
               </div>
               <button
