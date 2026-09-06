@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/axios";
 import toast from "react-hot-toast";
 
-const BASE = "/v1/master-data/kurikulum";
+const BASE = "/operator/master-data/kurikulum";
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 export const kurikulumKeys = {

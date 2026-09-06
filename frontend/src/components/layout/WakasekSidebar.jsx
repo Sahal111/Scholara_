@@ -159,7 +159,7 @@ function SidebarSection({ section, onClose }) {
     <div className="mb-1">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-white/60 hover:text-[#a78bfa] hover:bg-white/5 rounded-xl transition-all duration-200 group"
+        className="w-full flex items-center justify-between px-4 py-2.5 text-white/60 hover:text-[#69ff87] hover:bg-white/5 rounded-xl transition-all duration-200 group"
       >
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-[18px]">
@@ -210,8 +210,8 @@ function SidebarItem({ item, onClose }) {
       className={({ isActive }) =>
         `px-4 py-2 transition-all duration-200 text-sm rounded-lg flex items-center ${
           isActive
-            ? "text-[#a78bfa] bg-white/10 font-semibold"
-            : "text-white/50 hover:text-[#a78bfa] hover:bg-white/5"
+            ? "text-[#69ff87] bg-white/10 font-semibold"
+            : "text-white/50 hover:text-[#69ff87] hover:bg-white/5"
         }`
       }
     >
@@ -237,15 +237,15 @@ export function WakasekSidebarContent({ onClose }) {
   return (
     <div
       className="flex flex-col h-full w-[272px] overflow-y-auto border-r border-white/5"
-      style={{ background: "#1e1b4b" }}
+      style={{ background: "#00342b" }}
     >
       {/* ── Logo Header ── */}
       <div
         className="p-5 border-b border-white/10 flex items-center gap-3 sticky top-0 z-10"
-        style={{ background: "rgba(30,27,75,0.97)" }}
+        style={{ background: "rgba(0,52,43,0.95)" }}
       >
-        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden shrink-0 border border-[#a78bfa]/40">
-          <span className="material-symbols-outlined text-[#a78bfa] text-xl">
+        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden shrink-0 border border-[#69ff87]/40">
+          <span className="material-symbols-outlined text-[#69ff87] text-xl">
             school
           </span>
         </div>
@@ -253,7 +253,7 @@ export function WakasekSidebarContent({ onClose }) {
           <h1 className="font-bold text-white text-sm leading-tight truncate">
             {schoolName}
           </h1>
-          <p className="text-[#a78bfa]/70 text-[10px] font-semibold uppercase tracking-widest mt-0.5">
+          <p className="text-[#69ff87]/70 text-[10px] font-semibold uppercase tracking-widest mt-0.5">
             Waka Kurikulum
           </p>
         </div>
@@ -270,7 +270,7 @@ export function WakasekSidebarContent({ onClose }) {
       {/* ── User Info ── */}
       <div className="px-4 py-3 border-b border-white/5">
         <div className="flex items-center gap-3 bg-white/5 rounded-xl p-3">
-          <div className="w-9 h-9 rounded-full bg-[#a78bfa]/20 border border-[#a78bfa]/30 overflow-hidden flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-full bg-[#69ff87]/20 border border-[#69ff87]/30 overflow-hidden flex items-center justify-center shrink-0">
             {user?.foto ? (
               <img
                 src={`${BASE_URL}/storage/${user.foto}`}
@@ -278,7 +278,7 @@ export function WakasekSidebarContent({ onClose }) {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-[#a78bfa] font-bold text-sm">
+              <span className="text-[#69ff87] font-bold text-sm">
                 {user?.nama_lengkap?.charAt(0)?.toUpperCase()}
               </span>
             )}
@@ -301,7 +301,7 @@ export function WakasekSidebarContent({ onClose }) {
           className={({ isActive }) =>
             `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
               isActive
-                ? "bg-[#a78bfa]/20 text-[#a78bfa]"
+                ? "bg-[#69ff87]/20 text-[#69ff87]"
                 : "text-white/50 hover:bg-white/5 hover:text-white/80"
             }`
           }

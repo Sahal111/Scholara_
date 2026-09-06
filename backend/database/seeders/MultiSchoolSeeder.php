@@ -48,6 +48,7 @@ class MultiSchoolSeeder extends Seeder
                 'jenjang' => 'dasar',
                 'subdomain' => 'sdbudiutama',
                 'operator' => ['name' => 'Admin SD Budi Utama', 'username' => 'admin_sd'],
+                'wakasek' => ['name' => 'Wakasek SD Budi Utama', 'username' => 'wakasek_sd'],
             ],
             [
                 'nama' => 'SMP Negeri 1 Nusantara',
@@ -56,6 +57,7 @@ class MultiSchoolSeeder extends Seeder
                 'jenjang' => 'menengah_pertama',
                 'subdomain' => 'smpn1nusantara',
                 'operator' => ['name' => 'Admin SMP N 1', 'username' => 'admin_smp'],
+                'wakasek' => ['name' => 'Wakasek SMP N 1', 'username' => 'wakasek_smp'],
             ],
             [
                 'nama' => 'SMA Negeri 1 Merdeka',
@@ -64,6 +66,7 @@ class MultiSchoolSeeder extends Seeder
                 'jenjang' => 'menengah_atas',
                 'subdomain' => 'sman1merdeka',
                 'operator' => ['name' => 'Admin SMA N 1', 'username' => 'admin_sma'],
+                'wakasek' => ['name' => 'Wakasek SMA N 1', 'username' => 'wakasek_sma'],
             ],
             [
                 'nama' => 'SMK Negeri 2 Teknologi',
@@ -72,6 +75,7 @@ class MultiSchoolSeeder extends Seeder
                 'jenjang' => 'menengah_atas',
                 'subdomain' => 'smkn2teknologi',
                 'operator' => ['name' => 'Admin SMK N 2', 'username' => 'admin_smk'],
+                'wakasek' => ['name' => 'Wakasek SMK N 2', 'username' => 'wakasek_smk'],
             ],
             [
                 'nama' => 'MI Al-Ikhlas',
@@ -80,6 +84,7 @@ class MultiSchoolSeeder extends Seeder
                 'jenjang' => 'dasar',
                 'subdomain' => 'mialikhlasdev',
                 'operator' => ['name' => 'Admin MI Al-Ikhlas', 'username' => 'admin_mi'],
+                'wakasek' => ['name' => 'Wakasek MI Al-Ikhlas', 'username' => 'wakasek_mi'],
             ],
             [
                 'nama' => 'MTs Darul Ulum',
@@ -88,6 +93,7 @@ class MultiSchoolSeeder extends Seeder
                 'jenjang' => 'menengah_pertama',
                 'subdomain' => 'mtsdarululum',
                 'operator' => ['name' => 'Admin MTs Darul Ulum', 'username' => 'admin_mts'],
+                'wakasek' => ['name' => 'Wakasek MTs Darul Ulum', 'username' => 'wakasek_mts'],
             ],
             [
                 'nama' => 'MA Nurul Huda',
@@ -96,6 +102,7 @@ class MultiSchoolSeeder extends Seeder
                 'jenjang' => 'menengah_atas',
                 'subdomain' => 'manurulhuda',
                 'operator' => ['name' => 'Admin MA Nurul Huda', 'username' => 'admin_ma'],
+                'wakasek' => ['name' => 'Wakasek MA Nurul Huda', 'username' => 'wakasek_ma'],
             ],
             [
                 'nama' => 'MAK Farmasi Al-Hikmah',
@@ -104,6 +111,7 @@ class MultiSchoolSeeder extends Seeder
                 'jenjang' => 'menengah_atas',
                 'subdomain' => 'makalhikmah',
                 'operator' => ['name' => 'Admin MAK Al-Hikmah', 'username' => 'admin_mak'],
+                'wakasek' => ['name' => 'Wakasek MAK Al-Hikmah', 'username' => 'wakasek_mak'],
             ],
         ];
     }
@@ -153,8 +161,12 @@ class MultiSchoolSeeder extends Seeder
             // 5. User operator
             $this->createOperator($school, $roles['operator'], $def);
 
+            // 6. User wakasek
+            $this->createWakasek($school, $roles['wakasek'], $def);
+
             $this->command->info("✅ '{$def['nama']}' ({$def['jenis']}) berhasil di-seed.");
-            $this->command->info("   👤 Login: {$def['operator']['username']}@{$def['subdomain']}.sch.id / password");
+            $this->command->info("   👤 Operator : {$def['operator']['username']}@{$def['subdomain']}.sch.id / password");
+            $this->command->info("   👤 Wakasek  : {$def['wakasek']['username']}@{$def['subdomain']}.sch.id / password");
         });
     }
 
@@ -284,6 +296,36 @@ class MultiSchoolSeeder extends Seeder
         ]);
     }
 
+    private function createWakasek(School $school, Role $role, array $def): void
+    {
+        $subdomain = $def['subdomain'];
+        $username = $def['wakasek']['username'];
+        $email = "{$username}@{$subdomain}.sch.id";
+
+        $user = User::withoutGlobalScopes()
+            ->where('school_id', $school->id)
+            ->where('username', $username)
+            ->first();
+
+        if (!$user) {
+            $user = User::withoutGlobalScopes()->create([
+                'school_id' => $school->id,
+                'name' => $def['wakasek']['name'],
+                'email' => $email,
+                'username' => $username,
+                'password' => Hash::make('password'),
+                'is_active' => true,
+            ]);
+        }
+
+        DB::table('user_roles')->insertOrIgnore([
+            'user_id' => $user->id,
+            'role_id' => $role->id,
+            'school_id' => $school->id,
+            'created_at' => now(),
+        ]);
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Permission definitions (sama dengan SchoolSeeder)
     // ─────────────────────────────────────────────────────────────────────
@@ -310,6 +352,8 @@ class MultiSchoolSeeder extends Seeder
             ['slug' => 'master_data.mapel.manage', 'nama' => 'Kelola Mata Pelajaran', 'modul' => 'master_data'],
             ['slug' => 'master_data.tahun_ajaran.view', 'nama' => 'Lihat Tahun Ajaran', 'modul' => 'master_data'],
             ['slug' => 'master_data.tahun_ajaran.manage', 'nama' => 'Kelola Tahun Ajaran', 'modul' => 'master_data'],
+            ['slug' => 'master_data.kurikulum.view', 'nama' => 'Lihat Kurikulum', 'modul' => 'master_data'],
+            ['slug' => 'master_data.kurikulum.manage', 'nama' => 'Kelola Kurikulum', 'modul' => 'master_data'],
             ['slug' => 'master_data.orang_tua.view', 'nama' => 'Lihat Data Orang Tua', 'modul' => 'master_data'],
             ['slug' => 'master_data.orang_tua.manage', 'nama' => 'Kelola Data Orang Tua', 'modul' => 'master_data'],
             ['slug' => 'absensi.input', 'nama' => 'Input Absensi', 'modul' => 'absensi'],
@@ -395,7 +439,7 @@ class MultiSchoolSeeder extends Seeder
             'ortu' => ['master_data.siswa.view', 'absensi.view_kelas_sendiri', 'pengumuman.view', 'siswa_portal.tagihan.view', 'siswa_portal.rapor.view'],
             'siswa' => ['siswa_portal.profil.view', 'siswa_portal.profil.update', 'siswa_portal.absensi.view', 'siswa_portal.nilai.view', 'siswa_portal.jadwal.view', 'siswa_portal.pengumuman.view', 'siswa_portal.tagihan.view', 'siswa_portal.rapor.view'],
             'admin_ppdb' => ['master_data.siswa.view', 'ppdb.pendaftar.view', 'ppdb.pendaftar.update', 'ppdb.pendaftar.approve', 'ppdb.pendaftar.reject', 'ppdb.pengaturan.manage'],
-            'wakasek' => ['master_data.guru.view', 'master_data.guru.export', 'master_data.guru.verify', 'master_data.siswa.view', 'master_data.siswa.export', 'master_data.kelas.view', 'master_data.kelas.manage', 'master_data.mapel.view', 'master_data.mapel.manage', 'master_data.tahun_ajaran.view', 'master_data.orang_tua.view', 'absensi.view_all', 'absensi.rekap', 'dms.view_all', 'dms.approve', 'dms.download', 'dms.bulk_download', 'pengumuman.view', 'pengumuman.create', 'pengumuman.update', 'pengumuman.delete', 'laporan.guru.view', 'laporan.siswa.view', 'laporan.absensi.view', 'laporan.export', 'akademik.jadwal.manage', 'akademik.rapor.view', 'akademik.kalender.manage', 'pengaturan.view'],
+            'wakasek' => ['master_data.guru.view', 'master_data.guru.export', 'master_data.guru.verify', 'master_data.siswa.view', 'master_data.siswa.export', 'master_data.kelas.view', 'master_data.kelas.manage', 'master_data.mapel.view', 'master_data.mapel.manage', 'master_data.tahun_ajaran.view', 'master_data.tahun_ajaran.manage', 'master_data.kurikulum.view', 'master_data.kurikulum.manage', 'master_data.orang_tua.view', 'absensi.view_all', 'absensi.rekap', 'dms.view_all', 'dms.approve', 'dms.download', 'dms.bulk_download', 'pengumuman.view', 'pengumuman.create', 'pengumuman.update', 'pengumuman.delete', 'laporan.guru.view', 'laporan.siswa.view', 'laporan.absensi.view', 'laporan.export', 'akademik.jadwal.manage', 'akademik.rapor.view', 'akademik.kalender.manage', 'pengaturan.view'],
             'guru_bk' => ['master_data.siswa.view', 'absensi.view_all', 'absensi.rekap', 'dms.upload', 'dms.view_own', 'dms.download', 'pengumuman.view', 'bk.konseling.view', 'bk.konseling.create', 'bk.konseling.update', 'bk.catatan.view', 'bk.catatan.create', 'bk.laporan.view', 'bk.laporan.export'],
             'pustakawan' => ['master_data.siswa.view', 'pengumuman.view', 'perpustakaan.buku.view', 'perpustakaan.buku.create', 'perpustakaan.buku.update', 'perpustakaan.buku.delete', 'perpustakaan.peminjaman.view', 'perpustakaan.peminjaman.manage', 'perpustakaan.laporan.view', 'perpustakaan.laporan.export'],
             'tata_usaha' => ['master_data.siswa.view', 'master_data.guru.view', 'master_data.orang_tua.view', 'dms.upload', 'dms.view_all', 'dms.download', 'dms.bulk_download', 'pengumuman.view', 'pengumuman.create', 'surat.view', 'surat.create', 'surat.update', 'surat.delete', 'surat.arsip', 'surat.legalisir', 'laporan.siswa.view', 'laporan.guru.view', 'laporan.export'],

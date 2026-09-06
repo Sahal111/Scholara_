@@ -6,7 +6,7 @@ export default function WakasekLayout() {
   return (
     <AppLayout
       sidebar={<WakasekSidebarContent />}
-      className="bg-[#f5f3ff] text-[#1e1b4b]"
+      className="bg-[#f8faf9] text-[#191c1c]"
       sidebarWidth={272}
       renderContent={(location) =>
         location.pathname === "/wakasek" ? (
