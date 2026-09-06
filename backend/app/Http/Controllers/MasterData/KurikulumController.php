@@ -7,7 +7,7 @@ use App\Http\Requests\Kurikulum\StoreKurikulumRequest;
 use App\Http\Requests\Kurikulum\UpdateKurikulumRequest;
 use App\Http\Resources\KurikulumDetailResource;
 use App\Http\Resources\KurikulumResource;
-use App\Services\Kurikulum\KurikulumService;
+use App\Services\KurikulumService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 

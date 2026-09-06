@@ -358,10 +358,15 @@ export default function App() {
 
         {/* Kebijakan Akademik */}
         <Route path="kurikulum" element={<MasterKurikulum />} />
-        <Route path="tahun-ajaran" element={<TahunAjaranSemester />} />
-        <Route path="tahun-ajaran/:id" element={<DetailTahunAjaran />} />
+        {/* Bug #4 fix: oper basePath agar navigasi detail/recycle-bin tidak lari ke /operator */}
         <Route
-          path="tahun-ajaran/:tahunAjaranId/semester/:semesterId"
+          path="tahun-ajaran"
+          element={<TahunAjaranSemester basePath="/wakasek/tahun-ajaran" />}
+        />
+        <Route path="tahun-ajaran/:id" element={<DetailTahunAjaran />} />
+        {/* Bug #5a fix: param harus taId & semesterNama sesuai useParams() di DetailSemester.jsx */}
+        <Route
+          path="tahun-ajaran/:taId/semester/:semesterNama"
           element={<DetailSemester />}
         />
         <Route
@@ -392,6 +397,13 @@ export default function App() {
 
         {/* Pengawasan — Monitoring Absensi */}
         <Route path="absensi" element={<MonitoringAbsensiWakasek />} />
+
+        {/* Kalender Akademik — Bug #5c fix: route belum terdaftar di wakasek block */}
+        {/* Bug #9 fix: oper apiBase agar query ke /wakasek/kalender, bukan /kepsek/kalender */}
+        <Route
+          path="kalender"
+          element={<KalenderAkademik apiBase="/wakasek/kalender" />}
+        />
 
         {/* Informasi */}
         <Route path="pengumuman" element={<PengumumanWakasek />} />

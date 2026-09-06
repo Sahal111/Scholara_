@@ -127,7 +127,9 @@ function JenisBadge({ jenis }) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function KalenderAkademik() {
+// Bug #9 fix: terima apiBase prop agar komponen bisa dipakai kepsek (/kepsek/kalender)
+// maupun wakasek (/wakasek/kalender) tanpa duplikasi komponen.
+export default function KalenderAkademik({ apiBase = "/kepsek/kalender" }) {
   const queryClient = useQueryClient();
   const now = new Date();
 
@@ -150,13 +152,13 @@ export default function KalenderAkademik() {
     queryKey: ["kalender", viewYear],
     queryFn: () =>
       api
-        .get("/kepsek/kalender", { params: { tahun: viewYear } })
+        .get(apiBase, { params: { tahun: viewYear } })
         .then((r) => r.data.data),
   });
 
   // ── Mutations ────────────────────────────────────────────────────────────
   const addMutation = useMutation({
-    mutationFn: (data) => api.post("/kepsek/kalender", data),
+    mutationFn: (data) => api.post(apiBase, data),
     onSuccess: () => {
       toast.success("Kegiatan berhasil ditambahkan");
       queryClient.invalidateQueries(["kalender", viewYear]);
@@ -167,7 +169,7 @@ export default function KalenderAkademik() {
   });
 
   const editMutation = useMutation({
-    mutationFn: (data) => api.put(`/kepsek/kalender/${editItem.id}`, data),
+    mutationFn: (data) => api.put(`${apiBase}/${editItem.id}`, data),
     onSuccess: () => {
       toast.success("Kegiatan berhasil diperbarui");
       queryClient.invalidateQueries(["kalender", viewYear]);
@@ -178,7 +180,7 @@ export default function KalenderAkademik() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => api.delete(`/kepsek/kalender/${id}`),
+    mutationFn: (id) => api.delete(`${apiBase}/${id}`),
     onSuccess: () => {
       toast.success("Kegiatan berhasil dihapus");
       queryClient.invalidateQueries(["kalender", viewYear]);

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Kurikulum;
+namespace App\Services;
 
 use App\Models\Kurikulum;
 use App\Models\KurikulumKomponenNilai;

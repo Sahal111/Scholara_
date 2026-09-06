@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import api from "../../lib/axios";
+import api, { backendBaseUrl } from "../../lib/axios";
 import { Search, Eye, Filter } from "lucide-react";
 
 const fetchSiswa = (search, idKelas, statusPd, jenisKelamin) =>
@@ -9,7 +9,7 @@ const fetchSiswa = (search, idKelas, statusPd, jenisKelamin) =>
     .get("/wakasek/siswa", {
       params: {
         search,
-        id_kelas: idKelas,
+        kelas_id: idKelas, // Bug #6 fix: backend cek $request->kelas_id, bukan id_kelas
         status_pd: statusPd,
         jenis_kelamin: jenisKelamin,
       },
@@ -172,19 +172,22 @@ export default function DataSiswaWakasek() {
                       <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                         {s.foto ? (
                           <img
-                            src={`http://127.0.0.1:8001/storage/${s.foto}`}
-                            alt={s.nama_lengkap}
+                            src={`${backendBaseUrl}/storage/${s.foto}`}
+                            alt={s.nama ?? s.nama_lengkap}
                             className="w-full h-full object-cover"
                           />
                         ) : (
                           <span className="text-green-700 font-semibold text-xs">
-                            {s.nama_lengkap?.charAt(0)?.toUpperCase()}
+                            {(s.nama ?? s.nama_lengkap)
+                              ?.charAt(0)
+                              ?.toUpperCase()}
                           </span>
                         )}
                       </div>
                       <div>
+                        {/* Bug #6 fix: kolom DB adalah `nama`, bukan `nama_lengkap` (itu accessor Guru) */}
                         <p className="font-medium text-gray-800">
-                          {s.nama_lengkap}
+                          {s.nama ?? s.nama_lengkap}
                         </p>
                         {s.kelas_aktif && (
                           <p className="text-xs text-gray-400">
@@ -217,16 +220,21 @@ export default function DataSiswaWakasek() {
                     </span>
                   </td>
                   <td className="px-6 py-4">
+                    {/* Bug #6 fix: kolom DB `status` berisi lowercase ('aktif','lulus'),
+                        bukan `status_pd`. Tampilkan dengan capitalize. */}
                     <span
                       className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                        s.status_pd === "Aktif"
+                        (s.status ?? s.status_pd)?.toLowerCase() === "aktif"
                           ? "bg-green-100 text-green-700"
-                          : s.status_pd === "Lulus"
+                          : (s.status ?? s.status_pd)?.toLowerCase() === "lulus"
                             ? "bg-blue-100 text-blue-700"
                             : "bg-gray-100 text-gray-600"
                       }`}
                     >
-                      {s.status_pd}
+                      {(() => {
+                        const v = s.status ?? s.status_pd ?? "";
+                        return v.charAt(0).toUpperCase() + v.slice(1);
+                      })()}
                     </span>
                   </td>
                   <td className="px-6 py-4">

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Kepsek;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateProfilKepsekRequest extends FormRequest
 {
@@ -14,7 +15,13 @@ class UpdateProfilKepsekRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'nullable|email|max:255',
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                // Cegah 500 MySQL integrity violation jika email dipakai akun lain
+                Rule::unique('users', 'email')->ignore($this->user()->id),
+            ],
             'no_hp' => 'nullable|string|max:20',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
             'password_lama' => 'nullable|string',

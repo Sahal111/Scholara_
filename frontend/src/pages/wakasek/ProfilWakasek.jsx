@@ -140,7 +140,12 @@ export default function ProfilWakasek() {
     );
   }
 
-  const { user, kepsek, master } = data ?? {};
+  // Bug #8 fix: backend /wakasek/profil (KepsekController::profil) mengembalikan
+  // { user: { nama, ... }, guru: { nuptk, status_kepegawaian, ... } }
+  // Bukan { user, kepsek, master }. Tambahkan alias agar sisa kode tidak patah.
+  const { user, guru } = data ?? {};
+  const kepsek = guru; // alias — data kepegawaian ada di objek guru
+  const master = guru; // alias — status_kepegawaian juga dari guru
 
   const fotoUrl =
     previewImage ?? (user?.foto ? `${BASE_URL}/storage/${user.foto}` : null);
@@ -189,9 +194,12 @@ export default function ProfilWakasek() {
           {/* Info singkat */}
           <div className="text-center sm:text-left mt-1 sm:mt-2 flex-1">
             <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
-              {user?.nama_lengkap ?? "-"}
+              {/* Bug #8 fix: backend kirim user.nama, bukan user.nama_lengkap */}
+              {user?.nama ?? "-"}
             </h1>
-            <p className="text-indigo-200 text-base mt-1">Kepala Sekolah</p>
+            <p className="text-indigo-200 text-base mt-1">
+              Wakil Kepala Sekolah Kurikulum
+            </p>
 
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-4">
               {kepsek?.nuptk && (
@@ -405,11 +413,11 @@ export default function ProfilWakasek() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 className="font-bold text-gray-800 flex items-center gap-2 mb-5">
               <Building2 className="w-5 h-5 text-indigo-500" />
-              Data Jabatan Kepala Sekolah
+              Data Jabatan Wakil Kepala Sekolah
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               <InfoRow label="NUPTK" value={kepsek?.nuptk} />
-              <InfoRow label="No. SK Kepala Sekolah" value={kepsek?.no_sk} />
+              <InfoRow label="No. SK" value={kepsek?.no_sk} />
               <InfoRow
                 label="TMT Jabatan"
                 value={

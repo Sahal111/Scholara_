@@ -76,7 +76,7 @@ class KepsekController extends Controller
                 'judul' => $p->judul,
                 'kategori' => $p->kategori,
                 'ringkasan' => \Str::limit(strip_tags($p->konten), 100),
-                'penulis' => $p->penulis?->nama_lengkap,
+                'penulis' => $p->penulis?->name,  // User model pakai field 'name', bukan 'nama_lengkap'
                 'tanggal' => $p->created_at?->translatedFormat('d M Y'),
             ]);
 

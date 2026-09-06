@@ -77,11 +77,11 @@ class GuruPolicy
             && $user->hasRole('operator');
     }
 
-    /** Verifikasi data guru — operator atau kepsek sekolah yang sama. */
+    /** Verifikasi data guru — operator, kepsek, atau wakasek sekolah yang sama. */
     public function verify(User $user, Guru $guru): bool
     {
         return $this->sameSchool($user, $guru)
-            && ($user->hasRole('operator') || $user->hasRole('kepsek'));
+            && ($user->hasRole('operator') || $user->hasRole('kepsek') || $user->hasRole('wakasek'));
     }
 
     /** Upload dokumen / foto guru. */
@@ -97,10 +97,10 @@ class GuruPolicy
         return $user->hasRole('operator');
     }
 
-    /** Export data — operator atau kepsek. */
+    /** Export data — operator, kepsek, atau wakasek. */
     public function export(User $user): bool
     {
-        return $user->hasRole('operator') || $user->hasRole('kepsek');
+        return $user->hasRole('operator') || $user->hasRole('kepsek') || $user->hasRole('wakasek');
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

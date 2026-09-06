@@ -57,10 +57,11 @@ class ProgramPendidikanPolicy
         return $this->sameSchool($user, $program);
     }
 
-    /** Hapus permanen — hanya operator, harus sekolah yang sama. */
+    /** Hapus permanen — operator atau wakasek (pemilik kebijakan akademik), harus sekolah yang sama. */
     public function forceDelete(User $user, ProgramPendidikan $program): bool
     {
-        return $user->hasRole('operator') && $this->sameSchool($user, $program);
+        return ($user->hasRole('operator') || $user->hasRole('wakasek'))
+            && $this->sameSchool($user, $program);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

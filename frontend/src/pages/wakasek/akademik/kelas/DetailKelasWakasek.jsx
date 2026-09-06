@@ -31,7 +31,8 @@ function initials(nama = "") {
 
 // ── Halaman Utama ─────────────────────────────────────────────────────────────
 export default function DetailKelasWakasek() {
-  const { id } = useParams();
+  // Bug #5b fix: route App.jsx pakai :kelasId, bukan :id
+  const { kelasId, id = kelasId } = useParams();
   const navigate = useNavigate();
 
   // Fetch info kelas + riwayat akademik + stats

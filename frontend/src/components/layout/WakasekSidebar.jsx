@@ -67,7 +67,6 @@ const MENU_SECTIONS = [
         to: "/wakasek/kalender",
         icon: "calendar_month",
         label: "Kalender Akademik",
-        soon: true,
       },
     ],
   },
