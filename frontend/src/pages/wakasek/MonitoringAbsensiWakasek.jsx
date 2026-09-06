@@ -190,7 +190,8 @@ export default function MonitoringAbsensiWakasek() {
 
   const filteredRekap = useMemo(() => {
     if (kelasFilter === "all") return rekapList;
-    return rekapList.filter((k) => String(k.id_kelas) === String(kelasFilter));
+    // Fix: backend mengembalikan property kelas_id, bukan id_kelas
+    return rekapList.filter((k) => String(k.kelas_id) === String(kelasFilter));
   }, [rekapList, kelasFilter]);
 
   const totalAll = useMemo(() => {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Kepsek\KepsekController;
+use App\Http\Controllers\Kepsek\KalenderAkademikController;
 use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\MasterData\TahunAjaranController;
 use Illuminate\Support\Facades\Route;
@@ -57,6 +58,14 @@ Route::middleware(['auth:sanctum', 'role:wakasek'])
         });
         Route::middleware('permission:pengumuman.delete')->group(function () {
             Route::delete('/pengumuman/{id}', [PengumumanController::class, 'destroy']);
+        });
+
+        // ── Kalender Akademik — wakasek punya akademik.kalender.manage ──
+        Route::middleware('permission:akademik.kalender.manage')->group(function () {
+            Route::get('/kalender', [KalenderAkademikController::class, 'index']);
+            Route::post('/kalender', [KalenderAkademikController::class, 'store']);
+            Route::put('/kalender/{id}', [KalenderAkademikController::class, 'update']);
+            Route::delete('/kalender/{id}', [KalenderAkademikController::class, 'destroy']);
         });
 
         // ── Profil wakasek sendiri ───────────────────────────────────────

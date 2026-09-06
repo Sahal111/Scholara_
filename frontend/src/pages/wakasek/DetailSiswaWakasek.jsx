@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import api from "../../lib/axios";
+import api, { backendBaseUrl } from "../../lib/axios";
 import {
   ArrowLeft,
   Phone,
@@ -41,9 +41,7 @@ export default function DetailSiswaWakasek() {
       </div>
     );
 
-  const fotoUrl = siswa.foto
-    ? `http://127.0.0.1:8001/storage/${siswa.foto}`
-    : null;
+  const fotoUrl = siswa.foto ? `${backendBaseUrl}/storage/${siswa.foto}` : null;
 
   return (
     <div>

@@ -372,8 +372,12 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
 
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────
     
-        Route::middleware('permission:akademik.jadwal.manage')->group(function () {
+        // GET hanya butuh .view — operator (view-only) dan wakasek (manage) sama-sama bisa baca.
+        Route::middleware('permission:akademik.jadwal.view,akademik.jadwal.manage')->group(function () {
             Route::get('/jadwal-pelajaran', [JadwalPelajaranController::class, 'index']);
+        });
+        // Mutasi (tambah/edit/hapus) tetap butuh .manage — hanya wakasek.
+        Route::middleware('permission:akademik.jadwal.manage')->group(function () {
             Route::post('/jadwal-pelajaran', [JadwalPelajaranController::class, 'store']);
             Route::put('/jadwal-pelajaran/{id}', [JadwalPelajaranController::class, 'update']);
             Route::delete('/jadwal-pelajaran/{id}', [JadwalPelajaranController::class, 'destroy']);

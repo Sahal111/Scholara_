@@ -15,8 +15,17 @@ class PengumumanController extends Controller
             ->whereIn('target', ['semua', 'internal'])
             ->orderBy('created_at', 'desc');
 
-        // Operator & kepsek (role_id 1 dan 4) lihat semua termasuk terjadwal
-        if (!in_array($request->user()->role_id, [1, 4])) {
+        // Operator, kepsek, dan wakasek boleh lihat semua termasuk yang terjadwal (publish_at di masa depan).
+        // Role lain (guru, ortu, dll) hanya lihat yang sudah publish.
+        // Gunakan hasRole() — skema baru tidak punya kolom role_id di tabel users.
+        $user = $request->user();
+        $canSeeScheduled = $user && (
+            $user->hasRole('operator') ||
+            $user->hasRole('kepsek') ||
+            $user->hasRole('wakasek')
+        );
+
+        if (!$canSeeScheduled) {
             $query->where(function ($q) {
                 $q->whereNull('publish_at')
                     ->orWhere('publish_at', '<=', now());

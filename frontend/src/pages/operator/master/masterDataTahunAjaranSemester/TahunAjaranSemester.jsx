@@ -33,7 +33,11 @@ const ModalBuatSemester = ModalBuatSemesterComp;
 const SemesterCard = SemesterCardComp;
 
 // ── Main Page Component ────────────────────────────────────────────────────────
-export default function TahunAjaran() {
+// Fix #14: terima basePath prop agar komponen bisa dipakai oleh operator maupun wakasek
+// tanpa hardcode /operator/master/tahun-ajaran di setiap navigate/Link.
+export default function TahunAjaran({
+  basePath = "/operator/master/tahun-ajaran",
+}) {
   const { hasPermission } = useAuth();
   const canManage = hasPermission("master_data.tahun_ajaran.manage");
   const queryClient = useQueryClient();
@@ -260,7 +264,7 @@ export default function TahunAjaran() {
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
             {/* Link ke halaman dedicated */}
             <Link
-              to="/operator/master/tahun-ajaran/arsip"
+              to={`${basePath}/arsip`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-white hover:text-gray-900 hover:shadow-sm text-xs font-bold transition-all"
             >
               <span className="material-symbols-outlined text-[14px]">
@@ -269,7 +273,7 @@ export default function TahunAjaran() {
               Arsip
             </Link>
             <Link
-              to="/operator/master/tahun-ajaran/recycle-bin"
+              to={`${basePath}/recycle-bin`}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-500 hover:bg-white hover:text-gray-900 hover:shadow-sm text-xs font-bold transition-all"
             >
               <span className="material-symbols-outlined text-[14px]">
@@ -694,7 +698,7 @@ export default function TahunAjaran() {
                                           }
                                           onDetail={() =>
                                             navigate(
-                                              `/operator/master/tahun-ajaran/${t.id}/semester/Ganjil`,
+                                              `${basePath}/${t.id}/semester/Ganjil`,
                                             )
                                           }
                                           onBuat={() => {
@@ -719,7 +723,7 @@ export default function TahunAjaran() {
                                           }
                                           onDetail={() =>
                                             navigate(
-                                              `/operator/master/tahun-ajaran/${t.id}/semester/Genap`,
+                                              `${basePath}/${t.id}/semester/Genap`,
                                             )
                                           }
                                           onBuat={() => {
@@ -911,11 +915,7 @@ export default function TahunAjaran() {
                 {selectedTA && (
                   <div className="mt-5 relative z-10">
                     <button
-                      onClick={() =>
-                        navigate(
-                          `/operator/master/tahun-ajaran/${selectedTA.id}`,
-                        )
-                      }
+                      onClick={() => navigate(`${basePath}/${selectedTA.id}`)}
                       className="w-full py-3 rounded-2xl bg-[#00342b] text-white hover:bg-[#004d40] text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-[#00342b]/20 hover:shadow-lg"
                     >
                       <span>Buka Rincian Lengkap</span>
@@ -1005,7 +1005,7 @@ export default function TahunAjaran() {
                         dihapus sementara.
                       </p>
                       <Link
-                        to="/operator/master/tahun-ajaran/recycle-bin"
+                        to={`${basePath}/recycle-bin`}
                         className="w-full bg-[#eceeed] hover:bg-[#e6e9e8] text-[#3f4945] px-5 py-3 rounded-xl font-label-badge text-[11px] font-black tracking-widest uppercase flex items-center justify-center gap-2 transition-all border border-[#bfc9c4]/30"
                       >
                         <span className="material-symbols-outlined text-[16px]">
@@ -1138,7 +1138,7 @@ export default function TahunAjaran() {
                   type="button"
                   onClick={() => {
                     close();
-                    navigate(`/operator/master/tahun-ajaran/${actionItem.id}`);
+                    navigate(`${basePath}/${actionItem.id}`);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-text-primary hover:bg-surface-container-low hover:text-primary transition-colors"
                 >

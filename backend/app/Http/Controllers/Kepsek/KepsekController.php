@@ -32,7 +32,7 @@ class KepsekController extends Controller
     {
         $today = now()->toDateString();
 
-        $totalSiswa = Siswa::where('status_pd', 'Aktif')->count();
+        $totalSiswa = Siswa::where('status', 'aktif')->count();
         $totalKelas = Kelas::where('is_active', 1)->count();
         $totalGuru = User::whereHas('roles', fn($q) => $q->where('slug', 'guru'))->where('is_active', 1)->count();
         $totalMapel = MataPelajaran::where('is_active', 1)->count();
@@ -292,7 +292,7 @@ class KepsekController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'gurus' => $guru,
+                'guru' => $guru,
                 'mata_pelajaran_diampu' => $mapelDiampu,
             ],
         ]);
@@ -430,8 +430,8 @@ class KepsekController extends Controller
         return response()->json([
             'success' => true,
             'data' => [
-                'siswas' => $siswa,
-                'orang_tuas' => $dataOrangTua,
+                'siswa' => $siswa,
+                'orang_tua' => $dataOrangTua,
                 'riwayat_kelas' => $riwayatKelas,
                 'statistik_absensi' => [
                     'total' => $absensiStats?->total ?? 0,
@@ -462,36 +462,36 @@ class KepsekController extends Controller
     }
 
     // -------------------------------------------------------
-    // PROFIL KEPSEK
+    // PROFIL KEPSEK / WAKASEK
+    // Skema baru: tidak ada tabel user_kepseks terpisah.
+    // Data profil diambil dari relasi user->guru (via guru.user_id).
     // -------------------------------------------------------
     public function profil(Request $request)
     {
-        $user = $request->user()->load('kepsekProfile');
+        $user = $request->user()->load('guru');
 
-        $nuptk = $user->kepsekProfile?->nuptk;
-
-        $masterGuru = null;
-        if ($nuptk) {
-            $masterGuru = Guru::where('nuptk', $nuptk)->first();
-        }
+        $guru = $user->guru;
 
         return response()->json([
             'success' => true,
             'data' => [
                 'user' => [
                     'id' => $user->id,
+                    'ulid' => $user->ulid,
                     'username' => $user->username,
                     'email' => $user->email,
                     'nama' => $user->name,
-                    'no_hp' => $user->guru?->no_hp,
+                    'no_hp' => $guru?->no_hp,
                     'foto' => $user->foto,
                 ],
-                'kepsek' => [
-                    'nuptk' => $user->kepsekProfile?->nuptk,
-                    'no_sk' => $user->kepsekProfile?->no_sk,
-                    'tmt_jabatan' => $user->kepsekProfile?->tmt_jabatan,
-                ],
-                'master' => $masterGuru,
+                'guru' => $guru ? [
+                    'nuptk' => $guru->nuptk,
+                    'nip' => $guru->nip,
+                    'jenis_ptk' => $guru->jenis_ptk,
+                    'status_kepegawaian' => $guru->status_kepegawaian,
+                    'golongan' => $guru->golongan,
+                    'is_active' => $guru->is_active,
+                ] : null,
             ],
         ]);
     }

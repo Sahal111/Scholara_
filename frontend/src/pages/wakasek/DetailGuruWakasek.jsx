@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import api from "../../lib/axios";
+import api, { backendBaseUrl } from "../../lib/axios";
 import { ArrowLeft, Phone, Mail, BookOpen } from "lucide-react";
 
 export default function DetailGuruWakasek() {
@@ -29,9 +29,7 @@ export default function DetailGuruWakasek() {
       </div>
     );
 
-  const fotoUrl = guru.foto
-    ? `http://127.0.0.1:8001/storage/${guru.foto}`
-    : null;
+  const fotoUrl = guru.foto ? `${backendBaseUrl}/storage/${guru.foto}` : null;
 
   return (
     <div>

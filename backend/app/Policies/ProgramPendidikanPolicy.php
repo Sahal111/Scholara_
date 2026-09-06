@@ -31,12 +31,12 @@ class ProgramPendidikanPolicy
     }
 
     /**
-     * Tambah program baru — hanya operator (dijaga permission middleware).
-     * Tidak pakai before() agar pengecekan school_id tetap aktif di semua role.
+     * Tambah program baru — wakasek (pemilik kebijakan akademik) atau operator.
+     * Permission middleware sudah menjaga akses; policy ini hanya cek role.
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('operator');
+        return $user->hasRole('operator') || $user->hasRole('wakasek');
     }
 
     /** Edit program — harus sekolah yang sama. Operator pun harus pass cek ini. */

@@ -23,13 +23,19 @@ class TahunAjaranPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasRole('operator') || $user->hasRole('kepsek');
+        return $user->hasRole('operator')
+            || $user->hasRole('kepsek')
+            || $user->hasRole('wakasek');
     }
 
     public function view(User $user, TahunAjaran $tahunAjaran): bool
     {
         return (int) $user->school_id === (int) $tahunAjaran->school_id
-            && ($user->hasRole('operator') || $user->hasRole('kepsek'));
+            && (
+                $user->hasRole('operator') ||
+                $user->hasRole('kepsek') ||
+                $user->hasRole('wakasek')
+            );
     }
 
     public function restore(User $user, TahunAjaran $tahunAjaran): bool

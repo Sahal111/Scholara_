@@ -375,9 +375,10 @@ export default function App() {
         />
         <Route path="mapel" element={<MasterMapelWakasek />} />
         <Route path="kelas" element={<MasterKelasWakasek />} />
-        <Route path="kelas/:id" element={<DetailKelasWakasek />} />
+        {/* Fix #11: param nama harus kelasId agar sesuai useParams() di komponen */}
+        <Route path="kelas/:kelasId" element={<DetailKelasWakasek />} />
         <Route
-          path="kelas/:id/periode/:periodeId"
+          path="kelas/:kelasId/periode/:periodeId"
           element={<DetailKelasPeriodeAkademikWakasek />}
         />
 

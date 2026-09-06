@@ -138,13 +138,14 @@ export default function DashboardWakasek() {
             Operasional Kelas
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {/* Fix #12: Kelas & Rombel sudah diimplementasi — enable */}
             <QuickCard
               to="/wakasek/kelas"
               icon="meeting_room"
               label="Kelas & Rombel"
               desc="Buat dan atur rombongan belajar"
-              available={false}
             />
+            {/* Jadwal belum punya halaman wakasek — tetap soon */}
             <QuickCard
               to="/wakasek/jadwal"
               icon="event_note"
@@ -152,13 +153,14 @@ export default function DashboardWakasek() {
               desc="Susun jadwal per kelas"
               available={false}
             />
+            {/* Fix #12: Kalender Akademik sudah ada route & controller — enable */}
             <QuickCard
               to="/wakasek/kalender"
               icon="calendar_month"
               label="Kalender Akademik"
               desc="Hari efektif & libur sekolah"
-              available={false}
             />
+            {/* Rapor belum diimplementasi — tetap soon */}
             <QuickCard
               to="/wakasek/rapor"
               icon="description"

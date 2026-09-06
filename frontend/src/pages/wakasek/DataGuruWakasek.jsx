@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import api from "../../lib/axios";
+import api, { backendBaseUrl } from "../../lib/axios";
 import { Search, Eye } from "lucide-react";
 
 const jenisPtkOptions = [
@@ -131,7 +131,7 @@ export default function DataGuruWakasek() {
                       <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                         {g.foto ? (
                           <img
-                            src={`http://127.0.0.1:8001/storage/${g.foto}`}
+                            src={`${backendBaseUrl}/storage/${g.foto}`}
                             alt={g.nama_lengkap}
                             className="w-full h-full object-cover"
                           />
