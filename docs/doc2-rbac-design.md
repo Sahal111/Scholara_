@@ -230,14 +230,32 @@ Ini yang di-seed otomatis saat sekolah baru dibuat.
 Semua permission tanpa terkecuali.
 
 ### operator
+> **DIPERBARUI September 2026** — Operator bukan lagi super-admin de facto.
+> Operator adalah **pelaksana administrasi & pengelola data teknis**.
+> Kebijakan akademik (kurikulum, tahun ajaran, program, mapel, kelas, jadwal) adalah domain Wakasek.
 ```
-master_data.* (semua)
+-- Master data TEKNIS (full CRUD)
+master_data.guru.* (semua: view, create, update, delete, import, export, verify)
+master_data.siswa.* (semua: view, create, update, delete, import, export)
+master_data.orang_tua.view, master_data.orang_tua.manage
+
+-- Kebijakan akademik — VIEW ONLY (manage ada di wakasek)
+master_data.kelas.view             ← BUKAN .manage
+master_data.mapel.view             ← BUKAN .manage
+master_data.tahun_ajaran.view      ← BUKAN .manage
+master_data.program.view           ← BUKAN .manage
+master_data.kurikulum.view         ← BUKAN .manage
+
+-- Akademik operasional — view
+akademik.jadwal.view               ← BUKAN .manage
+
+-- Administrasi
 akun.* (semua, kecuali akun.manage_roles)
 absensi.view_all, absensi.rekap
 dms.view_all, dms.approve, dms.download, dms.bulk_download
 pengumuman.* (semua)
 laporan.* (semua)
-akademik.jadwal.manage, akademik.kalender.manage
+pengaturan.rbac.manage             -- bisa buat role custom (misal: waka_kurikulum)
 ```
 
 ### kepsek
@@ -291,18 +309,35 @@ master_data.siswa.view        -- read only untuk referensi
 ```
 
 ### wakasek
+> **DIPERBARUI September 2026** — Wakasek adalah **Pemilik & Penanggung Jawab Kebijakan Akademik**.
+> Sesuai Permendiknas dan realita sekolah Indonesia, Waka Kurikulum bertanggung jawab atas
+> seluruh struktur akademik. Operator hanya bisa VIEW data akademik, bukan MANAGE.
+> Sekolah yang perlu memisahkan "Wakasek Kurikulum" dan "Wakasek Kesiswaan" bisa membuat
+> role custom via fitur RBAC (pengaturan.rbac.manage ada di operator).
 ```
+-- Data guru & siswa — VIEW ONLY (CRUD ada di operator)
 master_data.guru.view, master_data.guru.export, master_data.guru.verify
 master_data.siswa.view, master_data.siswa.export
+master_data.orang_tua.view
+
+-- Kebijakan akademik — FULL MANAGE (domain utama wakasek)
 master_data.kelas.view, master_data.kelas.manage
 master_data.mapel.view, master_data.mapel.manage
-master_data.tahun_ajaran.view
-master_data.orang_tua.view
+master_data.tahun_ajaran.view, master_data.tahun_ajaran.manage   ← ditambahkan Sept 2026
+master_data.program.view, master_data.program.manage
+master_data.kurikulum.view, master_data.kurikulum.manage
+
+-- Akademik operasional
+akademik.jadwal.view, akademik.jadwal.manage
+akademik.kalender.manage
+akademik.nilai.view, akademik.nilai.view_all                     ← baru Sept 2026
+akademik.rapor.view, akademik.rapor.manage                       ← baru Sept 2026
+
+-- Pengawasan
 absensi.view_all, absensi.rekap
 dms.view_all, dms.approve, dms.download, dms.bulk_download
 pengumuman.* (semua)
 laporan.guru.view, laporan.siswa.view, laporan.absensi.view, laporan.export
-akademik.jadwal.manage, akademik.rapor.view, akademik.kalender.manage
 pengaturan.view
 ```
 
@@ -410,3 +445,41 @@ keuangan.export
 4. Super Admin platform (platform_admins) punya akses lintas tenant
    hanya untuk keperluan support dan administrasi platform.
    Aksi mereka harus selalu tercatat di activity_logs dengan flag `is_platform_admin`.
+
+---
+
+## Changelog RBAC
+
+### September 2026 — Wakasek-Operator Academic Split
+
+**Latar belakang:**
+Berdasarkan riset lapangan (Permendiknas, tugas pokok Waka Kurikulum) dan analisis
+kompetitor SaaS sekolah Indonesia (Skoola, Kamadeva, APPSO), ditemukan bahwa:
+1. Di sekolah nyata, Waka Kurikulum adalah penanggung jawab kebijakan akademik
+2. Semua kompetitor menempatkan kebijakan akademik di role "admin/operator" — ini gap
+3. Scholara bisa diferensiasi dengan pemisahan yang akurat sesuai struktur organisasi sekolah
+
+**Perubahan yang diterapkan:**
+
+#### Backend
+- Migration baru: `2026_09_04_000001_fix_rbac_wakasek_operator_academic_split.php`
+  - Tambah permission baru: `akademik.jadwal.view`, `akademik.nilai.view_all`, `akademik.rapor.manage`
+  - Cabut dari operator: `kelas.manage`, `mapel.manage`, `tahun_ajaran.manage`, `program.manage`, `kurikulum.manage`, `jadwal.manage`, `kalender.manage`, `rapor.manage`
+  - Tambah ke wakasek: `tahun_ajaran.manage` (bug fix — sebelumnya tidak ada!), `nilai.view_all`, `rapor.manage`
+- `SchoolSeeder.php`: operator berubah dari `$all` → `array_filter` (exclude manage akademik)
+- Route baru: `routes/api/wakasek.php` — portal API dedicated `/wakasek/*`
+- Update `routes/api/master-data.php`: tambah `wakasek` ke middleware role
+
+#### Frontend
+- `WakasekSidebar.jsx` baru — tema indigo, 5 grup menu
+- `WakasekLayout.jsx` diupdate
+- `DashboardWakasek.jsx` diupdate total (dari ComingSoonDashboard)
+- 11 halaman wakasek baru/diupdate (Tahun Ajaran, Kurikulum, Program Pendidikan, Mapel, Kelas, Guru, Siswa, Absensi, Pengumuman, Laporan, Profil)
+- `OperatorSidebar.jsx`: menu akademik dipindah ke grup "Referensi Akademik" (readonly, badge "Waka")
+- 20+ file operator: ditambahkan `canManage`/`canCreate`/`canDelete`/`canImport`/`canExport` guards
+
+**Catatan penting untuk developer:**
+- Operator yang login tidak akan melihat tombol Tambah/Edit/Hapus untuk data akademik
+- Wakasek punya portal sendiri `/wakasek/*` dengan tema visual berbeda (indigo vs hijau operator)
+- Sekolah yang butuh role "waka_kurikulum" terpisah dari "wakasek" bisa buat via RBAC custom (operator punya `pengaturan.rbac.manage`)
+- Permission `master_data.tahun_ajaran.manage` sebelumnya ada di definisi tapi tidak di-assign ke wakasek — ini bug yang sudah difix

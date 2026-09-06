@@ -25,6 +25,8 @@
 
 Scholara/SIAKAD is a multi-tenant SaaS platform for school management built with **Laravel 12 (API)** + **React 19 (SPA)**. It uses a **shared database with `school_id`** for tenant isolation. The system supports **13 tenant-level roles** (after `super_operator` was merged into `operator`) and a separate **platform admin tier**. Current development: Phase 0 (multi-tenant foundation) completed, Phase 1 (backend refactor) mostly completed, Phase 2 (frontend refactor) in progress, and several Phase 3-5 modules (LMS, Keuangan, PPDB, BK, Perpustakaan, Surat/TU) have early implementations.
 
+**Key architectural decision (September 2026):** RBAC has been restructured to reflect real-world school organizational structure. `wakasek` is now the **owner of academic policy** (kurikulum, tahun ajaran, program pendidikan, mapel, kelas, jadwal), while `operator` is strictly the **administrative executor** (data input, import/export, sinkronisasi). This is a differentiating feature vs. competitors (Skoola, Kamadeva, APPSO) which bundle academic policy into a single "admin" role.
+
 ---
 
 ## 3. Product & Domain Overview
@@ -116,17 +118,21 @@ Scholara/SIAKAD is a multi-tenant SaaS platform for school management built with
 - ✅ BK, Perpustakaan, Surat/TU — backend controllers exist
 - ✅ FormRequests organized by domain (18 subdirectories)
 - ✅ DetailGuru.jsx split into 8 tab components
-- ⬜ WaliKelas, Wakasek, GuruBK, TataUsaha, Pustakawan, AdminKeuangan, Siswa, SuperAdmin — dashboard only (placeholder)
+- ✅ **Portal Wakasek Kurikulum** (September 2026) — portal dedicated dengan sidebar indigo, 11 halaman aktif: Tahun Ajaran, Kurikulum, Program Pendidikan, Mata Pelajaran, Kelas & Rombel, Data Guru/Siswa (view-only), Monitoring Absensi, Pengumuman, Laporan, Profil. Route `/wakasek/*` dengan API `/wakasek/*` sendiri.
+- ✅ **RBAC Wakasek-Operator Split** (September 2026) — wakasek = pemilik kebijakan akademik (tahun ajaran, kurikulum, program, mapel, kelas, jadwal, rapor), operator = pelaksana administrasi (guru, siswa, import/export). Diimplementasikan via: migration RBAC fix, SchoolSeeder update, route `wakasek.php` baru, permission guards di 20+ halaman operator, OperatorSidebar restrukturisasi dengan grup "Referensi Akademik".
+- ⬜ WaliKelas, GuruBK, TataUsaha, Pustakawan, AdminKeuangan, Siswa, SuperAdmin — dashboard only (placeholder)
 
 ### Current Phase
 - Phase 0 (Multi-Tenant Foundation): `[COMPLETED]`
 - Phase 1 (Backend Refactor): `[MOSTLY_COMPLETED]` — controller splitting done, FormRequests organized, ApiResponse trait in use
 - Phase 2 (Frontend Refactor): `[IN_PROGRESS]` — reusable components exist, React Query hooks created, AppLayout adopted by 14/14 roles (layout unification COMPLETED), missing UI components COMPLETED
 - Phase 3-5 modules (LMS, Keuangan, PPDB): `[EARLY_IMPLEMENTATION]` — controllers and basic frontend exist
+- **RBAC Academic Split** (September 2026): `[COMPLETED]` — wakasek/operator permission split fully implemented across backend + frontend
 
 ### Technical Debt
 - Layout unification: 14/14 roles now use `AppLayout.jsx` — SiswaLayout & SuperAdminLayout migrated via extracted sidebar components (SiswaSidebar.jsx, SuperAdminSidebar.jsx) `[COMPLETED]`
-- Multiple sidebars exist (OperatorSidebar, Sidebar) — should be unified `[IN_PROGRESS]`
+- Multiple sidebars exist (OperatorSidebar, WakasekSidebar, Sidebar) — OperatorSidebar sudah direstrukturisasi dengan grup Referensi Akademik; perlu unifikasi lebih lanjut `[IN_PROGRESS]`
+- OperatorSidebar: menu kebijakan akademik dipindah ke grup "Referensi Akademik" (view-only, badge "Waka") `[COMPLETED — September 2026]`
 - Some pages still use `useEffect` + axios instead of React Query `[COMPLETED]` — DashboardKepsek.jsx migrated; remaining useEffect usages are all valid (form reset, UI sync, non-fetch)
 - `MasterGuru.jsx` split into modular components (MasterGuru, ModalImportGuru, ModalExportGuru, ModalPerhatianData, guruConstants) `[COMPLETED]` — reduced from 114KB (2516 lines) to 35KB (442 lines)
 - `TambahEditGuru.jsx` is still large (~64KB) `[NEEDS_ATTENTION]`
@@ -439,8 +445,8 @@ $this->error('Message', 'ERROR_CODE', 500);
 ### Current Route Files (actual source code)
 ```
 routes/api/
-  auth.php, operator.php, guru.php, kepsek.php, ortu.php,
-  absensi.php, master-data.php, public.php, lms.php,
+  auth.php, operator.php, guru.php, kepsek.php, wakasek.php,  ← wakasek.php BARU Sept 2026
+  ortu.php, absensi.php, master-data.php, public.php, lms.php,
   keuangan.php, ppdb.php, bk.php, perpustakaan.php, tata-usaha.php
 ```
 
@@ -544,9 +550,9 @@ public function delete(User $user, Guru $guru): bool {
 
 | Slug | Name | System | Description |
 |---|---|---|---|
-| `operator` | Operator | ✓ | Full access to all school features (includes former super_operator permissions) |
+| `operator` | Operator | ✓ | **Pelaksana administrasi** — CRUD guru, siswa, orang tua, import/export, manajemen akun, pengumuman, galeri. VIEW-ONLY untuk kebijakan akademik (tahun ajaran, kurikulum, mapel, kelas, program — domain wakasek). |
 | `kepsek` | Kepala Sekolah | ✓ | Read-only all data + approve documents |
-| `wakasek` | Wakil Kepsek | ✓ | Near kepsek — curriculum & student affairs |
+| `wakasek` | Wakil Kepala Sekolah Kurikulum | ✓ | **Pemilik kebijakan akademik** — kurikulum, tahun ajaran, program pendidikan, mapel, kelas, jadwal, rapor. View-only untuk guru & siswa. |
 | `guru` | Guru | ✓ | Own class data + attendance + profile |
 | `guru_bk` | Guru BK | ✓ | Counseling — NO access to grades |
 | `wali_kelas` | Wali Kelas | ✓ | Guru + student report cards |
@@ -760,7 +766,8 @@ frontend/src/
 ├── components/
 │   ├── layout/
 │   │   ├── AppLayout.jsx                          ← unified layout, used by 12/14 roles
-│   │   ├── OperatorSidebar.jsx, OperatorTopBar.jsx, OperatorFooter.jsx
+│   │   ├── OperatorSidebar.jsx, OperatorTopBar.jsx, OperatorFooter.jsx  ← direstrukturisasi Sept 2026
+│   │   ├── WakasekSidebar.jsx                     ← BARU Sept 2026 — tema indigo, 5 grup menu
 │   │   └── Sidebar.jsx
 │   ├── ortu/
 │   │   └── AnakSelector.jsx                       ← domain-specific component
@@ -791,7 +798,12 @@ frontend/src/
 │   │   └── keuangan/ DashboardKeuangan, JenisTagihan, Tagihan, Pembayaran
 │   ├── adminppdb/    DashboardAdminPpdb, PpdbCalonSiswa, AdminPpdbLayout
 │   ├── walikelas/    DashboardWaliKelas, WaliKelasLayout           ← placeholder
-│   ├── wakasek/      DashboardWakasek, WakasekLayout               ← placeholder
+│   ├── wakasek/      DashboardWakasek, WakasekLayout, DataGuruWakasek, DetailGuruWakasek,
+│   │                 DataSiswaWakasek, DetailSiswaWakasek, MonitoringAbsensiWakasek,
+│   │                 PengumumanWakasek, LaporanWakasek, ProfilWakasek  ← IMPLEMENTED Sept 2026
+│   │   └── akademik/ MasterKurikulum, MasterProgramWakasek, RecycleBinProgramWakasek,
+│   │                 MasterMapelWakasek, MasterKelasWakasek, DetailKelasWakasek,
+│   │                 DetailKelasPeriodeAkademikWakasek
 │   ├── guru-bk/      DashboardGuruBk, GuruBkLayout                 ← placeholder
 │   ├── tata-usaha/   DashboardTataUsaha, TataUsahaLayout           ← placeholder
 │   ├── pustakawan/   DashboardPustakawan, PustakawanLayout         ← placeholder

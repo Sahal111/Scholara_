@@ -7,12 +7,13 @@
 Project sudah punya fondasi yang berjalan:
 - ✅ Auth lengkap: login multi-role, register ortu, forgot/reset password via email
 - ✅ Multi-tenant login: cross-tenant prevention via subdomain + SchoolScope
-- ✅ 14 role sistem: super_operator, operator, kepsek, wakasek, guru, guru_bk, wali_kelas, bendahara, admin_keuangan, tata_usaha, pustakawan, ortu, siswa, admin_ppdb
+- ✅ 13 role sistem: operator (super_operator merged), kepsek, wakasek, guru, guru_bk, wali_kelas, bendahara, admin_keuangan, tata_usaha, pustakawan, ortu, siswa, admin_ppdb
 - ✅ DB + Model untuk modul BK, Perpustakaan, Surat/TU
-- ✅ Master Data Guru (GuruProfileController — index, show, store, update, destroy, dll)
-- ✅ Master Data Siswa, Kelas, Mapel, Jadwal, Tahun Ajaran
-- ✅ Portal Guru, Kepsek, Ortu, WaliKelas, Bendahara (sebagian)
-- ✅ React frontend dengan layout per role + redirectMap 14 role
+- ✅ Master Data Guru (split 9 sub-controllers), Siswa, Kelas, Mapel, Jadwal, Tahun Ajaran
+- ✅ Portal Guru, Kepsek, Ortu, Bendahara (functional)
+- ✅ **Portal Wakasek Kurikulum** (September 2026) — portal dedicated, 11 halaman aktif, sidebar indigo, API route `/wakasek/*` sendiri
+- ✅ **RBAC Wakasek-Operator Split** (September 2026) — pemisahan kebijakan akademik (wakasek) vs administrasi (operator), migration + seeder + 20+ frontend guards + sidebar restrukturisasi
+- ✅ React frontend dengan layout per role + redirectMap 13 role
 
 ---
 
@@ -56,15 +57,17 @@ Project sudah punya fondasi yang berjalan:
 ## Phase 2 — Refactor Frontend (No New Feature)
 *Target: komponen reusable, React Query konsisten*
 
-- [ ] Buat `components/ui/` (DataTable, Modal, Badge, Skeleton, dll)
-- [ ] Satukan semua Layout jadi satu `AppLayout.jsx`
-- [ ] Satukan semua Sidebar jadi satu `Sidebar.jsx` (dinamis per permission)
-- [ ] Buat `hooks/api/` (useGuru, useSiswa, useAbsensi, useKelas, dll)
-- [ ] Migrasi halaman yang masih pakai `useEffect` + axios manual → React Query
-- [ ] Pecah `DetailGuru.jsx` (7641 baris) jadi 15 tab komponen
-- [ ] Pecah `MasterGuru.jsx`, `TambahEditGuru.jsx`
-- [ ] Pindah `PublicNavbar.jsx`, `PublicFooter.jsx` ke `pages/public/components/`
-- [ ] Tambah `useDisclosure.js`, `useDebounce.js` hook
+- [x] Buat `components/ui/` (DataTable, Modal, Badge, Skeleton, dll) `[DONE]`
+- [x] Satukan semua Layout jadi satu `AppLayout.jsx` — 12/14 roles `[MOSTLY DONE]`
+- [ ] Satukan semua Sidebar jadi satu `Sidebar.jsx` (dinamis per permission) `[IN PROGRESS]`
+- [x] Buat `hooks/api/` (useGuru, useSiswa, useAbsensi, useKelas, dll) `[DONE]`
+- [x] Migrasi halaman yang masih pakai `useEffect` + axios manual → React Query `[DONE]`
+- [x] Pecah `DetailGuru.jsx` (7641 baris) jadi 8 tab komponen `[DONE]`
+- [x] Pecah `MasterGuru.jsx` jadi komponen modular `[DONE]`
+- [ ] Pecah `TambahEditGuru.jsx` (~64KB) `[NEEDS ATTENTION]`
+- [x] Tambah `useDisclosure.js`, `useDebounce.js` hook `[DONE]`
+- [x] **Portal Wakasek Kurikulum** — sidebar, layout, 11 halaman, API route dedicated `[DONE — September 2026]`
+- [x] **RBAC Wakasek-Operator Split** — operator frontend: 20+ file dengan canManage/canCreate/canDelete guards, OperatorSidebar restrukturisasi dengan grup "Referensi Akademik" `[DONE — September 2026]`
 
 ---
 
@@ -72,9 +75,12 @@ Project sudah punya fondasi yang berjalan:
 *Target: nilai, rapor, kalender akademik*
 
 - [ ] Tabel: `komponen_penilaians`, `nilais`, `nilai_akhirs`
-- [ ] Input nilai per mapel
-- [ ] Generate rapor semester
+- [ ] Input nilai per mapel (permission `akademik.nilai.input` sudah ada di guru)
+- [ ] Rekap nilai semua kelas (permission `akademik.nilai.view_all` sudah ada di wakasek & kepsek)
+- [ ] Generate & finalisasi rapor semester (permission `akademik.rapor.manage` sudah ada di wakasek)
 - [ ] Kalender akademik (sudah ada tabelnya, lengkapi fitur)
+- [ ] Portal Wakasek: halaman Rapor & Nilai (saat ini masih "Soon" di sidebar)
+- [ ] Portal Wakasek: Jadwal Pelajaran, Kalender Akademik, Penempatan Siswa, Pengampu Mapel
 
 ---
 
@@ -155,6 +161,20 @@ akan harus diubah lagi. Itu buang waktu.
 
 Urutan yang tidak bisa dilangkahi:
 ```
-Phase 0 (fondasi) → Phase 1 (backend rapi) → Phase 2 (frontend rapi)
+Phase 0 (fondasi) ✅ → Phase 1 (backend rapi) ✅ mostly → Phase 2 (frontend rapi) 🔄
 → baru boleh Phase 3, 4, 5, dst
 ```
+
+### Progress Update — September 2026
+
+**Yang sudah selesai di luar rencana awal (nilai positif):**
+- Portal Wakasek Kurikulum selesai lebih awal — sebelumnya hanya placeholder
+- RBAC Wakasek-Operator split selesai — diferensiasi vs kompetitor (Skoola, Kamadeva)
+- Permission guards di 20+ halaman operator — UI konsisten dengan RBAC backend
+
+**Yang masih harus diselesaikan sebelum Phase 3:**
+- [ ] TambahEditGuru.jsx masih ~64KB — perlu dipecah
+- [ ] Sidebar unifikasi belum selesai (WakasekSidebar, OperatorSidebar, Sidebar masih terpisah)
+- [ ] Sisa portal placeholder: WaliKelas, GuruBK, TataUsaha, Pustakawan, AdminKeuangan, Siswa, SuperAdmin
+- [ ] API Resource belum sistematis diterapkan di semua controller
+- [ ] Observer pattern belum diimplementasikan
