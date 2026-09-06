@@ -272,6 +272,8 @@ function SkeletonRow() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function MasterKelas() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("master_data.kelas.manage");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -444,87 +446,92 @@ export default function MasterKelas() {
 
         {/* Right — buttons */}
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <button
-              className="px-5 py-2.5 rounded-full border flex items-center gap-2 font-bold text-sm transition-all"
-              style={{
-                borderColor: "rgba(191,201,196,0.3)",
-                color: "#00342b",
-                background: "rgba(255,255,255,0.5)",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "rgba(225,227,226,0.5)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "rgba(255,255,255,0.5)")
-              }
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                upload
-              </span>
-              Import
-            </button>
-            <button
-              className="px-5 py-2.5 rounded-full border flex items-center gap-2 font-bold text-sm transition-all"
-              style={{
-                borderColor: "rgba(191,201,196,0.3)",
-                color: "#00342b",
-                background: "rgba(255,255,255,0.5)",
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.background = "rgba(225,227,226,0.5)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.background = "rgba(255,255,255,0.5)")
-              }
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                download
-              </span>
-              Export
-            </button>
-          </div>
+          {canManage && (
+            <div className="flex items-center gap-2">
+              <button
+                className="px-5 py-2.5 rounded-full border flex items-center gap-2 font-bold text-sm transition-all"
+                style={{
+                  borderColor: "rgba(191,201,196,0.3)",
+                  color: "#00342b",
+                  background: "rgba(255,255,255,0.5)",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "rgba(225,227,226,0.5)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "rgba(255,255,255,0.5)")
+                }
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  upload
+                </span>
+                Import
+              </button>
+              <button
+                className="px-5 py-2.5 rounded-full border flex items-center gap-2 font-bold text-sm transition-all"
+                style={{
+                  borderColor: "rgba(191,201,196,0.3)",
+                  color: "#00342b",
+                  background: "rgba(255,255,255,0.5)",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "rgba(225,227,226,0.5)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "rgba(255,255,255,0.5)")
+                }
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  download
+                </span>
+                Export
+              </button>
+            </div>
+          )}
 
           {/* Tambah Kelas — exact template: bg-secondary=006e2a, rounded-full, shadow */}
-          <button
-            onClick={() => {
-              setEditData(null);
-              setModalOpen(true);
-            }}
-            className="flex items-center gap-3 rounded-full border border-white/20 transition-all duration-500 group"
-            style={{
-              background: "#006e2a",
-              color: "#ffffff",
-              padding: "16px 32px",
-              fontFamily: "'Inter', sans-serif",
-              fontSize: "12px",
-              fontWeight: 900,
-              letterSpacing: "0.2em",
-              boxShadow: "0 8px 16px rgba(0,110,42,0.15)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "translateY(-4px) scale(1.05)";
-              e.currentTarget.style.boxShadow =
-                "0 16px 24px rgba(0,110,42,0.3)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "";
-              e.currentTarget.style.boxShadow =
-                "0 8px 16px rgba(0,110,42,0.15)";
-            }}
-          >
-            <div
-              className="rounded-full p-1 group-hover:rotate-90 transition-transform duration-500"
-              style={{ background: "rgba(255,255,255,0.2)" }}
+          {canManage && (
+            <button
+              onClick={() => {
+                setEditData(null);
+                setModalOpen(true);
+              }}
+              className="flex items-center gap-3 rounded-full border border-white/20 transition-all duration-500 group"
+              style={{
+                background: "#006e2a",
+                color: "#ffffff",
+                padding: "16px 32px",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "12px",
+                fontWeight: 900,
+                letterSpacing: "0.2em",
+                boxShadow: "0 8px 16px rgba(0,110,42,0.15)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform =
+                  "translateY(-4px) scale(1.05)";
+                e.currentTarget.style.boxShadow =
+                  "0 16px 24px rgba(0,110,42,0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "";
+                e.currentTarget.style.boxShadow =
+                  "0 8px 16px rgba(0,110,42,0.15)";
+              }}
             >
-              <span className="material-symbols-outlined text-[20px] block">
-                add
+              <div
+                className="rounded-full p-1 group-hover:rotate-90 transition-transform duration-500"
+                style={{ background: "rgba(255,255,255,0.2)" }}
+              >
+                <span className="material-symbols-outlined text-[20px] block">
+                  add
+                </span>
+              </div>
+              <span className="tracking-[0.2em] font-black uppercase">
+                Tambah Kelas
               </span>
-            </div>
-            <span className="tracking-[0.2em] font-black uppercase">
-              Tambah Kelas
-            </span>
-          </button>
+            </button>
+          )}
         </div>
       </div>
 

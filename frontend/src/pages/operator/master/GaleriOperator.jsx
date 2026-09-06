@@ -31,6 +31,12 @@ const KATEGORI_COLOR = {
 };
 
 export default function GaleriOperator() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("dms.create");
+  const canUpdate = hasPermission("dms.update");
+  const canDelete = hasPermission("dms.delete");
+  const canImport = hasPermission("dms.import");
+  const canExport = hasPermission("dms.export");
   const queryClient = useQueryClient();
   const fileInputRef = useRef(null);
 
@@ -155,13 +161,15 @@ export default function GaleriOperator() {
             Upload dan atur foto yang ditampilkan di halaman Galeri publik.
           </p>
         </div>
-        <button
-          onClick={openModal}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Upload Foto
-        </button>
+        {canCreate && (
+          <button
+            onClick={openModal}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Upload Foto
+          </button>
+        )}
       </div>
 
       {/* ── Filter Kategori ───────────────────────────────────────── */}
@@ -254,16 +262,18 @@ export default function GaleriOperator() {
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(item.id);
-                        }}
-                        className="p-1.5 bg-white/90 text-red-600 rounded-lg shadow hover:bg-white transition-colors"
-                        title="Hapus"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      {canDelete && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item.id);
+                          }}
+                          className="p-1.5 bg-white/90 text-red-600 rounded-lg shadow hover:bg-white transition-colors"
+                          title="Hapus"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     {/* Info */}
@@ -500,14 +510,16 @@ export default function GaleriOperator() {
                   )}
                 </p>
               </div>
-              <button
-                onClick={() => handleDelete(previewItem.id)}
-                disabled={deleteMutation.isPending}
-                className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors text-sm font-medium"
-              >
-                <Trash2 className="w-4 h-4" />
-                Hapus
-              </button>
+              {canDelete && (
+                <button
+                  onClick={() => handleDelete(previewItem.id)}
+                  disabled={deleteMutation.isPending}
+                  className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors text-sm font-medium"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Hapus
+                </button>
+              )}
             </div>
           </div>
         </div>

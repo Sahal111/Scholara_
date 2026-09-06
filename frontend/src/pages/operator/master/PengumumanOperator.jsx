@@ -44,6 +44,12 @@ const formatWaktu = (dateStr) => {
 };
 
 export default function PengumumanOperator() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("pengumuman.create");
+  const canUpdate = hasPermission("pengumuman.update");
+  const canDelete = hasPermission("pengumuman.delete");
+  const canImport = hasPermission("pengumuman.import");
+  const canExport = hasPermission("pengumuman.export");
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -147,7 +153,9 @@ export default function PengumumanOperator() {
           </p>
         </div>
         <button
-          onClick={() => openModal()}
+          onClick={canCreate ? () => openModal() : undefined}
+          disabled={!canCreate}
+          style={{ display: canCreate ? undefined : "none" }}
           className="btn-primary flex items-center gap-2"
         >
           <Plus className="w-4 h-4" />
@@ -183,20 +191,24 @@ export default function PengumumanOperator() {
                   </span>
 
                   <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => openModal(item)}
-                      className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                      title="Hapus"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {canUpdate && (
+                      <button
+                        onClick={() => openModal(item)}
+                        className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                        title="Hapus"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

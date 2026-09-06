@@ -215,6 +215,12 @@ function StatCard({
    MAIN PAGE
 ───────────────────────────────────────── */
 export default function MasterSiswa() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("master_data.siswa.create");
+  const canUpdate = hasPermission("master_data.siswa.update");
+  const canDelete = hasPermission("master_data.siswa.delete");
+  const canImport = hasPermission("master_data.siswa.import");
+  const canExport = hasPermission("master_data.siswa.export");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -363,40 +369,46 @@ export default function MasterSiswa() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-3 shrink-0">
-          <button
-            className="px-5 py-2.5 rounded-xl border border-outline-variant/30 font-bold text-sm flex items-center gap-2 bg-white/70 shadow-sm transition-all hover:bg-surface-container/60"
-            style={{ color: DARK_GREEN }}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              upload
-            </span>
-            Import
-          </button>
-          <button
-            className="px-5 py-2.5 rounded-xl border border-outline-variant/30 font-bold text-sm flex items-center gap-2 bg-white/70 shadow-sm transition-all hover:bg-surface-container/60"
-            style={{ color: DARK_GREEN }}
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              download
-            </span>
-            Export
-          </button>
-
-          <button
-            onClick={() => navigate("/operator/master/siswa/tambah")}
-            className="px-6 py-3 rounded-xl text-white font-black text-[12px] tracking-widest uppercase flex items-center gap-2.5 shadow-lg hover:-translate-y-0.5 hover:scale-[1.02] transition-all duration-300 group"
-            style={{ backgroundColor: DARK_GREEN }}
-          >
-            <div
-              className="rounded-full p-0.5 group-hover:rotate-90 transition-transform duration-500"
-              style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+          {canImport && (
+            <button
+              className="px-5 py-2.5 rounded-xl border border-outline-variant/30 font-bold text-sm flex items-center gap-2 bg-white/70 shadow-sm transition-all hover:bg-surface-container/60"
+              style={{ color: DARK_GREEN }}
             >
-              <span className="material-symbols-outlined text-[18px] block">
-                add
+              <span className="material-symbols-outlined text-[18px]">
+                upload
               </span>
-            </div>
-            Tambah Siswa
-          </button>
+              Import
+            </button>
+          )}
+          {canExport && (
+            <button
+              className="px-5 py-2.5 rounded-xl border border-outline-variant/30 font-bold text-sm flex items-center gap-2 bg-white/70 shadow-sm transition-all hover:bg-surface-container/60"
+              style={{ color: DARK_GREEN }}
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                download
+              </span>
+              Export
+            </button>
+          )}
+
+          {canCreate && (
+            <button
+              onClick={() => navigate("/operator/master/siswa/tambah")}
+              className="px-6 py-3 rounded-xl text-white font-black text-[12px] tracking-widest uppercase flex items-center gap-2.5 shadow-lg hover:-translate-y-0.5 hover:scale-[1.02] transition-all duration-300 group"
+              style={{ backgroundColor: DARK_GREEN }}
+            >
+              <div
+                className="rounded-full p-0.5 group-hover:rotate-90 transition-transform duration-500"
+                style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
+              >
+                <span className="material-symbols-outlined text-[18px] block">
+                  add
+                </span>
+              </div>
+              Tambah Siswa
+            </button>
+          )}
         </div>
       </div>
 
@@ -469,17 +481,19 @@ export default function MasterSiswa() {
               </button>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  if (confirm(`Hapus ${selected.size} siswa yang dipilih?`)) {
-                    selected.forEach((nisn) => hapus.mutate(nisn));
-                    clearSel();
-                  }
-                }}
-                className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-bold transition-colors"
-              >
-                Hapus Terpilih
-              </button>
+              {canDelete && (
+                <button
+                  onClick={() => {
+                    if (confirm(`Hapus ${selected.size} siswa yang dipilih?`)) {
+                      selected.forEach((nisn) => hapus.mutate(nisn));
+                      clearSel();
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-bold transition-colors"
+                >
+                  Hapus Terpilih
+                </button>
+              )}
               <button
                 onClick={clearSel}
                 className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
@@ -651,7 +665,7 @@ export default function MasterSiswa() {
                             : "Klik 'Tambah Siswa' untuk mulai memasukkan data"}
                         </p>
                       </div>
-                      {!search && !status && !tingkat && (
+                      {!search && !status && !tingkat && canCreate && (
                         <button
                           onClick={() =>
                             navigate("/operator/master/siswa/tambah")

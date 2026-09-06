@@ -234,24 +234,28 @@ function TrashCard({ item, onRestore, onForceDelete, canManage }) {
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            onClick={() => onRestore(item)}
-            title="Pulihkan"
-            className="text-[#3f4945]/40 hover:text-[#006e2a] transition-all p-2 rounded-full hover:bg-[#006e2a]/10"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              restore
-            </span>
-          </button>
-          <button
-            onClick={() => onForceDelete(item)}
-            title="Hapus Permanen"
-            className="text-[#3f4945]/40 hover:text-red-500 transition-all p-2 rounded-full hover:bg-red-50"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              delete_forever
-            </span>
-          </button>
+          {canManage && (
+            <button
+              onClick={() => onRestore(item)}
+              title="Pulihkan"
+              className="text-[#3f4945]/40 hover:text-[#006e2a] transition-all p-2 rounded-full hover:bg-[#006e2a]/10"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                restore
+              </span>
+            </button>
+          )}
+          {canManage && (
+            <button
+              onClick={() => onForceDelete(item)}
+              title="Hapus Permanen"
+              className="text-[#3f4945]/40 hover:text-red-500 transition-all p-2 rounded-full hover:bg-red-50"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                delete_forever
+              </span>
+            </button>
+          )}
         </div>
       </div>
       {semesters.length > 0 ? (

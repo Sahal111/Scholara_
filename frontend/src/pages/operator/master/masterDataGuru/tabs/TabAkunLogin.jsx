@@ -193,22 +193,22 @@ export default function TabAkunLogin({
               {akunGuru.is_active ? "Nonaktifkan Akun" : "Aktifkan Akun"}
             </button>
             {canDelete && (
-             <button
-              onClick={() => {
-                if (
-                  confirm(
-                    "Hapus akun login guru ini? Tindakan ini tidak bisa dibatalkan.",
+              <button
+                onClick={() => {
+                  if (
+                    confirm(
+                      "Hapus akun login guru ini? Tindakan ini tidak bisa dibatalkan.",
+                    )
                   )
-                )
-                  hapusAkun.mutate(akunGuru.id);
-              }}
-              className="px-4 py-2 bg-surface border border-error/30 text-error rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-error/5 transition-colors ml-auto"
-            >
-              <span className="material-symbols-outlined text-[18px]">
-                delete
-              </span>{" "}
-              Hapus Akun
-            </button>
+                    hapusAkun.mutate(akunGuru.id);
+                }}
+                className="px-4 py-2 bg-surface border border-error/30 text-error rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-error/5 transition-colors ml-auto"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  delete
+                </span>{" "}
+                Hapus Akun
+              </button>
             )}
           </div>
         </div>

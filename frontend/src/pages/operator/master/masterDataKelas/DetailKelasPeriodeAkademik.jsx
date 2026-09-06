@@ -21,6 +21,8 @@ function initials(nama = "") {
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 export default function DetailKelasPeriodeAkademik() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("master_data.kelas.manage");
   const { kelasId, periodeId } = useParams(); // periodeId = tahun_ajaran_id
   const [activeTab, setActiveTab] = useState("siswa");
   const [search, setSearch] = useState("");
@@ -331,6 +333,7 @@ export default function DetailKelasPeriodeAkademik() {
               <ul className="flex whitespace-nowrap min-w-max">
                 {tabs.map((tab) => (
                   <li key={tab.id}>
+                    {canManage && 
                     <button
                       onClick={() => setActiveTab(tab.id)}
                       className={`px-5 py-3 text-sm font-medium transition-colors border-b-2 rounded-t-lg ${
@@ -341,6 +344,7 @@ export default function DetailKelasPeriodeAkademik() {
                     >
                       {tab.label}
                     </button>
+                    }
                   </li>
                 ))}
               </ul>

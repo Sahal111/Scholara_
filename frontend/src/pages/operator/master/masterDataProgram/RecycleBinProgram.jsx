@@ -102,7 +102,7 @@ function JenisBadge({ jenis }) {
 }
 
 // ── Table Row ─────────────────────────────────────────────────────────────────
-function TrashRow({ item, index, onRestore, onForceDelete }) {
+function TrashRow({ item, index, onRestore, onForceDelete, canManage }) {
   return (
     <tr className="hover:bg-[#006e2a]/5 transition-all duration-200 group">
       <td className="py-5 px-6 text-[#3f4945] font-medium text-sm">
@@ -134,24 +134,28 @@ function TrashRow({ item, index, onRestore, onForceDelete }) {
       </td>
       <td className="py-5 px-6 text-right">
         <div className="flex items-center justify-end gap-1">
-          <button
-            onClick={() => onRestore(item)}
-            title="Pulihkan"
-            className="text-[#bfc9c4] hover:text-[#006e2a] transition-all p-2 rounded-full hover:bg-[#006e2a]/10"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              restore
-            </span>
-          </button>
-          <button
-            onClick={() => onForceDelete(item)}
-            title="Hapus Permanen"
-            className="text-[#bfc9c4] hover:text-red-500 transition-all p-2 rounded-full hover:bg-red-50"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              delete_forever
-            </span>
-          </button>
+          {canManage && (
+            <button
+              onClick={() => onRestore(item)}
+              title="Pulihkan"
+              className="text-[#bfc9c4] hover:text-[#006e2a] transition-all p-2 rounded-full hover:bg-[#006e2a]/10"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                restore
+              </span>
+            </button>
+          )}
+          {canManage && (
+            <button
+              onClick={() => onForceDelete(item)}
+              title="Hapus Permanen"
+              className="text-[#bfc9c4] hover:text-red-500 transition-all p-2 rounded-full hover:bg-red-50"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                delete_forever
+              </span>
+            </button>
+          )}
         </div>
       </td>
     </tr>
@@ -159,7 +163,7 @@ function TrashRow({ item, index, onRestore, onForceDelete }) {
 }
 
 // ── Mobile Card ───────────────────────────────────────────────────────────────
-function TrashCard({ item, onRestore, onForceDelete }) {
+function TrashCard({ item, onRestore, onForceDelete, canManage }) {
   return (
     <div className="bg-white/80 backdrop-blur-md border border-white/40 rounded-2xl shadow-sm p-5 hover:shadow-md transition-all">
       <div className="flex items-start justify-between gap-4 mb-3">
@@ -180,24 +184,28 @@ function TrashCard({ item, onRestore, onForceDelete }) {
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={() => onRestore(item)}
-            title="Pulihkan"
-            className="text-[#3f4945]/40 hover:text-[#006e2a] transition-all p-2 rounded-full hover:bg-[#006e2a]/10"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              restore
-            </span>
-          </button>
-          <button
-            onClick={() => onForceDelete(item)}
-            title="Hapus Permanen"
-            className="text-[#3f4945]/40 hover:text-red-500 transition-all p-2 rounded-full hover:bg-red-50"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              delete_forever
-            </span>
-          </button>
+          {canManage && (
+            <button
+              onClick={() => onRestore(item)}
+              title="Pulihkan"
+              className="text-[#3f4945]/40 hover:text-[#006e2a] transition-all p-2 rounded-full hover:bg-[#006e2a]/10"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                restore
+              </span>
+            </button>
+          )}
+          {canManage && (
+            <button
+              onClick={() => onForceDelete(item)}
+              title="Hapus Permanen"
+              className="text-[#3f4945]/40 hover:text-red-500 transition-all p-2 rounded-full hover:bg-red-50"
+            >
+              <span className="material-symbols-outlined text-[20px]">
+                delete_forever
+              </span>
+            </button>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-2 flex-wrap">
@@ -214,6 +222,8 @@ function TrashCard({ item, onRestore, onForceDelete }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function RecycleBinProgram() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("master_data.program.manage");
   const { data: trashData, isLoading, isError } = useTrashProgram();
   const restoreMut = useRestoreProgram();
   const forceDeleteMut = useForceDeleteProgram();

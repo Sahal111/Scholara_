@@ -53,6 +53,8 @@ function SkeletonPage() {
 
 // ── DEAD: inline ModalEditSemester, MetricCard, KalenderItem — replaced by imports
 export default function DetailSemester() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("master_data.tahun_ajaran.manage");
   const { taId, semesterNama } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -876,12 +878,14 @@ export default function DetailSemester() {
                     event_busy
                   </span>
                   <p className="text-sm">Belum ada event kalender.</p>
-                  <Link
-                    to="/kepsek/kalender"
-                    className="text-[#006e2a] text-xs font-bold hover:underline"
-                  >
-                    Tambah event →
-                  </Link>
+                  {canManage && (
+                    <Link
+                      to="/kepsek/kalender"
+                      className="text-[#006e2a] text-xs font-bold hover:underline"
+                    >
+                      Tambah event →
+                    </Link>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col gap-8">

@@ -91,6 +91,12 @@ function SkeletonStatCard() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function MasterGuru() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("master_data.guru.create");
+  const canUpdate = hasPermission("master_data.guru.update");
+  const canDelete = hasPermission("master_data.guru.delete");
+  const canImport = hasPermission("master_data.guru.import");
+  const canExport = hasPermission("master_data.guru.export");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
@@ -213,39 +219,43 @@ export default function MasterGuru() {
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             {/* Import / Export pill */}
-            <div className="flex items-center bg-surface-container-low/70 p-1.5 rounded-2xl border border-outline-variant/30">
-              <button
-                onClick={() => setImportOpen(true)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-on-background text-sm font-semibold hover:bg-surface-variant transition-all"
-              >
-                <span className="material-symbols-outlined text-[20px]">
-                  upload
-                </span>
-                <span className="hidden sm:inline">Import</span>
-              </button>
-              <div className="w-px h-6 bg-outline-variant/30 mx-1" />
-              <button
-                onClick={() => setExportOpen(true)}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-on-background text-sm font-semibold hover:bg-surface-variant transition-all"
-              >
-                <span className="material-symbols-outlined text-[20px]">
-                  download
-                </span>
-                <span className="hidden sm:inline">Export</span>
-              </button>
-            </div>
+            {(canImport || canExport) && (
+              <div className="flex items-center bg-surface-container-low/70 p-1.5 rounded-2xl border border-outline-variant/30">
+                <button
+                  onClick={() => setImportOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-on-background text-sm font-semibold hover:bg-surface-variant transition-all"
+                >
+                  <span className="material-symbols-outlined text-[20px]">
+                    upload
+                  </span>
+                  <span className="hidden sm:inline">Import</span>
+                </button>
+                <div className="w-px h-6 bg-outline-variant/30 mx-1" />
+                <button
+                  onClick={() => setExportOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-on-background text-sm font-semibold hover:bg-surface-variant transition-all"
+                >
+                  <span className="material-symbols-outlined text-[20px]">
+                    download
+                  </span>
+                  <span className="hidden sm:inline">Export</span>
+                </button>
+              </div>
+            )}
 
-            {/* Tambah Guru — hijau gelap sesuai template */}
-            <button
-              onClick={() => navigate("/operator/master/guru/tambah")}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-bold hover:-translate-y-0.5 hover:shadow-xl active:scale-95 transition-all shadow-lg"
-              style={{ backgroundColor: "#00342b" }}
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                person_add
-              </span>
-              <span>Tambah Guru</span>
-            </button>
+            {/* Tambah Guru */}
+            {canCreate && (
+              <button
+                onClick={() => navigate("/operator/master/guru/tambah")}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-bold hover:-translate-y-0.5 hover:shadow-xl active:scale-95 transition-all shadow-lg"
+                style={{ backgroundColor: "#00342b" }}
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  person_add
+                </span>
+                <span>Tambah Guru</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -592,20 +602,24 @@ export default function MasterGuru() {
                                 edit
                               </span>
                             </button>
-                            <button
-                              onClick={() => {
-                                if (
-                                  confirm(`Hapus data guru ${g.nama_lengkap}?`)
-                                )
-                                  hapus.mutate(g.nuptk);
-                              }}
-                              title="Hapus"
-                              className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-error-container/20 transition-colors"
-                            >
-                              <span className="material-symbols-outlined text-[20px]">
-                                delete
-                              </span>
-                            </button>
+                            {canDelete && (
+                              <button
+                                onClick={() => {
+                                  if (
+                                    confirm(
+                                      `Hapus data guru ${g.nama_lengkap}?`,
+                                    )
+                                  )
+                                    hapus.mutate(g.nuptk);
+                                }}
+                                title="Hapus"
+                                className="p-1.5 text-on-surface-variant hover:text-error rounded-lg hover:bg-error-container/20 transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-[20px]">
+                                  delete
+                                </span>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

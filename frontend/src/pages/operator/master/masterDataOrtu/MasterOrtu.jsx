@@ -132,6 +132,12 @@ function StatCard({
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function MasterOrtu() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("master_data.orang_tua.create");
+  const canUpdate = hasPermission("master_data.orang_tua.update");
+  const canDelete = hasPermission("master_data.orang_tua.delete");
+  const canImport = hasPermission("master_data.orang_tua.import");
+  const canExport = hasPermission("master_data.orang_tua.export");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -278,31 +284,37 @@ export default function MasterOrtu() {
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             {/* Import / Export pill */}
             <div className="flex items-center bg-surface-container-low/70 p-1.5 rounded-2xl border border-outline-variant/30">
-              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-on-background text-sm font-semibold hover:bg-surface-variant transition-all">
-                <span className="material-symbols-outlined text-[20px]">
-                  upload
-                </span>
-                <span className="hidden sm:inline">Import</span>
-              </button>
+              {canImport && (
+                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-on-background text-sm font-semibold hover:bg-surface-variant transition-all">
+                  <span className="material-symbols-outlined text-[20px]">
+                    upload
+                  </span>
+                  <span className="hidden sm:inline">Import</span>
+                </button>
+              )}
               <div className="w-px h-6 bg-outline-variant/30 mx-1" />
-              <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-on-background text-sm font-semibold hover:bg-surface-variant transition-all">
-                <span className="material-symbols-outlined text-[20px]">
-                  download
-                </span>
-                <span className="hidden sm:inline">Export</span>
-              </button>
+              {canExport && (
+                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-on-background text-sm font-semibold hover:bg-surface-variant transition-all">
+                  <span className="material-symbols-outlined text-[20px]">
+                    download
+                  </span>
+                  <span className="hidden sm:inline">Export</span>
+                </button>
+              )}
             </div>
             {/* Tambah Orang Tua */}
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-bold hover:-translate-y-0.5 hover:shadow-xl active:scale-95 transition-all shadow-lg"
-              style={{ backgroundColor: "#00342b" }}
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                person_add
-              </span>
-              <span>Tambah Orang Tua</span>
-            </button>
+            {canCreate && (
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-bold hover:-translate-y-0.5 hover:shadow-xl active:scale-95 transition-all shadow-lg"
+                style={{ backgroundColor: "#00342b" }}
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  person_add
+                </span>
+                <span>Tambah Orang Tua</span>
+              </button>
+            )}
           </div>
         </div>
 

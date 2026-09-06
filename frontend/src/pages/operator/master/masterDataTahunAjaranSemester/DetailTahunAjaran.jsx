@@ -21,6 +21,8 @@ const ModalChecklistKesiapan = ModalChecklistKesiapanComp;
 
 // ── Main Page Component ──────────────────────────────────────────────────────
 export default function DetailTahunAjaran() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("master_data.tahun_ajaran.manage");
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -2426,12 +2428,14 @@ export default function DetailTahunAjaran() {
             <p className="text-sm font-medium">
               Belum ada kelas yang terdaftar pada tahun ajaran ini.
             </p>
-            <button
-              onClick={() => navigate("/operator/master/kelas")}
-              className="text-[#006e2a] text-xs font-bold hover:underline"
-            >
-              + Tambah Kelas Baru
-            </button>
+            {canManage && (
+              <button
+                onClick={() => navigate("/operator/master/kelas")}
+                className="text-[#006e2a] text-xs font-bold hover:underline"
+              >
+                + Tambah Kelas Baru
+              </button>
+            )}
           </div>
         ) : (
           <div className="overflow-x-auto -mx-6 sm:mx-0">

@@ -436,6 +436,12 @@ function KodeRegistrasiPanel() {
 
 // ── Main Page ──────────────────────────────────────────────
 export default function ManajemenAkun() {
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("pengaturan.akun.create");
+  const canUpdate = hasPermission("pengaturan.akun.update");
+  const canDelete = hasPermission("pengaturan.akun.delete");
+  const canImport = hasPermission("pengaturan.akun.import");
+  const canExport = hasPermission("pengaturan.akun.export");
   const queryClient = useQueryClient();
   const [roleFilter, setRoleFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -478,13 +484,15 @@ export default function ManajemenAkun() {
             Kelola akun operator, guru, kepala sekolah, dan orang tua
           </p>
         </div>
-        <button
-          onClick={() => setModalOpen(true)}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Tambah Akun
-        </button>
+        {canCreate && (
+          <button
+            onClick={() => setModalOpen(true)}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Tambah Akun
+          </button>
+        )}
       </div>
 
       {/* Panel Kode Registrasi */}
@@ -610,21 +618,23 @@ export default function ManajemenAkun() {
                         </button>
 
                         {/* Hapus */}
-                        <button
-                          onClick={() => {
-                            if (
-                              confirm(
-                                `Hapus akun ${u.nama_lengkap}? Tindakan ini tidak bisa dibatalkan.`,
-                              )
-                            ) {
-                              deleteUser.mutate(u.id);
-                            }
-                          }}
-                          title="Hapus akun"
-                          className="p-2 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {canDelete && (
+                          <button
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  `Hapus akun ${u.nama_lengkap}? Tindakan ini tidak bisa dibatalkan.`,
+                                )
+                              ) {
+                                deleteUser.mutate(u.id);
+                              }
+                            }}
+                            title="Hapus akun"
+                            className="p-2 rounded-lg hover:bg-red-50 text-gray-500 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

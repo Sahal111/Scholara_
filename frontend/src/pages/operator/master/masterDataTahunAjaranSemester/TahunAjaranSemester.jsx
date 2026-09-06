@@ -34,6 +34,8 @@ const SemesterCard = SemesterCardComp;
 
 // ── Main Page Component ────────────────────────────────────────────────────────
 export default function TahunAjaran() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("master_data.tahun_ajaran.manage");
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -288,16 +290,20 @@ export default function TahunAjaran() {
               </span>
             </button>
 
-            <button
-              onClick={() => {
-                setEditData(null);
-                setModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary-container text-on-primary rounded-xl text-sm font-semibold hover:bg-on-primary-fixed-variant transition-colors shadow-sm"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-              Tambah Tahun Ajaran
-            </button>
+            {canManage && (
+              <button
+                onClick={() => {
+                  setEditData(null);
+                  setModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-primary-container text-on-primary rounded-xl text-sm font-semibold hover:bg-on-primary-fixed-variant transition-colors shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  add
+                </span>
+                Tambah Tahun Ajaran
+              </button>
+            )}
           </div>
         </div>
 
@@ -627,20 +633,24 @@ export default function TahunAjaran() {
                                     className="inline-flex"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <button
-                                      type="button"
-                                      onClick={(e) => handleOpenAction(e, t.id)}
-                                      title="Opsi"
-                                      className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                                        openActionId === t.id
-                                          ? "bg-[#00342b] text-white shadow-md"
-                                          : "text-[#3f4945]/70 hover:text-[#00342b] hover:bg-[#eceeed]"
-                                      }`}
-                                    >
-                                      <span className="material-symbols-outlined text-[20px]">
-                                        more_vert
-                                      </span>
-                                    </button>
+                                    {canManage && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) =>
+                                          handleOpenAction(e, t.id)
+                                        }
+                                        title="Opsi"
+                                        className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                                          openActionId === t.id
+                                            ? "bg-[#00342b] text-white shadow-md"
+                                            : "text-[#3f4945]/70 hover:text-[#00342b] hover:bg-[#eceeed]"
+                                        }`}
+                                      >
+                                        <span className="material-symbols-outlined text-[20px]">
+                                          more_vert
+                                        </span>
+                                      </button>
+                                    )}
                                   </div>
                                 </td>
                               </tr>

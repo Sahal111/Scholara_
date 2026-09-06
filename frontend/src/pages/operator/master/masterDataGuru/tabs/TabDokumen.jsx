@@ -259,15 +259,17 @@ export default function TabDokumen({ nuptk, guru }) {
               Kelola berkas identitas, ijazah, SK, dan sertifikat
             </p>
           </div>
-          <button
-            onClick={() => setModalUpload(true)}
-            className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-[18px]">
-              upload_file
-            </span>{" "}
-            Upload Dokumen
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => setModalUpload(true)}
+              className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[18px]">
+                upload_file
+              </span>{" "}
+              Upload Dokumen
+            </button>
+          )}
         </div>
 
         {/* Mini stats */}
@@ -388,15 +390,17 @@ export default function TabDokumen({ nuptk, guru }) {
                       </button>
                     </>
                   )}
-                  <button
-                    onClick={() =>
-                      confirm("Hapus dokumen ini?") &&
-                      deleteDokumen.mutate(d.id)
-                    }
-                    className="text-xs text-red-500 hover:underline ml-auto"
-                  >
-                    Hapus
-                  </button>
+                  {canDelete && (
+                    <button
+                      onClick={() =>
+                        confirm("Hapus dokumen ini?") &&
+                        deleteDokumen.mutate(d.id)
+                      }
+                      className="text-xs text-red-500 hover:underline ml-auto"
+                    >
+                      Hapus
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
