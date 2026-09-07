@@ -5,15 +5,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
 import { tahunAjaranKeys } from "../../../../hooks/api/useTahunAjaran";
-import ModalTahunAjaranComp from "./components/ModalTahunAjaran";
-import ModalChecklistKesiapanComp from "./components/ModalChecklistKesiapan";
+import ModalTahunAjaranComp from "../../../operator/master/masterDataTahunAjaranSemester/components/ModalTahunAjaran";
+import ModalChecklistKesiapanComp from "../../../operator/master/masterDataTahunAjaranSemester/components/ModalChecklistKesiapan";
 import {
   fmt,
   fmtLong,
   daysBetween,
   daysRemaining,
   calcProgress,
-} from "./utils/tahunAjaranHelpers";
+} from "../../../operator/master/masterDataTahunAjaranSemester/utils/tahunAjaranHelpers";
 
 // ── Alias — komponen dipindah ke ./components/ ────────────────────────────────
 const ModalEditTahunAjaran = ModalTahunAjaranComp;
