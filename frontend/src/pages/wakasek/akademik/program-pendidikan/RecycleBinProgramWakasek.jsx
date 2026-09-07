@@ -6,7 +6,7 @@ import {
   useRestoreProgram,
   useForceDeleteProgram,
 } from "../../../../hooks/api/useProgramPendidikan";
-import { JENIS_ICON } from "../../../operator/master/masterDataProgram/components/ProgramTable";
+import { JENIS_ICON } from "./components/ProgramTable";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -290,7 +290,7 @@ export default function RecycleBinProgram() {
         <section className="pt-6 pb-4 flex flex-col gap-4 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <Link
-              to="/operator/master/program-pendidikan"
+              to="/wakasek/program-pendidikan"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-md hover:bg-[#e6e9e8] text-[#00342b] rounded-2xl transition-all border border-[#bfc9c4]/30 shadow-sm group w-fit"
             >
               <span className="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">
