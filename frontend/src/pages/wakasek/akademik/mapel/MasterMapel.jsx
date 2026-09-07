@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../../../contexts/AuthContext";
 import {
   useMapelList,
   useMapelStats,
@@ -12,12 +13,7 @@ import Confirm from "../../../../components/ui/Confirm";
 import MapelTable from "./components/MapelTable";
 import { MapelStatsGrid, MapelToolbar } from "./components/MapelHelpers";
 import toast from "react-hot-toast";
-import {
-  Upload,
-  Download,
-  Plus,
-  BookOpen,
-} from "lucide-react";
+import { Upload, Download, Plus, BookOpen } from "lucide-react";
 
 /* ─── Halaman Utama: Master Mata Pelajaran ───────────────────── */
 export default function MasterMapel() {
@@ -61,7 +57,12 @@ export default function MasterMapel() {
   const list = data?.data ?? [];
   const meta = data?.meta ?? {};
   const lastPage = meta?.last_page ?? 1;
-  const hasActiveFilters = !!(filterKelompok || filterTingkat || filterStatus || search);
+  const hasActiveFilters = !!(
+    filterKelompok ||
+    filterTingkat ||
+    filterStatus ||
+    search
+  );
 
   /* ── Handlers ── */
   const openTambah = () => {
@@ -135,34 +136,38 @@ export default function MasterMapel() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {canManage && <button
-            onClick={() => setImportOpen(true)}
-            className="px-5 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2 font-semibold text-sm bg-white"
-          >
-            <Upload size={16} />
-            Import
-          </button>}
-          {canManage && <button
-            onClick={handleExport}
-            disabled={exportLoading}
-            className="px-5 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2 font-semibold text-sm bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {exportLoading ? (
-              <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Download size={16} />
-            )}
-            {exportLoading ? "Mengekspor..." : "Export"}
-          </button>}
-          {canManage && 
-          <button
-            onClick={openTambah}
-            className="bg-emerald-700 text-white px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-700/25 hover:bg-emerald-800 hover:-translate-y-0.5 transition-all duration-200"
-          >
-            <Plus size={18} />
-            Tambah Mapel
-          </button>
-          }
+          {canManage && (
+            <button
+              onClick={() => setImportOpen(true)}
+              className="px-5 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2 font-semibold text-sm bg-white"
+            >
+              <Upload size={16} />
+              Import
+            </button>
+          )}
+          {canManage && (
+            <button
+              onClick={handleExport}
+              disabled={exportLoading}
+              className="px-5 py-2.5 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2 font-semibold text-sm bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {exportLoading ? (
+                <div className="w-4 h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Download size={16} />
+              )}
+              {exportLoading ? "Mengekspor..." : "Export"}
+            </button>
+          )}
+          {canManage && (
+            <button
+              onClick={openTambah}
+              className="bg-emerald-700 text-white px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-700/25 hover:bg-emerald-800 hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <Plus size={18} />
+              Tambah Mapel
+            </button>
+          )}
         </div>
       </div>
 

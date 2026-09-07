@@ -27,7 +27,7 @@ import MasterSiswa from "./pages/operator/master/masterDataSiswa/MasterSiswa";
 import TambahEditSiswa from "./pages/operator/master/masterDataSiswa/TambahEditSiswa";
 import MasterKelas from "./pages/operator/master/masterDataKelas/MasterKelas";
 import MasterOrtu from "./pages/operator/master/masterDataOrtu/MasterOrtu";
-import TahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/TahunAjaranSemester";
+import TahunAjaranSemester from "./pages/wakasek/akademik/tahun-ajaran/TahunAjaranSemester";
 import ApprovalOrtu from "./pages/operator/ApprovalOrtu";
 import DetailGuru from "./pages/operator/master/masterDataGuru/DetailGuru";
 import DetailSiswa from "./pages/operator/master/masterDataSiswa/DetailSiswa";
@@ -39,11 +39,9 @@ import NaikKelas from "./pages/operator/master/NaikKelas";
 import DetailTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/DetailTahunAjaran";
 import DetailSemester from "./pages/wakasek/akademik/tahun-ajaran/DetailSemester";
 import RecycleBinTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/components/RecycleBinTahunAjaran";
-import RecycleBinProgram from "./pages/operator/master/masterDataProgram/RecycleBinProgram";
 import ArsipTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/components/ArsipTahunAjaran";
 import DetailArsipTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/DetailArsipTahunAjaran";
 import MasterMapel from "./pages/wakasek/akademik/mapel/MasterMapel";
-import MasterProgram from "./pages/operator/master/masterDataProgram/MasterProgram";
 import MasterJadwal from "./pages/wakasek/akademik/jadwal/MasterJadwal";
 import PengumumanOperator from "./pages/operator/master/PengumumanOperator";
 import GaleriOperator from "./pages/operator/master/GaleriOperator";
@@ -111,9 +109,8 @@ import MasterMapelWakasek from "./pages/wakasek/akademik/mapel/MasterMapelWakase
 import MasterKelasWakasek from "./pages/wakasek/akademik/kelas/MasterKelasWakasek";
 import DetailKelasWakasek from "./pages/wakasek/akademik/kelas/DetailKelasWakasek";
 import DetailKelasPeriodeAkademikWakasek from "./pages/wakasek/akademik/kelas/DetailKelasPeriodeAkademikWakasek";
-// Wakasek reuse komponen operator untuk modul yang identik secara fungsional
-// DetailTahunAjaran, DetailSemester, DetailArsipTahunAjaran sudah di-import di blok operator (baris ~39-44)
-import TahunAjaranSemester from "./pages/wakasek/akademik/tahun-ajaran/TahunAjaranSemester";
+// Wakasek reuse TahunAjaranSemester, DetailTahunAjaran, DetailSemester, DetailArsipTahunAjaran
+// yang sudah di-import di blok atas (baris ~30, 39-44)
 // Wakasek halaman khusus (view-only / wakasek API prefix)
 import DataGuruWakasek from "./pages/wakasek/DataGuruWakasek";
 import DetailGuruWakasek from "./pages/wakasek/DetailGuruWakasek";
@@ -205,7 +202,12 @@ export default function App() {
         <Route path="master/siswa/edit/:nisn" element={<TambahEditSiswa />} />
         <Route path="master/kelas" element={<MasterKelas />} />
         <Route path="master/ortu" element={<MasterOrtu />} />
-        <Route path="master/tahun-ajaran" element={<TahunAjaran />} />
+        <Route
+          path="master/tahun-ajaran"
+          element={
+            <TahunAjaranSemester basePath="/operator/master/tahun-ajaran" />
+          }
+        />
         <Route path="ortu-pending" element={<ApprovalOrtu />} />
         <Route path="master/guru/:nuptk" element={<DetailGuru />} />
         <Route path="master/siswa/:nisn" element={<DetailSiswa />} />
@@ -229,17 +231,20 @@ export default function App() {
           path="master/tahun-ajaran/arsip/:id"
           element={<DetailArsipTahunAjaran />}
         />
-        <Route path="master/tahun-ajaran/:id" element={<DetailTahunAjaran />} />
+        <Route
+          path="master/tahun-ajaran/:id"
+          element={
+            <DetailTahunAjaran
+              basePath="/operator/master/tahun-ajaran"
+              kelasPath="/operator/master/kelas"
+            />
+          }
+        />
         <Route
           path="master/tahun-ajaran/:taId/semester/:semesterNama"
           element={<DetailSemester />}
         />
         <Route path="master/mapel" element={<MasterMapel />} />
-        <Route
-          path="master/program-pendidikan/recycle-bin"
-          element={<RecycleBinProgram />}
-        />
-        <Route path="master/program-pendidikan" element={<MasterProgram />} />
         <Route path="master/jadwal-pelajaran" element={<MasterJadwal />} />
         <Route path="master/pengumuman" element={<PengumumanOperator />} />
         <Route path="master/galeri" element={<GaleriOperator />} />

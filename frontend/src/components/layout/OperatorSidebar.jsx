@@ -59,13 +59,6 @@ const MENU_SECTIONS = [
         label: "Mata Pelajaran",
         readonly: true,
       },
-      {
-        to: "/operator/master/program-pendidikan",
-        end: false,
-        icon: "account_tree",
-        label: "Program Pendidikan",
-        readonly: true,
-      },
     ],
   },
   {
