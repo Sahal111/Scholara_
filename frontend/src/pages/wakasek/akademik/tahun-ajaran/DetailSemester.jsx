@@ -97,7 +97,7 @@ export default function DetailSemester() {
         </span>
         <p className="font-semibold text-[#00342b]">Data tidak ditemukan.</p>
         <button
-          onClick={() => navigate("/operator/master/tahun-ajaran")}
+          onClick={() => navigate("/wakasek/tahun-ajaran")}
           className="text-[#006e2a] text-sm hover:underline flex items-center gap-1"
         >
           <span className="material-symbols-outlined text-[16px]">
@@ -125,7 +125,7 @@ export default function DetailSemester() {
           Semester "{semesterNama}" tidak ditemukan.
         </p>
         <button
-          onClick={() => navigate(`/operator/master/tahun-ajaran/${taId}`)}
+          onClick={() => navigate(`/wakasek/tahun-ajaran/${taId}`)}
           className="text-[#006e2a] text-sm hover:underline flex items-center gap-1"
         >
           <span className="material-symbols-outlined text-[16px]">
@@ -262,7 +262,7 @@ export default function DetailSemester() {
             <div className="relative z-10 flex flex-col gap-3 max-w-2xl">
               <nav className="flex items-center gap-1.5 text-sm text-[#3f4945] font-medium flex-wrap">
                 <Link
-                  to="/operator/master/tahun-ajaran"
+                  to="/wakasek/tahun-ajaran"
                   className="hover:text-[#006e2a] transition-colors"
                 >
                   Tahun Ajaran
@@ -271,7 +271,7 @@ export default function DetailSemester() {
                   chevron_right
                 </span>
                 <Link
-                  to={`/operator/master/tahun-ajaran/${taId}`}
+                  to={`/wakasek/tahun-ajaran/${taId}`}
                   className="hover:text-[#006e2a] transition-colors"
                 >
                   {ta.tahun}
@@ -338,7 +338,7 @@ export default function DetailSemester() {
                 Edit Semester
               </button>
               <button
-                onClick={() => navigate("/operator/master/tahun-ajaran")}
+                onClick={() => navigate("/wakasek/tahun-ajaran")}
                 className="w-12 h-12 bg-white/80 backdrop-blur-md border border-[#bfc9c4]/30 hover:bg-[#eceeed] rounded-full flex items-center justify-center text-[#00342b] transition-all shadow-sm hover:shadow-md"
               >
                 <span className="material-symbols-outlined text-[22px]">
@@ -1026,7 +1026,7 @@ export default function DetailSemester() {
           </div>
           <div className="mt-12 flex justify-center">
             <Link
-              to="/operator/master/mapel"
+              to="/wakasek/mapel"
               className="px-8 py-3 rounded-xl border border-[#006e2a]/30 text-[#006e2a] font-bold text-xs uppercase tracking-widest hover:bg-[#006e2a]/5 transition-all flex items-center gap-2 group"
             >
               Lihat Semua Mata Pelajaran
@@ -1060,7 +1060,7 @@ export default function DetailSemester() {
             {kelasFilter.slice(0, 8).map((k) => (
               <div
                 key={k.id}
-                onClick={() => navigate(`/operator/master/kelas/${k.id}`)}
+                onClick={() => navigate(`/wakasek/kelas/${k.id}`)}
                 className="bg-white/70 backdrop-blur-md border border-white/40 rounded-3xl p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group cursor-pointer"
               >
                 <div className="flex justify-between items-start mb-6">
@@ -2377,26 +2377,26 @@ export default function DetailSemester() {
             const leftLink = isGanjil
               ? taPrev
                 ? {
-                    to: `/operator/master/tahun-ajaran/${taPrev.id}/semester/Genap`,
+                    to: `/wakasek/tahun-ajaran/${taPrev.id}/semester/Genap`,
                     label: "Semester Sebelumnya",
                     title: `${taPrev.tahun} — Genap`,
                   }
                 : null
               : {
-                  to: `/operator/master/tahun-ajaran/${taId}/semester/Ganjil`,
+                  to: `/wakasek/tahun-ajaran/${taId}/semester/Ganjil`,
                   label: "Semester Sebelumnya",
                   title: `${ta.tahun} — Ganjil`,
                 };
 
             const rightLink = isGanjil
               ? {
-                  to: `/operator/master/tahun-ajaran/${taId}/semester/Genap`,
+                  to: `/wakasek/tahun-ajaran/${taId}/semester/Genap`,
                   label: "Semester Selanjutnya",
                   title: `${ta.tahun} — Genap`,
                 }
               : taNext
                 ? {
-                    to: `/operator/master/tahun-ajaran/${taNext.id}/semester/Ganjil`,
+                    to: `/wakasek/tahun-ajaran/${taNext.id}/semester/Ganjil`,
                     label: "Semester Selanjutnya",
                     title: `${taNext.tahun} — Ganjil`,
                   }

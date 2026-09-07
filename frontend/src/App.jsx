@@ -27,7 +27,7 @@ import MasterSiswa from "./pages/operator/master/masterDataSiswa/MasterSiswa";
 import TambahEditSiswa from "./pages/operator/master/masterDataSiswa/TambahEditSiswa";
 import MasterKelas from "./pages/operator/master/masterDataKelas/MasterKelas";
 import MasterOrtu from "./pages/operator/master/masterDataOrtu/MasterOrtu";
-import TahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/TahunAjaranSemester";
+import TahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/TahunAjaranSemester";
 import ApprovalOrtu from "./pages/operator/ApprovalOrtu";
 import DetailGuru from "./pages/operator/master/masterDataGuru/DetailGuru";
 import DetailSiswa from "./pages/operator/master/masterDataSiswa/DetailSiswa";
@@ -36,15 +36,15 @@ import DetailKelas from "./pages/operator/master/masterDataKelas/DetailKelas";
 import DetailKelasPeriodeAkademik from "./pages/operator/master/masterDataKelas/DetailKelasPeriodeAkademik";
 import DetailOrtu from "./pages/operator/master/masterDataOrtu/DetailOrtu";
 import NaikKelas from "./pages/operator/master/NaikKelas";
-import DetailTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailTahunAjaran";
-import DetailSemester from "./pages/operator/master/masterDataTahunAjaranSemester/DetailSemester";
-import RecycleBinTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/components/RecycleBinTahunAjaran";
+import DetailTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/DetailTahunAjaran";
+import DetailSemester from "./pages/wakasek/akademik/tahun-ajaran/DetailSemester";
+import RecycleBinTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/components/RecycleBinTahunAjaran";
 import RecycleBinProgram from "./pages/operator/master/masterDataProgram/RecycleBinProgram";
-import ArsipTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/components/ArsipTahunAjaran";
-import DetailArsipTahunAjaran from "./pages/operator/master/masterDataTahunAjaranSemester/DetailArsipTahunAjaran";
-import MasterMapel from "./pages/operator/master/masterDataMapel/MasterMapel";
+import ArsipTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/components/ArsipTahunAjaran";
+import DetailArsipTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/DetailArsipTahunAjaran";
+import MasterMapel from "./pages/wakasek/akademik/mapel/MasterMapel";
 import MasterProgram from "./pages/operator/master/masterDataProgram/MasterProgram";
-import MasterJadwal from "./pages/operator/master/MasterJadwal";
+import MasterJadwal from "./pages/wakasek/akademik/jadwal/MasterJadwal";
 import PengumumanOperator from "./pages/operator/master/PengumumanOperator";
 import GaleriOperator from "./pages/operator/master/GaleriOperator";
 import DetailDataOrtu from "./pages/operator/master/masterDataOrtu/DetailDataOrtu";
@@ -113,7 +113,7 @@ import DetailKelasWakasek from "./pages/wakasek/akademik/kelas/DetailKelasWakase
 import DetailKelasPeriodeAkademikWakasek from "./pages/wakasek/akademik/kelas/DetailKelasPeriodeAkademikWakasek";
 // Wakasek reuse komponen operator untuk modul yang identik secara fungsional
 // DetailTahunAjaran, DetailSemester, DetailArsipTahunAjaran sudah di-import di blok operator (baris ~39-44)
-import TahunAjaranSemester from "./pages/operator/master/masterDataTahunAjaranSemester/TahunAjaranSemester";
+import TahunAjaranSemester from "./pages/wakasek/akademik/tahun-ajaran/TahunAjaranSemester";
 // Wakasek halaman khusus (view-only / wakasek API prefix)
 import DataGuruWakasek from "./pages/wakasek/DataGuruWakasek";
 import DetailGuruWakasek from "./pages/wakasek/DetailGuruWakasek";

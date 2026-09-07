@@ -5,15 +5,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
 import { tahunAjaranKeys } from "../../../../hooks/api/useTahunAjaran";
-import ModalTahunAjaranComp from "../../../operator/master/masterDataTahunAjaranSemester/components/ModalTahunAjaran";
-import ModalChecklistKesiapanComp from "../../../operator/master/masterDataTahunAjaranSemester/components/ModalChecklistKesiapan";
+import ModalTahunAjaranComp from "./components/ModalTahunAjaran";
+import ModalChecklistKesiapanComp from "./components/ModalChecklistKesiapan";
 import {
   fmt,
   fmtLong,
   daysBetween,
   daysRemaining,
   calcProgress,
-} from "../../../operator/master/masterDataTahunAjaranSemester/utils/tahunAjaranHelpers";
+} from "./utils/tahunAjaranHelpers";
 
 // ── Alias — komponen dipindah ke ./components/ ────────────────────────────────
 const ModalEditTahunAjaran = ModalTahunAjaranComp;
@@ -76,7 +76,7 @@ export default function DetailTahunAjaran() {
       api.patch(`/operator/master-data/tahun-ajaran/${id}/arsip`),
     onSuccess: () => {
       toast.success("Tahun ajaran berhasil diarsipkan.");
-      navigate("/operator/master/tahun-ajaran");
+      navigate("/wakasek/tahun-ajaran");
     },
     onError: (err) =>
       toast.error(
@@ -125,7 +125,7 @@ export default function DetailTahunAjaran() {
           Tahun ajaran tidak ditemukan.
         </p>
         <button
-          onClick={() => navigate("/operator/master/tahun-ajaran")}
+          onClick={() => navigate("/wakasek/tahun-ajaran")}
           className="px-6 py-2.5 rounded-full bg-[#00342b] text-white text-xs font-bold hover:bg-[#004d40] flex items-center gap-2 transition-colors"
         >
           <span className="material-symbols-outlined text-[16px]">
@@ -238,7 +238,7 @@ export default function DetailTahunAjaran() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in-up">
         <div className="flex items-center gap-4 sm:gap-6 w-full flex-wrap">
           <button
-            onClick={() => navigate("/operator/master/tahun-ajaran")}
+            onClick={() => navigate("/wakasek/tahun-ajaran")}
             className="flex items-center gap-2 px-3.5 py-1.5 text-[#3f4945] hover:text-[#00342b] hover:bg-[#00342b]/5 rounded-xl transition-all duration-200 group border border-transparent hover:border-[#00342b]/10"
           >
             <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">
@@ -249,7 +249,7 @@ export default function DetailTahunAjaran() {
           <div className="h-4 w-px bg-[#bfc9c4]/40 hidden sm:block"></div>
           <nav className="flex items-center gap-2 ml-auto text-xs flex-wrap">
             <button
-              onClick={() => navigate("/operator/master/tahun-ajaran")}
+              onClick={() => navigate("/wakasek/tahun-ajaran")}
               className="font-medium text-[#3f4945]/60 hover:text-[#00342b] transition-colors"
             >
               Master Data
@@ -258,7 +258,7 @@ export default function DetailTahunAjaran() {
               chevron_right
             </span>
             <button
-              onClick={() => navigate("/operator/master/tahun-ajaran")}
+              onClick={() => navigate("/wakasek/tahun-ajaran")}
               className="font-medium text-[#3f4945]/60 hover:text-[#00342b] transition-colors"
             >
               Tahun Ajaran &amp; Semester
@@ -1626,9 +1626,7 @@ export default function DetailTahunAjaran() {
 
               <button
                 onClick={() =>
-                  navigate(
-                    `/operator/master/tahun-ajaran/${id}/semester/Ganjil`,
-                  )
+                  navigate(`/wakasek/tahun-ajaran/${id}/semester/Ganjil`)
                 }
                 className="w-full py-3.5 sm:py-4 bg-[#00342b] text-white font-bold rounded-full shadow-xl shadow-[#00342b]/20 hover:bg-[#004d40] hover:shadow-[#00342b]/40 hover:scale-[1.01] transition-all flex items-center justify-center gap-3 group/btn text-sm"
               >
@@ -1757,7 +1755,7 @@ export default function DetailTahunAjaran() {
 
               <button
                 onClick={() =>
-                  navigate(`/operator/master/tahun-ajaran/${id}/semester/Genap`)
+                  navigate(`/wakasek/tahun-ajaran/${id}/semester/Genap`)
                 }
                 className="w-full py-3.5 sm:py-4 bg-white border-2 border-[#bfc9c4]/50 group-hover:border-[#00342b]/50 group-hover:text-[#00342b] hover:border-[#00342b] hover:text-[#00342b] hover:shadow-[0_0_15px_rgba(0,110,42,0.2)] text-[#3f4945]/70 font-bold rounded-full transition-all duration-300 flex items-center justify-center gap-3 group/btn text-sm"
               >
@@ -2411,7 +2409,7 @@ export default function DetailTahunAjaran() {
               />
             </div>
             <button
-              onClick={() => navigate("/operator/master/kelas")}
+              onClick={() => navigate("/wakasek/kelas")}
               className="px-4 py-2 rounded-full bg-[#00342b] text-white text-xs font-bold hover:bg-[#004d40] transition-colors flex items-center gap-1.5 shrink-0"
             >
               <span className="material-symbols-outlined text-[16px]">add</span>
@@ -2430,7 +2428,7 @@ export default function DetailTahunAjaran() {
             </p>
             {canManage && (
               <button
-                onClick={() => navigate("/operator/master/kelas")}
+                onClick={() => navigate("/wakasek/kelas")}
                 className="text-[#006e2a] text-xs font-bold hover:underline"
               >
                 + Tambah Kelas Baru
@@ -2526,9 +2524,7 @@ export default function DetailTahunAjaran() {
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <button
-                        onClick={() =>
-                          navigate(`/operator/master/kelas/${k.id}`)
-                        }
+                        onClick={() => navigate(`/wakasek/kelas/${k.id}`)}
                         className="px-3 py-1 rounded-full border border-[#00342b]/20 hover:border-[#00342b] text-[#00342b] hover:bg-[#00342b]/5 font-bold transition-all text-[11px]"
                       >
                         Detail
@@ -2762,9 +2758,7 @@ export default function DetailTahunAjaran() {
         {/* Previous Year Card */}
         {taPrev ? (
           <button
-            onClick={() =>
-              navigate(`/operator/master/tahun-ajaran/${taPrev.id}`)
-            }
+            onClick={() => navigate(`/wakasek/tahun-ajaran/${taPrev.id}`)}
             className="group flex items-center gap-4 sm:gap-5 p-3.5 sm:p-4 sm:pr-8 bg-white/50 hover:bg-white rounded-2xl border border-[#bfc9c4]/20 hover:border-[#006e2a]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 ease-out"
           >
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#006e2a]/10 flex items-center justify-center text-[#006e2a] group-hover:bg-[#006e2a] group-hover:text-white transition-all duration-500 shrink-0">
@@ -2790,9 +2784,7 @@ export default function DetailTahunAjaran() {
         {/* Next Year Card */}
         {taNext ? (
           <button
-            onClick={() =>
-              navigate(`/operator/master/tahun-ajaran/${taNext.id}`)
-            }
+            onClick={() => navigate(`/wakasek/tahun-ajaran/${taNext.id}`)}
             className="group flex items-center justify-end sm:justify-start gap-4 sm:gap-5 p-3.5 sm:p-4 sm:pl-8 bg-white/50 hover:bg-white rounded-2xl border border-[#bfc9c4]/20 hover:border-[#006e2a]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 ease-out"
           >
             <div className="flex flex-col text-right">

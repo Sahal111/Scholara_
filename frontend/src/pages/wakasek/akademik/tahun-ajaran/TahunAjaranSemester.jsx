@@ -35,9 +35,7 @@ const SemesterCard = SemesterCardComp;
 // ── Main Page Component ────────────────────────────────────────────────────────
 // Fix #14: terima basePath prop agar komponen bisa dipakai oleh operator maupun wakasek
 // tanpa hardcode /operator/master/tahun-ajaran di setiap navigate/Link.
-export default function TahunAjaran({
-  basePath = "/operator/master/tahun-ajaran",
-}) {
+export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
   const { hasPermission } = useAuth();
   const canManage = hasPermission("master_data.tahun_ajaran.manage");
   const queryClient = useQueryClient();

@@ -889,7 +889,7 @@ export default function DetailArsipTahunAjaran() {
             Coba Lagi
           </button>
           <button
-            onClick={() => navigate("/operator/master/tahun-ajaran/arsip")}
+            onClick={() => navigate("/wakasek/tahun-ajaran/arsip")}
             className="px-5 py-2 rounded-full bg-[#00342b] text-white text-xs font-bold flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[16px]">
@@ -1005,7 +1005,7 @@ export default function DetailArsipTahunAjaran() {
       {/* ━━━━━━ 1. BREADCRUMB ━━━━━━ */}
       <div className="flex items-center justify-between gap-4 flex-wrap animate-fade-in-up">
         <button
-          onClick={() => navigate("/operator/master/tahun-ajaran/arsip")}
+          onClick={() => navigate("/wakasek/tahun-ajaran/arsip")}
           className="flex items-center gap-2 px-3.5 py-1.5 text-[#3f4945] hover:text-[#00342b] hover:bg-[#00342b]/5 rounded-xl transition-all group border border-transparent hover:border-[#00342b]/10"
         >
           <span className="material-symbols-outlined text-[18px] group-hover:-translate-x-1 transition-transform">
@@ -1015,7 +1015,7 @@ export default function DetailArsipTahunAjaran() {
         </button>
         <nav className="flex items-center gap-2 text-xs">
           <Link
-            to="/operator/master/tahun-ajaran"
+            to="/wakasek/tahun-ajaran"
             className="font-medium text-[#3f4945]/60 hover:text-[#00342b] transition-colors"
           >
             Master Data
@@ -1024,7 +1024,7 @@ export default function DetailArsipTahunAjaran() {
             chevron_right
           </span>
           <Link
-            to="/operator/master/tahun-ajaran/arsip"
+            to="/wakasek/tahun-ajaran/arsip"
             className="font-medium text-[#3f4945]/60 hover:text-[#00342b] transition-colors"
           >
             Arsip
@@ -2022,9 +2022,7 @@ export default function DetailArsipTahunAjaran() {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-8 border-t border-[#bfc9c4]/15">
         {taPrev ? (
           <button
-            onClick={() =>
-              navigate(`/operator/master/tahun-ajaran/arsip/${taPrev.id}`)
-            }
+            onClick={() => navigate(`/wakasek/tahun-ajaran/arsip/${taPrev.id}`)}
             className="group flex items-center gap-4 p-4 bg-white hover:bg-[#f8faf9] rounded-2xl border border-[#bfc9c4]/20 hover:border-[#006e2a]/25 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
           >
             <div className="w-10 h-10 rounded-full bg-[#006e2a]/10 flex items-center justify-center text-[#006e2a] group-hover:bg-[#006e2a] group-hover:text-white transition-all duration-300 shrink-0">
@@ -2048,9 +2046,7 @@ export default function DetailArsipTahunAjaran() {
         )}
         {taNext ? (
           <button
-            onClick={() =>
-              navigate(`/operator/master/tahun-ajaran/arsip/${taNext.id}`)
-            }
+            onClick={() => navigate(`/wakasek/tahun-ajaran/arsip/${taNext.id}`)}
             className="group flex items-center justify-end gap-4 p-4 bg-white hover:bg-[#f8faf9] rounded-2xl border border-[#bfc9c4]/20 hover:border-[#006e2a]/25 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
           >
             <div className="text-right">
