@@ -363,7 +363,10 @@ export default function App() {
           path="tahun-ajaran"
           element={<TahunAjaranSemester basePath="/wakasek/tahun-ajaran" />}
         />
-        <Route path="tahun-ajaran/:id" element={<DetailTahunAjaran />} />
+        <Route
+          path="tahun-ajaran/:id"
+          element={<DetailTahunAjaran basePath="/wakasek/tahun-ajaran" />}
+        />
         {/* Bug #5a fix: param harus taId & semesterNama sesuai useParams() di DetailSemester.jsx */}
         <Route
           path="tahun-ajaran/:taId/semester/:semesterNama"
