@@ -253,7 +253,9 @@ export function WakasekSidebarContent({ onClose }) {
             {schoolName}
           </h1>
           <p className="text-[#69ff87]/70 text-[10px] font-semibold uppercase tracking-widest mt-0.5">
-            Waka Kurikulum
+            {user?.bidang_wakasek
+              ? `Waka ${user.bidang_wakasek}`
+              : "Wakil Kepala Sekolah"}
           </p>
         </div>
         {onClose && (
@@ -286,7 +288,11 @@ export function WakasekSidebarContent({ onClose }) {
             <p className="text-sm font-semibold text-white/90 truncate">
               {user?.nama_lengkap}
             </p>
-            <p className="text-[10px] text-white/40">Wakasek Kurikulum</p>
+            <p className="text-[10px] text-white/40">
+              {user?.bidang_wakasek
+                ? `Wakasek ${user.bidang_wakasek}`
+                : "Wakil Kepala Sekolah"}
+            </p>
           </div>
         </div>
       </div>

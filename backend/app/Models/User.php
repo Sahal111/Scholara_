@@ -54,7 +54,8 @@ class User extends Authenticatable
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'user_roles', 'user_id', 'role_id')
-            ->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class);
+            ->withoutGlobalScope(\App\Models\Scopes\SchoolScope::class)
+            ->withPivot('bidang'); // bidang_wakasek: Kurikulum|Kesiswaan|Sarpras|Humas
     }
 
     public function getRoleSlug(): ?string

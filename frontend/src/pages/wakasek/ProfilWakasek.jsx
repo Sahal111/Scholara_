@@ -23,6 +23,13 @@ import toast from "react-hot-toast";
 const BASE_URL =
   import.meta.env.VITE_API_URL?.replace("/api", "") ?? "http://127.0.0.1:8001";
 
+const BIDANG_OPTIONS = [
+  { value: "Kurikulum", label: "Wakasek Kurikulum" },
+  { value: "Kesiswaan", label: "Wakasek Kesiswaan" },
+  { value: "Sarpras", label: "Wakasek Sarpras" },
+  { value: "Humas", label: "Wakasek Humas" },
+];
+
 const FORM_DEFAULT = {
   email: "",
   no_hp: "",
@@ -30,6 +37,7 @@ const FORM_DEFAULT = {
   password_baru: "",
   password_baru_confirmation: "",
   foto: null,
+  bidang_wakasek: "",
 };
 
 function InfoRow({ label, value }) {
@@ -71,6 +79,8 @@ export default function ProfilWakasek() {
         );
       }
       if (values.foto) form.append("foto", values.foto);
+      // bidang_wakasek selalu dikirim (boleh kosong string → backend simpan null)
+      form.append("bidang_wakasek", values.bidang_wakasek ?? "");
       return api.post("/wakasek/profil/update", form, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -108,6 +118,7 @@ export default function ProfilWakasek() {
       ...FORM_DEFAULT,
       email: data?.user?.email ?? "",
       no_hp: data?.user?.no_hp ?? "",
+      bidang_wakasek: data?.user?.bidang_wakasek ?? "",
     });
     setIsEditing(true);
   };
@@ -198,7 +209,9 @@ export default function ProfilWakasek() {
               {user?.nama ?? "-"}
             </h1>
             <p className="text-indigo-200 text-base mt-1">
-              Wakil Kepala Sekolah Kurikulum
+              {user?.bidang_wakasek
+                ? `Wakil Kepala Sekolah Bidang ${user.bidang_wakasek}`
+                : "Wakil Kepala Sekolah"}
             </p>
 
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-4">
@@ -310,6 +323,41 @@ export default function ProfilWakasek() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Bidang Wakasek */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Bidang Jabatan
+                </label>
+                <div className="relative">
+                  <BookOpen className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  <select
+                    disabled={!isEditing}
+                    value={
+                      isEditing
+                        ? formData.bidang_wakasek
+                        : (user?.bidang_wakasek ?? "")
+                    }
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        bidang_wakasek: e.target.value,
+                      })
+                    }
+                    className="input-field pl-10 disabled:bg-gray-50 disabled:text-gray-500 disabled:border-gray-200 appearance-none"
+                  >
+                    <option value="">-- Belum ditentukan --</option>
+                    {BIDANG_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Bidang struktural sesuai SK pengangkatan
+                </p>
               </div>
 
               {/* Ganti password — hanya tampil saat edit */}

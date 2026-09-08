@@ -4,6 +4,7 @@ use App\Http\Controllers\Kepsek\KepsekController;
 use App\Http\Controllers\Kepsek\KalenderAkademikController;
 use App\Http\Controllers\PengumumanController;
 use App\Http\Controllers\MasterData\TahunAjaranController;
+use App\Http\Controllers\Wakasek\WakasekController;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -69,6 +70,8 @@ Route::middleware(['auth:sanctum', 'role:wakasek'])
         });
 
         // ── Profil wakasek sendiri ───────────────────────────────────────
-        Route::get('/profil', [KepsekController::class, 'profil']);
-        Route::post('/profil/update', [KepsekController::class, 'updateProfil']);
+        // Menggunakan WakasekController (bukan KepsekController) agar
+        // bidang_wakasek (Kurikulum|Kesiswaan|Sarpras|Humas) bisa dikelola.
+        Route::get('/profil', [WakasekController::class, 'profil']);
+        Route::post('/profil/update', [WakasekController::class, 'updateProfil']);
     });
