@@ -390,7 +390,7 @@ export default function DashboardOperator() {
   const pendingOrtu = stats?.pendingOrtu ?? 0;
 
   return (
-    <div className="flex-1 p-4 sm:p-6 lg:p-7 space-y-5 max-w-[1600px] mx-auto w-full">
+    <div className="flex-1 px-4 pt-2 pb-6 sm:px-5 sm:pt-2 space-y-4 max-w-[1600px] mx-auto w-full">
       {/* ── Greeting Header ─────────────────────────────────────── */}
       <div className="relative overflow-hidden bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/70 shadow-sm flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5 group">
         <div className="absolute -right-10 -top-10 w-44 h-44 bg-gradient-to-br from-blue-50 to-indigo-50/30 rounded-full blur-2xl pointer-events-none" />
