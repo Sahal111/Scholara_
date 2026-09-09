@@ -10,8 +10,8 @@ export default function OperatorLayout() {
       sidebar={<SidebarContent />}
       topBar={(onMenuClick) => <OperatorTopBar onMenuClick={onMenuClick} />}
       footer={<OperatorFooter />}
-      className="bg-[#f8faf9] text-[#191c1c]"
-      sidebarWidth={280}
+      className="bg-[#f8fafc] text-slate-800 antialiased"
+      sidebarWidth={256}
       renderContent={(location) =>
         location.pathname === "/operator/dashboard" ? (
           <Outlet />
