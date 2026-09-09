@@ -66,11 +66,18 @@ export default function AppLayout({
       return sidebar;
     }
     // Generic Sidebar
-    return <Sidebar menus={menus} onClose={withOnClose ? () => setSidebarOpen(false) : undefined} />;
+    return (
+      <Sidebar
+        menus={menus}
+        onClose={withOnClose ? () => setSidebarOpen(false) : undefined}
+      />
+    );
   };
 
   return (
-    <div className={`flex h-screen overflow-hidden ${className || "bg-gray-50"}`}>
+    <div
+      className={`flex h-screen overflow-hidden ${className || "bg-gray-50"}`}
+    >
       {/* Desktop Sidebar — fixed */}
       <aside
         className="hidden md:flex fixed left-0 top-0 h-screen z-40 flex-shrink-0 overflow-hidden"
@@ -108,9 +115,11 @@ export default function AppLayout({
         <div data-app-main="" className="flex flex-col flex-1 min-w-0 h-screen">
           {/* TopBar: custom render function, or default mobile hamburger */}
           {topBar ? (
-            typeof topBar === "function"
-              ? topBar(() => setSidebarOpen((v) => !v))
-              : topBar
+            typeof topBar === "function" ? (
+              topBar(() => setSidebarOpen((v) => !v))
+            ) : (
+              topBar
+            )
           ) : (
             /* Default Mobile TopBar */
             <header className="md:hidden flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0">
@@ -141,7 +150,9 @@ export default function AppLayout({
           {header && <div className="flex-shrink-0 px-6 pt-4">{header}</div>}
 
           {/* Scrollable content */}
-          <main className={`flex-1 overflow-y-auto ${contentClassName || "p-6 md:p-8"}`}>
+          <main
+            className={`flex-1 overflow-y-auto ${contentClassName !== undefined ? contentClassName : "p-6 md:p-8"}`}
+          >
             {renderContent ? renderContent(location) : <Outlet />}
           </main>
 

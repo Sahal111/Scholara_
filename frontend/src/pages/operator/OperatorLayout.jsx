@@ -9,7 +9,6 @@ export default function OperatorLayout() {
     <AppLayout
       sidebar={<SidebarContent />}
       topBar={(onMenuClick) => <OperatorTopBar onMenuClick={onMenuClick} />}
-      footer={<OperatorFooter />}
       className="bg-[#f8fafc] text-slate-800 antialiased"
       contentClassName=""
       sidebarWidth={256}
