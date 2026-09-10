@@ -1,4 +1,7 @@
 import AppLayout from "../../components/layout/AppLayout";
+import AppSidebar from "../../components/layout/AppSidebar";
+import AppTopBar from "../../components/layout/AppTopBar";
+import AppFooter from "../../components/layout/AppFooter";
 import {
   LayoutDashboard,
   HeartHandshake,
@@ -6,6 +9,7 @@ import {
   BarChart3,
   UserCircle,
 } from "lucide-react";
+import { Outlet } from "react-router-dom";
 
 const menus = [
   { path: "/guru-bk", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -16,5 +20,35 @@ const menus = [
 ];
 
 export default function GuruBkLayout() {
-  return <AppLayout menus={menus} />;
+  return (
+    <AppLayout
+      sidebar={
+        <AppSidebar
+          menus={menus}
+          roleLabel="Guru BK"
+          profilePath="/guru-bk/profil"
+        />
+      }
+      topBar={(onMenuClick) => (
+        <AppTopBar
+          onMenuClick={onMenuClick}
+          roleLabel="Guru BK"
+          searchPlaceholder="Cari siswa, catatan konseling..."
+        />
+      )}
+      footer={<AppFooter roleLabel="Guru BK" />}
+      className="bg-[#f8fafc] text-slate-800 antialiased"
+      contentClassName=""
+      sidebarWidth={256}
+      renderContent={(location) =>
+        location.pathname === "/guru-bk" ? (
+          <Outlet />
+        ) : (
+          <div className="p-3 sm:p-4 md:p-6 w-full max-w-[1600px] mx-auto flex-1">
+            <Outlet />
+          </div>
+        )
+      }
+    />
+  );
 }
