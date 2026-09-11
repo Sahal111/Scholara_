@@ -49,10 +49,16 @@ class TahunAjaranController extends Controller
 
     public function store(StoreTahunAjaranRequest $request): JsonResponse
     {
+        // BUG-03 fix: ambil school_id dari container (di-set TenantMiddleware) untuk filter eksplisit.
+        // SchoolScope sudah otomatis menyuntikkan WHERE school_id, tapi kita tambahkan
+        // filter eksplisit sebagai defence-in-depth agar update tidak bocor ke tenant lain
+        // apabila SchoolScope gagal resolve (mis. container belum di-bind).
+        $schoolId = app('current_school_id');
+
         DB::beginTransaction();
         try {
             if ($request->is_active) {
-                TahunAjaran::query()->update(['is_active' => false]);
+                TahunAjaran::where('school_id', $schoolId)->update(['is_active' => false]);
             }
 
             $tahunAjaran = TahunAjaran::create([
@@ -62,7 +68,7 @@ class TahunAjaranController extends Controller
 
             if ($request->buat_semester) {
                 if ($request->semester_aktif) {
-                    Semester::query()->update(['is_active' => false]);
+                    Semester::where('school_id', $schoolId)->update(['is_active' => false]);
                 }
 
                 $schoolId = $tahunAjaran->school_id;
@@ -110,10 +116,13 @@ class TahunAjaranController extends Controller
         $tahunAjaran = TahunAjaran::findOrFail($id);
         Gate::authorize('manage', $tahunAjaran);
 
+        // BUG-03 fix: gunakan school_id eksplisit dari objek yang sudah terverifikasi (defence-in-depth).
+        $schoolId = $tahunAjaran->school_id;
+
         DB::beginTransaction();
         try {
             if ($request->is_active && !$tahunAjaran->is_active) {
-                TahunAjaran::query()->update(['is_active' => false]);
+                TahunAjaran::where('school_id', $schoolId)->update(['is_active' => false]);
             }
 
             $tahunAjaran->update([
@@ -137,7 +146,8 @@ class TahunAjaranController extends Controller
                     ->first();
 
                 if ($request->has('semester_aktif') && $request->semester_aktif && $request->is_active) {
-                    Semester::query()->update(['is_active' => false]);
+                    // BUG-03 fix: filter eksplisit school_id agar tidak nonaktifkan semester tenant lain.
+                    Semester::where('school_id', $schoolId)->update(['is_active' => false]);
                 }
 
                 if ($request->has('semester_ganjil_mulai') || $request->has('semester_ganjil_selesai') || !$semGanjilLama) {
@@ -195,8 +205,12 @@ class TahunAjaranController extends Controller
         $tahunAjaran = TahunAjaran::findOrFail($id);
         Gate::authorize('manage', $tahunAjaran);
 
-        TahunAjaran::query()->update(['is_active' => false]);
-        Semester::query()->update(['is_active' => false]);
+        // BUG-03 fix: gunakan school_id dari objek yang sudah terverifikasi kepemilikannya (via Gate).
+        // Filter eksplisit memastikan hanya Tahun Ajaran & Semester milik sekolah ini yang dinonaktifkan,
+        // tidak bocor ke tenant lain meskipun SchoolScope gagal resolve dari container.
+        $schoolId = $tahunAjaran->school_id;
+        TahunAjaran::where('school_id', $schoolId)->update(['is_active' => false]);
+        Semester::where('school_id', $schoolId)->update(['is_active' => false]);
         $tahunAjaran->update(['is_active' => true]);
 
         Semester::where('tahun_ajaran_id', $id)

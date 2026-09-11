@@ -368,9 +368,21 @@ export default function App() {
           path="tahun-ajaran"
           element={<TahunAjaranSemester basePath="/wakasek/tahun-ajaran" />}
         />
+        {/*
+          BUG-01 fix: tambah route recycle-bin dan arsip yang sebelumnya tidak terdaftar
+            → tombol "Recycle Bin" & "Arsip" di header TahunAjaranSemester.jsx akan 404 tanpa ini.
+          BUG-02 fix: semua route STATIS (recycle-bin, arsip, arsip/:id) didaftarkan
+            SEBELUM wildcard (:id) agar React Router v7 tidak menangkap "arsip" / "recycle-bin"
+            sebagai nilai parameter :id di DetailTahunAjaran.
+        */}
         <Route
-          path="tahun-ajaran/:id"
-          element={<DetailTahunAjaran basePath="/wakasek/tahun-ajaran" />}
+          path="tahun-ajaran/recycle-bin"
+          element={<RecycleBinTahunAjaran />}
+        />
+        <Route path="tahun-ajaran/arsip" element={<ArsipTahunAjaran />} />
+        <Route
+          path="tahun-ajaran/arsip/:id"
+          element={<DetailArsipTahunAjaran />}
         />
         {/* Bug #5a fix: param harus taId & semesterNama sesuai useParams() di DetailSemester.jsx */}
         <Route
@@ -378,8 +390,8 @@ export default function App() {
           element={<DetailSemester />}
         />
         <Route
-          path="tahun-ajaran/arsip/:id"
-          element={<DetailArsipTahunAjaran />}
+          path="tahun-ajaran/:id"
+          element={<DetailTahunAjaran basePath="/wakasek/tahun-ajaran" />}
         />
         <Route path="program-pendidikan" element={<MasterProgramWakasek />} />
         <Route
