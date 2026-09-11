@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useMutation } from "@tanstack/react-query";
-import api from "../../../../../lib/axios";
 import toast from "react-hot-toast";
-import { tahunAjaranKeys } from "../../../../../hooks/api/useTahunAjaran";
+import {
+  useCreateTahunAjaran,
+  useUpdateTahunAjaran,
+} from "../../../../../hooks/api/useTahunAjaran";
 
 export default function ModalTahunAjaran({
   open,
   onClose,
   editData,
-  queryClient,
+  queryClient: _qc,
 }) {
   const isEdit = !!editData;
+  const createMut = useCreateTahunAjaran();
+  const updateMut = useUpdateTahunAjaran(editData?.id);
+  const mutation = isEdit ? updateMut : createMut;
   const [form, setForm] = useState({
     tahun: "",
     tgl_mulai_ta: "",
@@ -51,7 +55,12 @@ export default function ModalTahunAjaran({
         tgl_mulai_ta: ganjil?.tgl_mulai || "",
         tgl_selesai_ta: genap?.tgl_selesai || ganjil?.tgl_selesai || "",
         is_active: editData.is_active || false,
-        buat_semester: !!(ganjil || genap),
+        // BUG-05 fix: saat Edit, buat_semester SELALU true.
+        // Tanggal TA tidak disimpan sebagai kolom tersendiri — satu-satunya
+        // cara menyimpan perubahan tanggal adalah via semester. Jika toggle
+        // diizinkan mati, perubahan tanggal yang diketik user akan di-strip
+        // di mutationFn tanpa ada notifikasi apapun.
+        buat_semester: true,
         semester_ganjil_mulai: ganjil?.tgl_mulai || "",
         semester_ganjil_selesai: ganjil?.tgl_selesai || "",
         semester_genap_mulai: genap?.tgl_mulai || "",
@@ -126,32 +135,6 @@ export default function ModalTahunAjaran({
       return updated;
     });
   };
-
-  const mutation = useMutation({
-    mutationFn: (data) => {
-      const { tgl_mulai_ta, tgl_selesai_ta, ...payload } = data;
-      return isEdit
-        ? api.put(`/operator/master-data/tahun-ajaran/${editData.id}`, payload)
-        : api.post("/operator/master-data/tahun-ajaran", payload);
-    },
-    onSuccess: () => {
-      toast.success(
-        `Tahun ajaran berhasil ${isEdit ? "diperbarui" : "ditambahkan"}.`,
-      );
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
-      if (isEdit)
-        queryClient.invalidateQueries({
-          queryKey: tahunAjaranKeys.detail(editData.id),
-        });
-      onClose();
-    },
-    onError: (err) => {
-      const errors = err.response?.data?.errors;
-      if (errors) Object.values(errors).forEach((e) => toast.error(e[0]));
-      else toast.error(err.response?.data?.message ?? "Gagal menyimpan.");
-    },
-  });
 
   if (!open) return null;
 
@@ -289,37 +272,54 @@ export default function ModalTahunAjaran({
               </div>
             </div>
 
-            {/* Semester otomatis toggle */}
-            <div className="mt-6 flex items-center justify-between gap-4 py-2">
-              <div className="flex gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#00c853]/5 flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[#00c853] text-xl">
-                    auto_mode
-                  </span>
-                </div>
-                <div>
-                  <h4 className="text-[#00342b] font-bold text-base leading-tight">
-                    Pengaturan Semester Otomatis
-                  </h4>
-                  <p className="text-[#3f4945]/70 text-xs mt-0.5 leading-tight">
-                    Bagi periode menjadi dua semester secara otomatis.
-                  </p>
-                </div>
+            {/* Semester toggle — behaviour berbeda antara mode Tambah dan Edit */}
+            {isEdit ? (
+              // BUG-05 fix: di mode Edit, toggle dikunci ON.
+              // Tanggal TA tidak punya kolom sendiri di DB — perubahan tanggal
+              // hanya bisa disimpan melalui data semester. Menampilkan info ini
+              // agar user tidak bingung kenapa toggle tidak bisa dimatikan.
+              <div className="mt-6 flex items-center gap-3 px-4 py-3 bg-[#e8f5e9] rounded-2xl border border-[#00c853]/20">
+                <span className="material-symbols-outlined text-[#006e2a] text-[20px] shrink-0">
+                  info
+                </span>
+                <p className="text-xs text-[#00342b] leading-relaxed">
+                  Perubahan tanggal disimpan melalui periode semester di bawah.
+                  Pastikan kedua semester sudah terisi dengan benar sebelum
+                  menyimpan.
+                </p>
               </div>
-              <button
-                type="button"
-                onClick={() => set("buat_semester", !form.buat_semester)}
-                className={`relative inline-flex h-6 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-[#00c853]/20 shadow-inner ${
-                  form.buat_semester ? "bg-[#004d40]" : "bg-[#bfc9c4]"
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 rounded-full bg-white shadow-md transform transition-transform duration-200 ${
-                    form.buat_semester ? "translate-x-7" : "translate-x-1"
+            ) : (
+              <div className="mt-6 flex items-center justify-between gap-4 py-2">
+                <div className="flex gap-3">
+                  <div className="w-10 h-10 rounded-full bg-[#00c853]/5 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[#00c853] text-xl">
+                      auto_mode
+                    </span>
+                  </div>
+                  <div>
+                    <h4 className="text-[#00342b] font-bold text-base leading-tight">
+                      Pengaturan Semester Otomatis
+                    </h4>
+                    <p className="text-[#3f4945]/70 text-xs mt-0.5 leading-tight">
+                      Bagi periode menjadi dua semester secara otomatis.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => set("buat_semester", !form.buat_semester)}
+                  className={`relative inline-flex h-6 w-12 shrink-0 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-4 focus:ring-[#00c853]/20 shadow-inner ${
+                    form.buat_semester ? "bg-[#004d40]" : "bg-[#bfc9c4]"
                   }`}
-                />
-              </button>
-            </div>
+                >
+                  <span
+                    className={`inline-block h-4 w-4 rounded-full bg-white shadow-md transform transition-transform duration-200 ${
+                      form.buat_semester ? "translate-x-7" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Section 2: Detail Semester */}
@@ -486,7 +486,12 @@ export default function ModalTahunAjaran({
             </button>
             <button
               type="button"
-              onClick={() => mutation.mutate(form)}
+              onClick={() => {
+                if (!isEdit && !form.buat_semester && (form.tgl_mulai_ta || form.tgl_selesai_ta)) {
+                  toast("Tanggal periode tidak akan tersimpan karena semester tidak dibuat. Aktifkan toggle semester jika ingin menyimpan tanggal.", { icon: "\u26a0\ufe0f", duration: 5000 });
+                }
+                mutation.mutate(form, { onSuccess: onClose });
+              }}
               disabled={mutation.isPending || !form.tahun}
               className="flex-1 sm:flex-none px-10 py-3 rounded-xl bg-[#004d40] text-white font-bold text-[11px] tracking-[0.1em] uppercase shadow-lg shadow-[#004d40]/20 hover:bg-[#00c853] hover:shadow-[#00c853]/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2"
             >

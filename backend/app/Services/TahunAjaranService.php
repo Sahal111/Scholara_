@@ -186,13 +186,27 @@ class TahunAjaranService
         }
 
         // ── Mata pelajaran: list + wajib/lokal ────────────────────────────────
-        $mapelList = MataPelajaran::select(['id', 'kode', 'nama_mapel', 'kelompok', 'tingkat', 'kurikulum', 'jam_per_minggu'])
+        // ponytail: filter mapel by TA via plot_guru_mapels join, fallback to all active if none plotted yet
+        $plottedMapelIds = PlotGuruMapel::where('tahun_ajaran_id', $id)
             ->where('is_active', true)
-            ->orderBy('nama_mapel')
-            ->take(8)
-            ->get();
+            ->distinct('mapel_id')
+            ->pluck('mapel_id');
 
-        $mapelKelompokCounts = MataPelajaran::where('is_active', true)
+        $mapelQuery = MataPelajaran::select(['id', 'kode', 'nama_mapel', 'kelompok', 'tingkat', 'kurikulum', 'jam_per_minggu'])
+            ->where('is_active', true)
+            ->orderBy('nama_mapel');
+
+        if ($plottedMapelIds->isNotEmpty()) {
+            $mapelQuery->whereIn('id', $plottedMapelIds);
+        }
+
+        $mapelList = $mapelQuery->take(8)->get();
+
+        $mapelKelompokQuery = MataPelajaran::where('is_active', true);
+        if ($plottedMapelIds->isNotEmpty()) {
+            $mapelKelompokQuery->whereIn('id', $plottedMapelIds);
+        }
+        $mapelKelompokCounts = $mapelKelompokQuery
             ->selectRaw("kelompok, COUNT(*) as jumlah")
             ->groupBy('kelompok')
             ->pluck('jumlah', 'kelompok');

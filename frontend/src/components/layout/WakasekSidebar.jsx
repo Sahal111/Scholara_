@@ -426,7 +426,7 @@ export function WakasekSidebarContent({ onClose }) {
                   strokeWidth="2"
                 />
               </svg>
-              <span>Profil Saya</span>
+              <span>Profil</span>
             </NavLink>
             <button
               onClick={handleLogout}

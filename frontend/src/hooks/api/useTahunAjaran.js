@@ -142,29 +142,55 @@ export function useSetSemesterAktif() {
 
 /**
  * Update tanggal semester tertentu melalui endpoint update TA.
- * Caller wajib menyertakan `tahunTA` (mis. "2025/2026") karena
- * UpdateTahunAjaranRequest mensyaratkan field `tahun`.
+ *
+ * PENTING — caller WAJIB menyertakan tanggal KEDUA semester (bukan hanya yang
+ * diedit), karena backend `update()` menggunakan `updateOrCreate` dengan
+ * kondisi `|| !$semXxxLama`.  Jika payload hanya berisi satu pasang tanggal,
+ * kondisi `!$semXxxLama` bisa `true` dan backend akan melakukan `updateOrCreate`
+ * dengan tgl_mulai/tgl_selesai = null untuk semester yang tidak ada di payload,
+ * sehingga **semester yang tidak diedit bisa ter-overwrite dengan null**.
+ *
+ * Solusi: selalu kirim keempat field tanggal sekaligus.  Gunakan data semester
+ * existing dari React Query cache sebagai nilai fallback untuk semester yang
+ * tidak diedit.
  *
  * @param {string|number} taId  — ID tahun ajaran
+ *
+ * @example
+ * // Hanya edit Genap, tapi tetap sertakan tanggal Ganjil dari data existing:
+ * updateSemester.mutate({
+ *   tahunTA: ta.tahun,
+ *   // Tanggal Ganjil — ambil dari existing agar tidak ter-overwrite
+ *   ganjilMulai:   existingGanjil?.tgl_mulai,
+ *   ganjilSelesai: existingGanjil?.tgl_selesai,
+ *   // Tanggal Genap — yang benar-benar ingin diubah
+ *   genapMulai:   newGenapMulai,
+ *   genapSelesai: newGenapSelesai,
+ * });
  */
 export function useUpdateSemester(taId) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ tahunTA, semesterNama, tglMulai, tglSelesai }) => {
+    mutationFn: ({
+      tahunTA,
+      ganjilMulai,
+      ganjilSelesai,
+      genapMulai,
+      genapSelesai,
+    }) => {
       if (!tahunTA) {
         throw new Error("tahunTA diperlukan untuk update semester.");
       }
+      // Selalu kirim keempat tanggal agar backend tidak overwrite semester
+      // yang tidak diedit dengan null ketika kondisi !$semXxxLama terpenuhi.
       const payload = {
         tahun: tahunTA,
         buat_semester: true,
+        semester_ganjil_mulai: ganjilMulai ?? null,
+        semester_ganjil_selesai: ganjilSelesai ?? null,
+        semester_genap_mulai: genapMulai ?? null,
+        semester_genap_selesai: genapSelesai ?? null,
       };
-      if (semesterNama === "Ganjil") {
-        payload.semester_ganjil_mulai = tglMulai;
-        payload.semester_ganjil_selesai = tglSelesai;
-      } else {
-        payload.semester_genap_mulai = tglMulai;
-        payload.semester_genap_selesai = tglSelesai;
-      }
       return api.put(`${BASE}/${taId}`, payload);
     },
     onSuccess: () => {

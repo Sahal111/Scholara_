@@ -57,12 +57,14 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
       setOpenActionId(null);
       setActionMenuPosition(null);
     };
+    const onKeydown = (e) => e.key === "Escape" && close();
     document.addEventListener("click", close);
     document.addEventListener("scroll", close, true);
-    document.addEventListener("keydown", (e) => e.key === "Escape" && close());
+    document.addEventListener("keydown", onKeydown);
     return () => {
       document.removeEventListener("click", close);
       document.removeEventListener("scroll", close, true);
+      document.removeEventListener("keydown", onKeydown);
     };
   }, [openActionId]);
   const [search, setSearch] = useState("");

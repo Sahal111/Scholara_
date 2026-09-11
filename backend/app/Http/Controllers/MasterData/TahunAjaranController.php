@@ -71,8 +71,6 @@ class TahunAjaranController extends Controller
                     Semester::where('school_id', $schoolId)->update(['is_active' => false]);
                 }
 
-                $schoolId = $tahunAjaran->school_id;
-
                 Semester::create([
                     'school_id' => $schoolId,
                     'tahun_ajaran_id' => $tahunAjaran->id,
@@ -131,8 +129,6 @@ class TahunAjaranController extends Controller
             ]);
 
             if ($request->buat_semester) {
-                $schoolId = $tahunAjaran->school_id;
-
                 $semGanjilLama = Semester::where('school_id', $schoolId)
                     ->where('tahun_ajaran_id', $tahunAjaran->id)
                     ->where('nama', 'Ganjil')
@@ -146,38 +142,52 @@ class TahunAjaranController extends Controller
                     ->first();
 
                 if ($request->has('semester_aktif') && $request->semester_aktif && $request->is_active) {
-                    // BUG-03 fix: filter eksplisit school_id agar tidak nonaktifkan semester tenant lain.
                     Semester::where('school_id', $schoolId)->update(['is_active' => false]);
                 }
 
-                if ($request->has('semester_ganjil_mulai') || $request->has('semester_ganjil_selesai') || !$semGanjilLama) {
-                    Semester::where('school_id', $schoolId)->updateOrCreate(
-                        ['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil'],
-                        [
-                            'school_id' => $schoolId,
-                            'tgl_mulai' => $request->has('semester_ganjil_mulai') ? $request->semester_ganjil_mulai : $semGanjilLama?->tgl_mulai,
-                            'tgl_selesai' => $request->has('semester_ganjil_selesai') ? $request->semester_ganjil_selesai : $semGanjilLama?->tgl_selesai,
-                            'is_active' => $request->has('semester_aktif') && $request->is_active
-                                ? ($request->semester_aktif === 'Ganjil')
-                                : ($semGanjilLama?->is_active ?? false),
-                            'deleted_at' => null,
-                        ]
-                    );
+                // ponytail: only touch a semester if the request carries data for it,
+                // OR if the semester doesn't exist yet AND at least one field is provided.
+                // Previous condition `|| !$semXxxLama` could create a semester with null dates.
+                $hasGanjilData = $request->has('semester_ganjil_mulai') || $request->has('semester_ganjil_selesai');
+                if ($hasGanjilData || $semGanjilLama) {
+                    $ganjilPayload = [
+                        'school_id' => $schoolId,
+                        'tgl_mulai' => $request->has('semester_ganjil_mulai') ? $request->semester_ganjil_mulai : $semGanjilLama?->tgl_mulai,
+                        'tgl_selesai' => $request->has('semester_ganjil_selesai') ? $request->semester_ganjil_selesai : $semGanjilLama?->tgl_selesai,
+                        'is_active' => $request->has('semester_aktif') && $request->is_active
+                            ? ($request->semester_aktif === 'Ganjil')
+                            : ($semGanjilLama?->is_active ?? false),
+                        'deleted_at' => null,
+                    ];
+                    if ($semGanjilLama) {
+                        $semGanjilLama->update($ganjilPayload);
+                    } elseif ($hasGanjilData) {
+                        Semester::create(array_merge($ganjilPayload, [
+                            'tahun_ajaran_id' => $tahunAjaran->id,
+                            'nama' => 'Ganjil',
+                        ]));
+                    }
                 }
 
-                if ($request->has('semester_genap_mulai') || $request->has('semester_genap_selesai') || !$semGenapLama) {
-                    Semester::where('school_id', $schoolId)->updateOrCreate(
-                        ['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Genap'],
-                        [
-                            'school_id' => $schoolId,
-                            'tgl_mulai' => $request->has('semester_genap_mulai') ? $request->semester_genap_mulai : $semGenapLama?->tgl_mulai,
-                            'tgl_selesai' => $request->has('semester_genap_selesai') ? $request->semester_genap_selesai : $semGenapLama?->tgl_selesai,
-                            'is_active' => $request->has('semester_aktif') && $request->is_active
-                                ? ($request->semester_aktif === 'Genap')
-                                : ($semGenapLama?->is_active ?? false),
-                            'deleted_at' => null,
-                        ]
-                    );
+                $hasGenapData = $request->has('semester_genap_mulai') || $request->has('semester_genap_selesai');
+                if ($hasGenapData || $semGenapLama) {
+                    $genapPayload = [
+                        'school_id' => $schoolId,
+                        'tgl_mulai' => $request->has('semester_genap_mulai') ? $request->semester_genap_mulai : $semGenapLama?->tgl_mulai,
+                        'tgl_selesai' => $request->has('semester_genap_selesai') ? $request->semester_genap_selesai : $semGenapLama?->tgl_selesai,
+                        'is_active' => $request->has('semester_aktif') && $request->is_active
+                            ? ($request->semester_aktif === 'Genap')
+                            : ($semGenapLama?->is_active ?? false),
+                        'deleted_at' => null,
+                    ];
+                    if ($semGenapLama) {
+                        $semGenapLama->update($genapPayload);
+                    } elseif ($hasGenapData) {
+                        Semester::create(array_merge($genapPayload, [
+                            'tahun_ajaran_id' => $tahunAjaran->id,
+                            'nama' => 'Genap',
+                        ]));
+                    }
                 }
             }
 
