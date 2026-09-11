@@ -18,9 +18,10 @@ export default function WakasekLayout() {
       footer={<AppFooter roleLabel="Wakil Kepala Sekolah" />}
       className="bg-[#f8fafc] text-slate-800 antialiased"
       contentClassName=""
-      sidebarWidth={272}
+      sidebarWidth={256}
       renderContent={(location) =>
-        location.pathname === "/wakasek" ? (
+        location.pathname === "/wakasek" ||
+        location.pathname === "/wakasek/dashboard" ? (
           <Outlet />
         ) : (
           <div className="p-3 sm:p-4 md:p-6 w-full max-w-[1600px] mx-auto flex-1">
