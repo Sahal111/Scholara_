@@ -132,6 +132,54 @@ class KurikulumController extends Controller
     }
 
     /**
+     * PATCH /v1/master-data/kurikulum/{ulid}/activate
+     * Aktifkan kembali kurikulum yang sebelumnya dinonaktifkan.
+     */
+    public function activate(string $ulid): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $this->kurikulumService->activate($ulid, $schoolId);
+
+        return $this->success(message: 'Kurikulum berhasil diaktifkan kembali.');
+    }
+
+    /**
+     * GET /v1/master-data/kurikulum/trash
+     * Daftar kurikulum yang sudah dihapus (recycle bin).
+     */
+    public function trash(Request $request): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $data = $this->kurikulumService->trash($schoolId, $request->all());
+
+        return $this->success(KurikulumResource::collection($data));
+    }
+
+    /**
+     * PATCH /v1/master-data/kurikulum/{ulid}/restore
+     * Pulihkan kurikulum dari recycle bin.
+     */
+    public function restore(string $ulid): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $kurikulum = $this->kurikulumService->restore($ulid, $schoolId);
+
+        return $this->success(new KurikulumDetailResource($kurikulum), 'Kurikulum berhasil dipulihkan.');
+    }
+
+    /**
      * POST /v1/master-data/kurikulum/tahun-ajaran/daftarkan
      * Daftarkan kurikulum ke tahun ajaran sekolah.
      */

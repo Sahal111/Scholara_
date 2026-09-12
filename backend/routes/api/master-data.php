@@ -342,8 +342,11 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
         // ── KURIKULUM ─────────────────────────────────────────────────────────────
         // Static routes SEBELUM {ulid} wildcard (aturan Scholara)
         Route::middleware('permission:master_data.kurikulum.view')->group(function () {
+            // Static routes BEFORE wildcards
             Route::get('/kurikulum/dropdown', [KurikulumController::class, 'dropdown'])
                 ->name('master-data.kurikulum.dropdown');
+            Route::get('/kurikulum/trash', [KurikulumController::class, 'trash'])
+                ->name('master-data.kurikulum.trash');
             Route::get('/kurikulum', [KurikulumController::class, 'index'])
                 ->name('master-data.kurikulum.index');
             Route::get('/kurikulum/{ulid}', [KurikulumController::class, 'show'])
@@ -357,6 +360,10 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
                 ->name('master-data.kurikulum.update');
             Route::patch('/kurikulum/{ulid}/deactivate', [KurikulumController::class, 'deactivate'])
                 ->name('master-data.kurikulum.deactivate');
+            Route::patch('/kurikulum/{ulid}/activate', [KurikulumController::class, 'activate'])
+                ->name('master-data.kurikulum.activate');
+            Route::patch('/kurikulum/{ulid}/restore', [KurikulumController::class, 'restore'])
+                ->name('master-data.kurikulum.restore');
             Route::delete('/kurikulum/{ulid}', [KurikulumController::class, 'destroy'])
                 ->name('master-data.kurikulum.destroy');
 

@@ -32,15 +32,19 @@ class KurikulumObserver
 
     private function log(string $action, Kurikulum $kurikulum, string $keterangan): void
     {
-        ActivityLog::create([
-            'user_id' => auth()->id(),
-            'action' => $action,
-            'module' => 'kurikulum',
-            'subject_id' => $kurikulum->id,
-            'keterangan' => $keterangan,
-            'ip_address' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-        ]);
+        // Kurikulum platform (school_id IS NULL) tidak dicatat ke activity_logs
+        // karena activity_logs.school_id adalah NOT NULL.
+        // Hanya mutasi kurikulum milik sekolah yang dicatat.
+        if ($kurikulum->school_id === null) {
+            return;
+        }
+
+        ActivityLog::log(
+            action: $action,
+            module: 'kurikulum',
+            subjectId: $kurikulum->id,
+            keterangan: $keterangan,
+        );
     }
 
     private function buildDiff(Kurikulum $kurikulum): string

@@ -27,17 +27,24 @@ class KurikulumService
     public function availableForSchool(int $schoolId, array $filters = []): LengthAwarePaginator
     {
         return Kurikulum::availableForSchool($schoolId)
-            ->aktif()
+            // Filter is_active: default tampilkan semua (aktif + nonaktif).
+            // Jika frontend mengirim is_active=1, tampilkan aktif saja; is_active=0 → nonaktif saja.
+            ->when(
+                isset($filters['is_active']),
+                fn($q) => $q->where('is_active', (bool) $filters['is_active'])
+            )
             ->when(
                 $filters['search'] ?? null,
-                fn($q, $s) =>
-                $q->where('nama', 'like', "%{$s}%")
-                    ->orWhere('kode', 'like', "%{$s}%")
+                // Bungkus dalam closure agar OR tidak memecah kondisi isolasi tenant (BUG 7).
+                fn($q, $s) => $q->where(
+                    fn($sub) => $sub
+                        ->where('nama', 'like', "%{$s}%")
+                        ->orWhere('kode', 'like', "%{$s}%")
+                )
             )
             ->when(
                 $filters['jenis'] ?? null,
-                fn($q, $j) =>
-                $q->where('jenis', $j)
+                fn($q, $j) => $q->where('jenis', $j)
             )
             ->with('komponenNilais')
             ->orderByRaw('school_id IS NULL DESC') // platform defaults duluan
@@ -144,6 +151,52 @@ class KurikulumService
     }
 
     /**
+     * Aktifkan kembali kurikulum yang sebelumnya dinonaktifkan.
+     */
+    public function activate(string $ulid, int $schoolId): void
+    {
+        $kurikulum = Kurikulum::forSchool($schoolId)
+            ->where('ulid', $ulid)
+            ->firstOrFail();
+
+        $kurikulum->update(['is_active' => true]);
+    }
+
+    /**
+     * Daftar kurikulum yang sudah dihapus (recycle bin) — hanya milik sekolah.
+     */
+    public function trash(int $schoolId, array $filters = []): LengthAwarePaginator
+    {
+        return Kurikulum::onlyTrashed()
+            ->where('school_id', $schoolId)
+            ->when(
+                $filters['search'] ?? null,
+                fn($q, $s) => $q->where(
+                    fn($sub) => $sub
+                        ->where('nama', 'like', "%{$s}%")
+                        ->orWhere('kode', 'like', "%{$s}%")
+                )
+            )
+            ->orderBy('deleted_at', 'desc')
+            ->paginate($filters['per_page'] ?? 15);
+    }
+
+    /**
+     * Pulihkan kurikulum dari recycle bin.
+     */
+    public function restore(string $ulid, int $schoolId): Kurikulum
+    {
+        $kurikulum = Kurikulum::onlyTrashed()
+            ->where('ulid', $ulid)
+            ->where('school_id', $schoolId)
+            ->firstOrFail();
+
+        $kurikulum->restore();
+
+        return $kurikulum->fresh();
+    }
+
+    /**
      * Hapus permanen — hanya jika tidak ada kelas yang pakai.
      */
     public function delete(string $ulid, int $schoolId): void
@@ -156,6 +209,23 @@ class KurikulumService
         if ($kelasCount > 0) {
             throw new \DomainException(
                 "Kurikulum \"{$kurikulum->nama}\" tidak bisa dihapus karena masih digunakan oleh {$kelasCount} kelas."
+            );
+        }
+
+        $mapelCount = $kurikulum->mapels()->count();
+        if ($mapelCount > 0) {
+            throw new \DomainException(
+                "Kurikulum \"{$kurikulum->nama}\" tidak bisa dihapus karena masih digunakan oleh {$mapelCount} mata pelajaran."
+            );
+        }
+
+        $tahunAjaranCount = DB::table('kurikulum_tahun_ajarans')
+            ->where('kurikulum_id', $kurikulum->id)
+            ->where('is_active', true)
+            ->count();
+        if ($tahunAjaranCount > 0) {
+            throw new \DomainException(
+                "Kurikulum \"{$kurikulum->nama}\" tidak bisa dihapus karena masih terdaftar di {$tahunAjaranCount} tahun ajaran."
             );
         }
 
