@@ -122,13 +122,18 @@ class MultiSchoolSeeder extends Seeder
 
     private function seedSchool(array $def): void
     {
-        // Skip jika NPSN sudah ada (idempotent)
-        $exists = School::withoutGlobalScopes()
+        // Cari sekolah yang sudah ada atau buat baru
+        $existingSchool = School::withoutGlobalScopes()
             ->where('npsn', $def['npsn'])
-            ->exists();
+            ->first();
 
-        if ($exists) {
+        if ($existingSchool) {
             $this->command->warn("⏭️  Skip '{$def['nama']}' — NPSN {$def['npsn']} sudah ada.");
+            // Tetap sync permissions untuk sekolah yang sudah ada
+            $permissions = $this->createPermissions($existingSchool);
+            $roles = $this->createRoles($existingSchool);
+            $this->assignPermissionsToRoles($roles, $permissions);
+            $this->command->info("   🔄 Permissions di-sync ulang untuk '{$def['nama']}'.");
             return;
         }
 

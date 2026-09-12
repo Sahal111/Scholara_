@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import {
   useKurikulumList,
+  useKurikulumDetail,
   useDeleteKurikulum,
   useDeactivateKurikulum,
 } from "@/hooks/api/useKurikulum";
@@ -93,6 +94,8 @@ export default function MasterKurikulum() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [editUlid, setEditUlid] = useState(null);
+  const { data: detailData } = useKurikulumDetail(editUlid);
 
   const [confirm, setConfirm] = useState({
     open: false,
@@ -114,8 +117,8 @@ export default function MasterKurikulum() {
   const hapus = useDeleteKurikulum();
   const nonaktifkan = useDeactivateKurikulum();
 
-  const list = data?.data?.data ?? [];
-  const meta = data?.data ?? {};
+  const list = data?.data ?? [];
+  const meta = data?.meta ?? {};
   const lastPage = meta?.last_page ?? 1;
   const total = meta?.total ?? 0;
 
@@ -129,7 +132,8 @@ export default function MasterKurikulum() {
     setModalOpen(true);
   };
   const openEdit = (k) => {
-    setEditData(k);
+    setEditUlid(k.ulid);
+    setEditData(k); // data awal sementara (tanpa komponen_nilais)
     setModalOpen(true);
   };
 

@@ -586,6 +586,7 @@ export default function RecycleBinTahunAjaran() {
                           index={idx}
                           onRestore={setConfirmRestore}
                           onForceDelete={setConfirmForceDelete}
+                          canManage={canManage}
                         />
                       ))}
                     </tbody>
@@ -600,6 +601,7 @@ export default function RecycleBinTahunAjaran() {
                       item={item}
                       onRestore={setConfirmRestore}
                       onForceDelete={setConfirmForceDelete}
+                      canManage={canManage}
                     />
                   ))}
                 </div>
