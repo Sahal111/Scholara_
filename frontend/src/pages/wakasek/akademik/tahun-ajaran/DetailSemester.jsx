@@ -52,7 +52,9 @@ function SkeletonPage() {
 }
 
 // ── DEAD: inline ModalEditSemester, MetricCard, KalenderItem — replaced by imports
-export default function DetailSemester() {
+export default function DetailSemester({
+  apiBase = "/operator/master-data/tahun-ajaran",
+}) {
   const { hasPermission } = useAuth();
   const canManage = hasPermission("master_data.tahun_ajaran.manage");
   const { taId, semesterNama } = useParams();
@@ -63,29 +65,30 @@ export default function DetailSemester() {
   // Pakai tahunAjaranKeys.detail() agar sinkron dengan cache dari halaman lain.
   // Sebelumnya pakai ["detail-semester", taId] — tidak match dengan invalidateQueries
   // yang dikirim dari TahunAjaranSemester.jsx maupun useTahunAjaran.js hook.
-  const { data, isLoading, isError } = useQuery({
-    queryKey: tahunAjaranKeys.detail(taId),
-    queryFn: () =>
-      api.get(`/operator/master-data/tahun-ajaran/${taId}`).then((r) => r.data),
-    enabled: !!taId,
-    staleTime: 60_000,
-  });
+    const { data, isLoading, isError } = useQuery({
+      queryKey: tahunAjaranKeys.detail(taId),
+      queryFn: () => api.get(`${apiBase}/${taId}`).then((r) => r.data),
+      enabled: !!taId,
+      staleTime: 60_000,
+    });
 
-  const setSemAktif = useMutation({
-    mutationFn: () =>
-      api.patch(`/operator/master-data/tahun-ajaran/${taId}/semester-aktif`, {
-        semester_nama: semesterNama,
-      }),
-    onSuccess: () => {
-      toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(taId) });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-    },
-    onError: (err) =>
-      toast.error(
-        err.response?.data?.message ?? "Gagal mengaktifkan semester.",
-      ),
-  });
+    const setSemAktif = useMutation({
+      mutationFn: () =>
+        api.patch(`${apiBase}/${taId}/semester-aktif`, {
+          semester_nama: semesterNama,
+        }),
+      onSuccess: () => {
+        toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
+        queryClient.invalidateQueries({
+          queryKey: tahunAjaranKeys.detail(taId),
+        });
+        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      },
+      onError: (err) =>
+        toast.error(
+          err.response?.data?.message ?? "Gagal mengaktifkan semester.",
+        ),
+    });
 
   if (isLoading) return <SkeletonPage />;
 

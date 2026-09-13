@@ -23,6 +23,7 @@ const ModalChecklistKesiapan = ModalChecklistKesiapanComp;
 export default function DetailTahunAjaran({
   basePath = "/wakasek/tahun-ajaran",
   kelasPath = "/wakasek/kelas",
+  apiBase = "/operator/master-data/tahun-ajaran",
 }) {
   const { hasPermission } = useAuth();
   const canManage = hasPermission("master_data.tahun_ajaran.manage");
@@ -37,55 +38,52 @@ export default function DetailTahunAjaran({
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: tahunAjaranKeys.detail(id),
-    queryFn: () =>
-      api.get(`/operator/master-data/tahun-ajaran/${id}`).then((r) => r.data),
+    queryFn: () => api.get(`${apiBase}/${id}`).then((r) => r.data),
     retry: false, // ← jangan retry, biar error langsung kelihatan
     staleTime: 30_000,
   });
 
-  const setAktif = useMutation({
-    mutationFn: () =>
-      api.patch(`/operator/master-data/tahun-ajaran/${id}/aktif`),
-    onSuccess: () => {
-      toast.success("Tahun ajaran berhasil diaktifkan.");
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
-    },
-    onError: (err) =>
-      toast.error(
-        err.response?.data?.message ?? "Gagal mengaktifkan tahun ajaran.",
-      ),
-  });
+    const setAktif = useMutation({
+      mutationFn: () => api.patch(`${apiBase}/${id}/aktif`),
+      onSuccess: () => {
+        toast.success("Tahun ajaran berhasil diaktifkan.");
+        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
+        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
+      },
+      onError: (err) =>
+        toast.error(
+          err.response?.data?.message ?? "Gagal mengaktifkan tahun ajaran.",
+        ),
+    });
 
-  const setSemesterAktif = useMutation({
-    mutationFn: (semesterNama) =>
-      api.patch(`/operator/master-data/tahun-ajaran/${id}/semester-aktif`, {
-        semester_nama: semesterNama,
-      }),
-    onSuccess: (_, semesterNama) => {
-      toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-    },
-    onError: (err) =>
-      toast.error(
-        err.response?.data?.message ?? "Gagal mengganti semester aktif.",
-      ),
-  });
+    const setSemesterAktif = useMutation({
+      mutationFn: (semesterNama) =>
+        api.patch(`${apiBase}/${id}/semester-aktif`, {
+          semester_nama: semesterNama,
+        }),
+      onSuccess: (_, semesterNama) => {
+        toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
+        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
+        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      },
+      onError: (err) =>
+        toast.error(
+          err.response?.data?.message ?? "Gagal mengganti semester aktif.",
+        ),
+    });
 
-  const arsipkanTA = useMutation({
-    mutationFn: () =>
-      api.patch(`/operator/master-data/tahun-ajaran/${id}/arsip`),
-    onSuccess: () => {
-      toast.success("Tahun ajaran berhasil diarsipkan.");
-      navigate(basePath);
-    },
-    onError: (err) =>
-      toast.error(
-        err.response?.data?.message ?? "Gagal mengarsipkan tahun ajaran.",
-      ),
-  });
+   const arsipkanTA = useMutation({
+     mutationFn: () => api.patch(`${apiBase}/${id}/arsip`),
+     onSuccess: () => {
+       toast.success("Tahun ajaran berhasil diarsipkan.");
+       navigate(basePath);
+     },
+     onError: (err) =>
+       toast.error(
+         err.response?.data?.message ?? "Gagal mengarsipkan tahun ajaran.",
+       ),
+   });
 
   // Close more menu when clicking outside
   useEffect(() => {

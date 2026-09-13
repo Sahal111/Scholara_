@@ -49,10 +49,8 @@ class TahunAjaranController extends Controller
 
     public function store(StoreTahunAjaranRequest $request): JsonResponse
     {
-        // BUG-03 fix: ambil school_id dari container (di-set TenantMiddleware) untuk filter eksplisit.
-        // SchoolScope sudah otomatis menyuntikkan WHERE school_id, tapi kita tambahkan
-        // filter eksplisit sebagai defence-in-depth agar update tidak bocor ke tenant lain
-        // apabila SchoolScope gagal resolve (mis. container belum di-bind).
+        Gate::authorize('create', TahunAjaran::class);
+
         $schoolId = app('current_school_id');
 
         DB::beginTransaction();
@@ -62,6 +60,7 @@ class TahunAjaranController extends Controller
             }
 
             $tahunAjaran = TahunAjaran::create([
+                'school_id' => $schoolId,
                 'tahun' => $request->tahun,
                 'is_active' => $request->is_active ?? false,
             ]);

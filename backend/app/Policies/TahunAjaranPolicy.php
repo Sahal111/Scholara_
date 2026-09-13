@@ -16,6 +16,11 @@ class TahunAjaranPolicy
         return null;
     }
 
+    public function create(User $user): bool
+    {
+        return $user->hasRole('operator') || $user->hasRole('wakasek');
+    }
+
     public function manage(User $user, TahunAjaran $tahunAjaran): bool
     {
         return (int) $user->school_id === (int) $tahunAjaran->school_id;

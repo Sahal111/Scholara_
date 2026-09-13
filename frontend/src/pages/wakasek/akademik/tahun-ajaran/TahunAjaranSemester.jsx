@@ -105,13 +105,14 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
   const activeTahun = aktif?.tahun ?? null;
 
   // Set default selected ID when data is loaded
-  useEffect(() => {
-    if (list.length > 0 && !selectedId) {
-      setSelectedId(aktif?.id ?? list[0]?.id);
-    }
-  }, [list, aktif, selectedId]);
+  // useEffect(() => {
+  //   if (list.length > 0 && !selectedId) {
+  //     setSelectedId(aktif?.id ?? list[0]?.id);
+  //   }
+  // }, [list, aktif, selectedId]);
 
-  const selectedTA = list.find((t) => t.id === selectedId) || aktif || list[0];
+ const effectiveSelectedId = selectedId ?? aktif?.id ?? list[0]?.id;
+ const selectedTA = list.find((t) => t.id === effectiveSelectedId) ?? null;
 
   const handleOpenAction = (e, id) => {
     e.stopPropagation();
@@ -508,7 +509,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                       ) : (
                         filtered.map((t) => {
                           const status = getStatusTahunAjaran(t, activeTahun);
-                          const isRowSelected = selectedId === t.id;
+                          const isRowSelected = effectiveSelectedId === t.id;
                           const isExpanded = expandedId === t.id;
                           const academicProg = getAcademicProgress(t);
                           const tMulai = getTglMulai(t);

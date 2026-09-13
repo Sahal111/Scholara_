@@ -28,11 +28,22 @@ class StoreTahunAjaranRequest extends FormRequest
             'buat_semester' => 'nullable|boolean',
             'semester_ganjil_mulai' => 'nullable|date',
             'semester_ganjil_selesai' => 'nullable|date|after_or_equal:semester_ganjil_mulai',
-            'semester_genap_mulai' => 'nullable|date|after:semester_ganjil_selesai',
+            'semester_genap_mulai' => [
+                'nullable',
+                'date',
+                function ($attribute, $value, $fail) {
+                    if (!$value)
+                        return;
+                    $ganjilSelesai = $this->input('semester_ganjil_selesai');
+                    if ($ganjilSelesai && strtotime($value) <= strtotime($ganjilSelesai)) {
+                        $fail('Tanggal mulai Semester Genap harus setelah Semester Ganjil selesai.');
+                    }
+                },
+            ],
             'semester_genap_selesai' => 'nullable|date|after_or_equal:semester_genap_mulai',
             'semester_aktif' => 'nullable|string|in:Ganjil,Genap',
-            'tgl_mulai_ta' => 'nullable|date',
-            'tgl_selesai_ta' => 'nullable|date|after_or_equal:tgl_mulai_ta',
+            // 'tgl_mulai_ta' => 'nullable|date',
+            // 'tgl_selesai_ta' => 'nullable|date|after_or_equal:tgl_mulai_ta',
         ];
     }
 
@@ -45,7 +56,7 @@ class StoreTahunAjaranRequest extends FormRequest
             'semester_ganjil_selesai.after_or_equal' => 'Tanggal selesai Semester Ganjil tidak boleh sebelum tanggal mulai.',
             'semester_genap_mulai.after' => 'Tanggal mulai Semester Genap harus setelah Semester Ganjil selesai.',
             'semester_genap_selesai.after_or_equal' => 'Tanggal selesai Semester Genap tidak boleh sebelum tanggal mulai.',
-            'tgl_selesai_ta.after_or_equal' => 'Tanggal selesai periode tidak boleh sebelum tanggal mulai.',
+            // 'tgl_selesai_ta.after_or_equal' => 'Tanggal selesai periode tidak boleh sebelum tanggal mulai.',
         ];
     }
 }
