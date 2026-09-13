@@ -315,7 +315,7 @@ export default function RecycleBinTahunAjaran() {
 
   const handleRestoreConfirm = () => {
     if (!confirmRestore) return;
-    restoreMut.mutate(confirmRestore.id, {
+    restoreMut.mutate(confirmRestore.ulid, {
       onSuccess: () => {
         toast.success(
           `Tahun ajaran ${confirmRestore.tahun} berhasil dipulihkan.`,
@@ -331,7 +331,7 @@ export default function RecycleBinTahunAjaran() {
 
   const handleForceDeleteConfirm = () => {
     if (!confirmForceDelete) return;
-    forceDeleteMut.mutate(confirmForceDelete.id, {
+    forceDeleteMut.mutate(confirmForceDelete.ulid, {
       onSuccess: () => {
         toast.success(
           `Tahun ajaran ${confirmForceDelete.tahun} dihapus permanen.`,
@@ -581,7 +581,7 @@ export default function RecycleBinTahunAjaran() {
                     <tbody className="divide-y divide-[#bfc9c4]/10">
                       {items.map((item, idx) => (
                         <TrashRow
-                          key={item.id}
+                          key={item.ulid}
                           item={item}
                           index={idx}
                           onRestore={setConfirmRestore}
@@ -597,7 +597,7 @@ export default function RecycleBinTahunAjaran() {
                 <div className="md:hidden p-4 space-y-3">
                   {items.map((item) => (
                     <TrashCard
-                      key={item.id}
+                      key={item.ulid}
                       item={item}
                       onRestore={setConfirmRestore}
                       onForceDelete={setConfirmForceDelete}

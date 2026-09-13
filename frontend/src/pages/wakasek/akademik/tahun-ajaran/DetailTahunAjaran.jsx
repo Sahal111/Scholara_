@@ -291,10 +291,11 @@ export default function DetailTahunAjaran({
           <div className="absolute -right-20 -top-20 w-96 h-96 bg-[#006e2a]/5 rounded-full blur-[120px] pointer-events-none"></div>
           <div className="absolute -left-10 -bottom-10 w-64 h-64 bg-[#00342b]/5 rounded-full blur-[100px] pointer-events-none"></div>
           <div
-            className="absolute inset-0 opacity-[0.03] pointer-events-none"
+            className="absolute inset-0 opacity-[0.06] pointer-events-none"
             style={{
               backgroundImage:
-                'url("https://www.transparenttextures.com/patterns/islamic-art.png")',
+                "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23006e2a' fill-opacity='1'%3E%3Cpath d='M20 0l4 4-4 4-4-4zm0 32l4 4-4 4-4-4zm-20-16l4 4-4 4-4-4zm40 0l4 4-4 4-4-4zm-30-6l4 4-4 4-4-4zm20 0l4 4-4 4-4-4zm-10 12l4 4-4 4-4-4z'/%3E%3C/g%3E%3C/svg%3E\")",
+              backgroundSize: "40px 40px",
             }}
           ></div>
 
@@ -2698,10 +2699,11 @@ export default function DetailTahunAjaran({
         {/* Refined Danger Zone Card */}
         <div className="bg-[#f2f4f3]/50 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-10 border border-[#ba1a1a]/20 shadow-sm flex flex-col relative overflow-hidden group transition-all duration-500 hover:shadow-2xl hover:shadow-[#ba1a1a]/10 h-fit">
           <div
-            className="absolute inset-0 opacity-[0.02] pointer-events-none"
+            className="absolute inset-0 opacity-[0.04] pointer-events-none"
             style={{
               backgroundImage:
-                'url("https://www.transparenttextures.com/patterns/islamic-art.png")',
+                "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ba1a1a' fill-opacity='1'%3E%3Cpath d='M20 0l4 4-4 4-4-4zm0 32l4 4-4 4-4-4zm-20-16l4 4-4 4-4-4zm40 0l4 4-4 4-4-4zm-30-6l4 4-4 4-4-4zm20 0l4 4-4 4-4-4zm-10 12l4 4-4 4-4-4z'/%3E%3C/g%3E%3C/svg%3E\")",
+              backgroundSize: "40px 40px",
             }}
           ></div>
           <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-[#ba1a1a]/10 rounded-full blur-[100px] pointer-events-none"></div>

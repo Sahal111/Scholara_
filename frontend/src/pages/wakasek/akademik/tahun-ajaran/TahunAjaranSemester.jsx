@@ -58,10 +58,18 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
       setActionMenuPosition(null);
     };
     const onKeydown = (e) => e.key === "Escape" && close();
-    document.addEventListener("click", close);
-    document.addEventListener("scroll", close, true);
-    document.addEventListener("keydown", onKeydown);
+
+    // Defer agar listener aktif SETELAH event klik saat ini selesai bubbling.
+    // Tanpa setTimeout, klik tombol ⋮ langsung men-trigger close() di frame
+    // yang sama sehingga dropdown tidak pernah tampil (race condition).
+    const timerId = setTimeout(() => {
+      document.addEventListener("click", close);
+      document.addEventListener("scroll", close, true);
+      document.addEventListener("keydown", onKeydown);
+    }, 0);
+
     return () => {
+      clearTimeout(timerId);
       document.removeEventListener("click", close);
       document.removeEventListener("scroll", close, true);
       document.removeEventListener("keydown", onKeydown);
@@ -111,8 +119,8 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
   //   }
   // }, [list, aktif, selectedId]);
 
- const effectiveSelectedId = selectedId ?? aktif?.id ?? list[0]?.id;
- const selectedTA = list.find((t) => t.id === effectiveSelectedId) ?? null;
+  const effectiveSelectedId = selectedId ?? aktif?.id ?? list[0]?.id;
+  const selectedTA = list.find((t) => t.ulid === effectiveSelectedId) ?? null;
 
   const handleOpenAction = (e, id) => {
     e.stopPropagation();
@@ -159,7 +167,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
 
   // Fetch detail data for the selected academic year (used in sidebar stats)
   const { data: selectedDetailData, isLoading: loadingDetail } =
-    useTahunAjaranDetail(selectedTA?.id);
+    useTahunAjaranDetail(selectedTA?.ulid);
 
   // Mutations — pakai hooks yang sudah ada (tidak duplikasi logic)
   const setAktif = useSetTahunAjaranAktif();
@@ -221,7 +229,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
     // Kalau TA ini yang sedang dipilih dan detail sudah di-load
     if (
       selectedDetailData &&
-      selectedTA?.id === t.id &&
+      selectedTA?.ulid === t.ulid &&
       selectedDetailData.checklist
     ) {
       const checks = Object.values(selectedDetailData.checklist);
@@ -509,8 +517,8 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                       ) : (
                         filtered.map((t) => {
                           const status = getStatusTahunAjaran(t, activeTahun);
-                          const isRowSelected = effectiveSelectedId === t.id;
-                          const isExpanded = expandedId === t.id;
+                          const isRowSelected = effectiveSelectedId === t.ulid;
+                          const isExpanded = expandedId === t.ulid;
                           const academicProg = getAcademicProgress(t);
                           const tMulai = getTglMulai(t);
                           const tSelesai = getTglSelesai(t);
@@ -520,11 +528,11 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                               : "-";
 
                           return (
-                            <React.Fragment key={t.id}>
+                            <React.Fragment key={t.ulid}>
                               <tr
                                 onClick={() => {
-                                  setSelectedId(t.id);
-                                  setExpandedId(isExpanded ? null : t.id);
+                                  setSelectedId(t.ulid);
+                                  setExpandedId(isExpanded ? null : t.ulid);
                                 }}
                                 className={`transition-all duration-300 cursor-pointer group ${
                                   isRowSelected
@@ -539,7 +547,9 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                                       type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setExpandedId(isExpanded ? null : t.id);
+                                        setExpandedId(
+                                          isExpanded ? null : t.ulid,
+                                        );
                                       }}
                                       className="w-7 h-7 rounded-lg flex items-center justify-center text-[#3f4945]/60 hover:text-[#006e2a] hover:bg-[#006e2a]/10 transition-colors"
                                       title="Lihat Detail Semester"
@@ -642,11 +652,11 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                                       <button
                                         type="button"
                                         onClick={(e) =>
-                                          handleOpenAction(e, t.id)
+                                          handleOpenAction(e, t.ulid)
                                         }
                                         title="Opsi"
                                         className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                                          openActionId === t.id
+                                          openActionId === t.ulid
                                             ? "bg-[#00342b] text-white shadow-md"
                                             : "text-[#3f4945]/70 hover:text-[#00342b] hover:bg-[#eceeed]"
                                         }`}
@@ -688,18 +698,18 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                                           )}
                                           nama="Ganjil"
                                           nomor="1"
-                                          taId={t.id}
+                                          taId={t.ulid}
                                           taIsActive={t.is_active}
                                           taStatus={status}
                                           onAktifkan={() =>
                                             setSemesterAktif.mutate({
-                                              taId: t.id,
+                                              taId: t.ulid,
                                               semesterNama: "Ganjil",
                                             })
                                           }
                                           onDetail={() =>
                                             navigate(
-                                              `${basePath}/${t.id}/semester/Ganjil`,
+                                              `${basePath}/${t.ulid}/semester/Ganjil`,
                                             )
                                           }
                                           onBuat={() => {
@@ -713,18 +723,18 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                                           )}
                                           nama="Genap"
                                           nomor="2"
-                                          taId={t.id}
+                                          taId={t.ulid}
                                           taIsActive={t.is_active}
                                           taStatus={status}
                                           onAktifkan={() =>
                                             setSemesterAktif.mutate({
-                                              taId: t.id,
+                                              taId: t.ulid,
                                               semesterNama: "Genap",
                                             })
                                           }
                                           onDetail={() =>
                                             navigate(
-                                              `${basePath}/${t.id}/semester/Genap`,
+                                              `${basePath}/${t.ulid}/semester/Genap`,
                                             )
                                           }
                                           onBuat={() => {
@@ -916,7 +926,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                 {selectedTA && (
                   <div className="mt-5 relative z-10">
                     <button
-                      onClick={() => navigate(`${basePath}/${selectedTA.id}`)}
+                      onClick={() => navigate(`${basePath}/${selectedTA.ulid}`)}
                       className="w-full py-3 rounded-2xl bg-[#00342b] text-white hover:bg-[#004d40] text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md shadow-[#00342b]/20 hover:shadow-lg"
                     >
                       <span>Buka Rincian Lengkap</span>
@@ -1074,7 +1084,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                               openConfirm({
                                 title: "Hapus Tahun Ajaran",
                                 message: `Periode "${selectedTA.tahun}" beserta data semesternya akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.`,
-                                onConfirm: () => hapus.mutate(selectedTA.id),
+                                onConfirm: () => hapus.mutate(selectedTA.ulid),
                               })
                             }
                             disabled={hapus.isPending}
@@ -1106,7 +1116,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
       {openActionId &&
         actionMenuPosition &&
         (() => {
-          const actionItem = list.find((item) => item.id === openActionId);
+          const actionItem = list.find((item) => item.ulid === openActionId);
           if (!actionItem) return null;
           const close = () => {
             setOpenActionId(null);
@@ -1139,7 +1149,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                   type="button"
                   onClick={() => {
                     close();
-                    navigate(`${basePath}/${actionItem.id}`);
+                    navigate(`${basePath}/${actionItem.ulid}`);
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-text-primary hover:bg-surface-container-low hover:text-primary transition-colors"
                 >
@@ -1174,7 +1184,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                       openConfirm({
                         title: "Aktifkan Tahun Ajaran",
                         message: `"${actionItem.tahun}" akan dijadikan tahun ajaran aktif. Tahun ajaran yang sedang aktif akan dinonaktifkan secara otomatis.`,
-                        onConfirm: () => setAktif.mutate(actionItem.id),
+                        onConfirm: () => setAktif.mutate(actionItem.ulid),
                         isDanger: false,
                       });
                     }}
@@ -1225,7 +1235,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                     openConfirm({
                       title: "Pindahkan ke Recycle Bin",
                       message: `Periode "${actionItem.tahun}" akan dipindahkan ke recycle bin. Data dapat dipulihkan kembali.`,
-                      onConfirm: () => hapus.mutate(actionItem.id),
+                      onConfirm: () => hapus.mutate(actionItem.ulid),
                     });
                   }}
                   disabled={hapus.isPending || actionItem.is_active}
@@ -1449,7 +1459,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                     setArsipModal((s) => ({ ...s, isPending: true }));
                     arsipkanMut.mutate(
                       {
-                        id: arsipModal.item.id,
+                        id: arsipModal.item.ulid,
                         catatan: arsipModal.catatan.trim() || undefined,
                       },
                       {

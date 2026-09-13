@@ -14,7 +14,7 @@ export default function ModalTahunAjaran({
 }) {
   const isEdit = !!editData;
   const createMut = useCreateTahunAjaran();
-  const updateMut = useUpdateTahunAjaran(editData?.id);
+  const updateMut = useUpdateTahunAjaran(editData?.ulid);
   const mutation = isEdit ? updateMut : createMut;
   const [form, setForm] = useState({
     tahun: "",
