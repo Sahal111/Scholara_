@@ -48,13 +48,13 @@ export default function ModalBuatSemester({
         semester_genap_selesai: `${y2}-06-30`,
       });
     }
-  }, [open, tahunAjaran?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, tahunAjaran?.ulid]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
 
   const mutation = useMutation({
     mutationFn: () =>
-      api.put(`/operator/master-data/tahun-ajaran/${tahunAjaran.id}`, {
+      api.put(`/operator/master-data/tahun-ajaran/${tahunAjaran.ulid}`, {
         tahun: tahunAjaran.tahun,
         buat_semester: true,
         ...form,
@@ -67,7 +67,7 @@ export default function ModalBuatSemester({
       );
       queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
       queryClient.invalidateQueries({
-        queryKey: tahunAjaranKeys.detail(tahunAjaran.id),
+        queryKey: tahunAjaranKeys.detail(tahunAjaran.ulid),
       });
       onClose();
     },

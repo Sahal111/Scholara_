@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class TahunAjaran extends Model
 {
@@ -16,10 +17,22 @@ class TahunAjaran extends Model
 
     protected $fillable = [
         'school_id',
+        'ulid',
         'tahun',
         'is_active',
         'is_archived',
         'archived_at',
+        // audit fields
+        'created_by',
+        'updated_by',
+        'deleted_by',
+    ];
+
+    protected $hidden = [
+        'id',        // jangan expose integer ID — gunakan ulid di API
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 
     protected $casts = [
@@ -28,7 +41,41 @@ class TahunAjaran extends Model
         'archived_at' => 'datetime',
     ];
 
-    // ── Relasi ──────────────────────────────────────────────
+    // ── Boot: auto-set ulid & audit fields ──────────────────────────────────
+
+    protected static function booted(): void
+    {
+        static::creating(function (TahunAjaran $model) {
+            if (empty($model->ulid)) {
+                $model->ulid = (string) Str::ulid();
+            }
+            if (empty($model->created_by) && auth()->check()) {
+                $model->created_by = auth()->id();
+            }
+        });
+
+        static::updating(function (TahunAjaran $model) {
+            if (auth()->check()) {
+                $model->updated_by = auth()->id();
+            }
+        });
+
+        static::deleting(function (TahunAjaran $model) {
+            if (auth()->check()) {
+                $model->deleted_by = auth()->id();
+                $model->saveQuietly();
+            }
+        });
+    }
+
+    // ── Route model binding: pakai ulid, bukan integer id ───────────────────
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
+
+    // ── Relasi ──────────────────────────────────────────────────────────────
 
     public function semesters(): HasMany
     {
@@ -43,10 +90,6 @@ class TahunAjaran extends Model
     /**
      * Kurikulum yang berlaku di tahun ajaran ini.
      * Many-to-many via pivot kurikulum_tahun_ajarans.
-     * Pivot menyimpan: semester_id, tingkat_kelas, catatan.
-     *
-     * Contoh penggunaan:
-     *   $tahunAjaran->kurikulums  → [K13 (tingkat [8,9]), Merdeka (tingkat [7])]
      */
     public function kurikulums(): BelongsToMany
     {
@@ -60,7 +103,7 @@ class TahunAjaran extends Model
             ->wherePivot('is_active', true);
     }
 
-    // ── Scopes ──────────────────────────────────────────────
+    // ── Scopes ──────────────────────────────────────────────────────────────
 
     public function scopeAktif($query)
     {

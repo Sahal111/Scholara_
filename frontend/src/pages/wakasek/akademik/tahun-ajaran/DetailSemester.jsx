@@ -65,30 +65,30 @@ export default function DetailSemester({
   // Pakai tahunAjaranKeys.detail() agar sinkron dengan cache dari halaman lain.
   // Sebelumnya pakai ["detail-semester", taId] — tidak match dengan invalidateQueries
   // yang dikirim dari TahunAjaranSemester.jsx maupun useTahunAjaran.js hook.
-    const { data, isLoading, isError } = useQuery({
-      queryKey: tahunAjaranKeys.detail(taId),
-      queryFn: () => api.get(`${apiBase}/${taId}`).then((r) => r.data),
-      enabled: !!taId,
-      staleTime: 60_000,
-    });
+  const { data, isLoading, isError } = useQuery({
+    queryKey: tahunAjaranKeys.detail(taId),
+    queryFn: () => api.get(`${apiBase}/${taId}`).then((r) => r.data),
+    enabled: !!taId,
+    staleTime: 60_000,
+  });
 
-    const setSemAktif = useMutation({
-      mutationFn: () =>
-        api.patch(`${apiBase}/${taId}/semester-aktif`, {
-          semester_nama: semesterNama,
-        }),
-      onSuccess: () => {
-        toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
-        queryClient.invalidateQueries({
-          queryKey: tahunAjaranKeys.detail(taId),
-        });
-        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      },
-      onError: (err) =>
-        toast.error(
-          err.response?.data?.message ?? "Gagal mengaktifkan semester.",
-        ),
-    });
+  const setSemAktif = useMutation({
+    mutationFn: () =>
+      api.patch(`${apiBase}/${taId}/semester-aktif`, {
+        semester_nama: semesterNama,
+      }),
+    onSuccess: () => {
+      toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
+      queryClient.invalidateQueries({
+        queryKey: tahunAjaranKeys.detail(taId),
+      });
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+    },
+    onError: (err) =>
+      toast.error(
+        err.response?.data?.message ?? "Gagal mengaktifkan semester.",
+      ),
+  });
 
   if (isLoading) return <SkeletonPage />;
 
@@ -2380,7 +2380,7 @@ export default function DetailSemester({
             const leftLink = isGanjil
               ? taPrev
                 ? {
-                    to: `/wakasek/tahun-ajaran/${taPrev.id}/semester/Genap`,
+                    to: `/wakasek/tahun-ajaran/${taPrev.ulid}/semester/Genap`,
                     label: "Semester Sebelumnya",
                     title: `${taPrev.tahun} — Genap`,
                   }
@@ -2399,7 +2399,7 @@ export default function DetailSemester({
                 }
               : taNext
                 ? {
-                    to: `/wakasek/tahun-ajaran/${taNext.id}/semester/Ganjil`,
+                    to: `/wakasek/tahun-ajaran/${taNext.ulid}/semester/Ganjil`,
                     label: "Semester Selanjutnya",
                     title: `${taNext.tahun} — Ganjil`,
                   }

@@ -19,6 +19,16 @@ class Semester extends Model
         'tgl_mulai',
         'tgl_selesai',
         'is_active',
+        // audit fields
+        'created_by',
+        'updated_by',
+        'deleted_by',
+    ];
+
+    protected $hidden = [
+        'created_by',
+        'updated_by',
+        'deleted_by',
     ];
 
     protected $casts = [
@@ -27,7 +37,31 @@ class Semester extends Model
         'tgl_selesai' => 'date:Y-m-d',
     ];
 
-    // ── Relasi ──────────────────────────────────────────────
+    // ── Boot: auto-set audit fields ─────────────────────────────────────────
+
+    protected static function booted(): void
+    {
+        static::creating(function (Semester $model) {
+            if (empty($model->created_by) && auth()->check()) {
+                $model->created_by = auth()->id();
+            }
+        });
+
+        static::updating(function (Semester $model) {
+            if (auth()->check()) {
+                $model->updated_by = auth()->id();
+            }
+        });
+
+        static::deleting(function (Semester $model) {
+            if (auth()->check()) {
+                $model->deleted_by = auth()->id();
+                $model->saveQuietly();
+            }
+        });
+    }
+
+    // ── Relasi ──────────────────────────────────────────────────────────────
 
     public function tahunAjaran()
     {
@@ -44,7 +78,7 @@ class Semester extends Model
         return $this->hasMany(Absensi::class, 'semester_id');
     }
 
-    // ── Scopes ──────────────────────────────────────────────
+    // ── Scopes ──────────────────────────────────────────────────────────────
 
     public function scopeAktif($query)
     {

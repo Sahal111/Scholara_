@@ -9,7 +9,7 @@ class GuruMutasi extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'guru_mutasi';
+    protected $table = 'guru_mutasis';
 
     protected $fillable = [
         'guru_id',

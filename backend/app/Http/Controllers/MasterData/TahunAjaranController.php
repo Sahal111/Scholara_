@@ -29,20 +29,21 @@ class TahunAjaranController extends Controller
 
     /**
      * List semua tahun ajaran yang aktif (belum diarsipkan, belum dihapus).
+     * Dipaginate sesuai standar PROJECT_CONTEXT.
      */
     public function index(): JsonResponse
     {
         $data = TahunAjaran::with('semesters')
             ->where('is_archived', false)
             ->orderByDesc('tahun')
-            ->get();
+            ->paginate(request()->integer('per_page', 15));
 
         return $this->success($data);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(string $ulid): JsonResponse
     {
-        $tahunAjaran = TahunAjaran::with('semesters')->findOrFail($id);
+        $tahunAjaran = TahunAjaran::with('semesters')->where('ulid', $ulid)->firstOrFail();
 
         return $this->success($this->service->buildDetail($tahunAjaran));
     }
@@ -108,12 +109,11 @@ class TahunAjaranController extends Controller
         }
     }
 
-    public function update(UpdateTahunAjaranRequest $request, int $id): JsonResponse
+    public function update(UpdateTahunAjaranRequest $request, string $ulid): JsonResponse
     {
-        $tahunAjaran = TahunAjaran::findOrFail($id);
+        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
         Gate::authorize('manage', $tahunAjaran);
 
-        // BUG-03 fix: gunakan school_id eksplisit dari objek yang sudah terverifikasi (defence-in-depth).
         $schoolId = $tahunAjaran->school_id;
 
         DB::beginTransaction();
@@ -144,9 +144,6 @@ class TahunAjaranController extends Controller
                     Semester::where('school_id', $schoolId)->update(['is_active' => false]);
                 }
 
-                // ponytail: only touch a semester if the request carries data for it,
-                // OR if the semester doesn't exist yet AND at least one field is provided.
-                // Previous condition `|| !$semXxxLama` could create a semester with null dates.
                 $hasGanjilData = $request->has('semester_ganjil_mulai') || $request->has('semester_ganjil_selesai');
                 if ($hasGanjilData || $semGanjilLama) {
                     $ganjilPayload = [
@@ -209,24 +206,21 @@ class TahunAjaranController extends Controller
         }
     }
 
-    public function setAktif(int $id): JsonResponse
+    public function setAktif(string $ulid): JsonResponse
     {
-        $tahunAjaran = TahunAjaran::findOrFail($id);
+        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
         Gate::authorize('manage', $tahunAjaran);
 
-        // BUG-03 fix: gunakan school_id dari objek yang sudah terverifikasi kepemilikannya (via Gate).
-        // Filter eksplisit memastikan hanya Tahun Ajaran & Semester milik sekolah ini yang dinonaktifkan,
-        // tidak bocor ke tenant lain meskipun SchoolScope gagal resolve dari container.
         $schoolId = $tahunAjaran->school_id;
         TahunAjaran::where('school_id', $schoolId)->update(['is_active' => false]);
         Semester::where('school_id', $schoolId)->update(['is_active' => false]);
         $tahunAjaran->update(['is_active' => true]);
 
-        Semester::where('tahun_ajaran_id', $id)
+        Semester::where('tahun_ajaran_id', $tahunAjaran->id)
             ->where('nama', 'Ganjil')
             ->update(['is_active' => true]);
 
-        ActivityLog::log('set_aktif', 'tahun_ajaran', $id, "Mengaktifkan tahun ajaran {$tahunAjaran->tahun}.");
+        ActivityLog::log('set_aktif', 'tahun_ajaran', $tahunAjaran->id, "Mengaktifkan tahun ajaran {$tahunAjaran->tahun}.");
 
         return $this->success(
             $tahunAjaran->load('semesters'),
@@ -234,9 +228,9 @@ class TahunAjaranController extends Controller
         );
     }
 
-    public function setSemesterAktif(SetSemesterAktifRequest $request, int $id): JsonResponse
+    public function setSemesterAktif(SetSemesterAktifRequest $request, string $ulid): JsonResponse
     {
-        $tahunAjaran = TahunAjaran::findOrFail($id);
+        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
         Gate::authorize('manage', $tahunAjaran);
 
         if (!$tahunAjaran->is_active) {
@@ -247,15 +241,15 @@ class TahunAjaranController extends Controller
             );
         }
 
-        Semester::where('tahun_ajaran_id', $id)->update(['is_active' => false]);
-        Semester::where('tahun_ajaran_id', $id)
+        Semester::where('tahun_ajaran_id', $tahunAjaran->id)->update(['is_active' => false]);
+        Semester::where('tahun_ajaran_id', $tahunAjaran->id)
             ->where('nama', $request->semester_nama)
             ->update(['is_active' => true]);
 
         ActivityLog::log(
             'set_semester_aktif',
             'tahun_ajaran',
-            $id,
+            $tahunAjaran->id,
             "Mengaktifkan Semester {$request->semester_nama} pada tahun ajaran {$tahunAjaran->tahun}.",
         );
 
@@ -267,11 +261,10 @@ class TahunAjaranController extends Controller
 
     /**
      * Arsipkan tahun ajaran (periode selesai → arsip historis).
-     * Berbeda dengan delete: data tetap ada, hanya ditandai selesai.
      */
-    public function arsip(ArsipTahunAjaranRequest $request, int $id): JsonResponse
+    public function arsip(ArsipTahunAjaranRequest $request, string $ulid): JsonResponse
     {
-        $tahunAjaran = TahunAjaran::findOrFail($id);
+        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
         Gate::authorize('manage', $tahunAjaran);
 
         if ($tahunAjaran->is_active) {
@@ -283,40 +276,25 @@ class TahunAjaranController extends Controller
         }
 
         if ($tahunAjaran->is_archived) {
-            return $this->error(
-                'Tahun ajaran ini sudah diarsipkan.',
-                'CONFLICT',
-                422
-            );
+            return $this->error('Tahun ajaran ini sudah diarsipkan.', 'CONFLICT', 422);
         }
 
         DB::beginTransaction();
         try {
-            // Nonaktifkan semua semester milik TA ini
-            Semester::where('tahun_ajaran_id', $id)->update(['is_active' => false]);
+            Semester::where('tahun_ajaran_id', $tahunAjaran->id)->update(['is_active' => false]);
 
             $tahunAjaran->update([
                 'is_archived' => true,
                 'archived_at' => now(),
             ]);
 
-            $catatan = $request->catatan
-                ? " Catatan: {$request->catatan}"
-                : '';
+            $catatan = $request->catatan ? " Catatan: {$request->catatan}" : '';
 
-            ActivityLog::log(
-                'arsip',
-                'tahun_ajaran',
-                $id,
-                "Mengarsipkan tahun ajaran {$tahunAjaran->tahun}.{$catatan}",
-            );
+            ActivityLog::log('arsip', 'tahun_ajaran', $tahunAjaran->id, "Mengarsipkan tahun ajaran {$tahunAjaran->tahun}.{$catatan}");
 
             DB::commit();
 
-            return $this->success(
-                $tahunAjaran->load('semesters'),
-                'Tahun ajaran berhasil diarsipkan.'
-            );
+            return $this->success($tahunAjaran->load('semesters'), 'Tahun ajaran berhasil diarsipkan.');
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->error('Gagal mengarsipkan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
@@ -324,41 +302,26 @@ class TahunAjaranController extends Controller
     }
 
     /**
-     * Keluarkan tahun ajaran dari arsip → kembali ke daftar aktif (tidak otomatis aktif).
+     * Keluarkan tahun ajaran dari arsip → kembali ke daftar aktif.
      */
-    public function unarsip(int $id): JsonResponse
+    public function unarsip(string $ulid): JsonResponse
     {
-        $tahunAjaran = TahunAjaran::findOrFail($id);
+        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
         Gate::authorize('manage', $tahunAjaran);
 
         if (!$tahunAjaran->is_archived) {
-            return $this->error(
-                'Tahun ajaran ini tidak sedang diarsipkan.',
-                'CONFLICT',
-                422
-            );
+            return $this->error('Tahun ajaran ini tidak sedang diarsipkan.', 'CONFLICT', 422);
         }
 
         DB::beginTransaction();
         try {
-            $tahunAjaran->update([
-                'is_archived' => false,
-                'archived_at' => null,
-            ]);
+            $tahunAjaran->update(['is_archived' => false, 'archived_at' => null]);
 
-            ActivityLog::log(
-                'unarsip',
-                'tahun_ajaran',
-                $id,
-                "Mengeluarkan tahun ajaran {$tahunAjaran->tahun} dari arsip.",
-            );
+            ActivityLog::log('unarsip', 'tahun_ajaran', $tahunAjaran->id, "Mengeluarkan tahun ajaran {$tahunAjaran->tahun} dari arsip.");
 
             DB::commit();
 
-            return $this->success(
-                $tahunAjaran->load('semesters'),
-                'Tahun ajaran berhasil dikeluarkan dari arsip.'
-            );
+            return $this->success($tahunAjaran->load('semesters'), 'Tahun ajaran berhasil dikeluarkan dari arsip.');
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->error('Gagal mengeluarkan dari arsip: ' . $e->getMessage(), 'SERVER_ERROR', 500);
@@ -366,21 +329,21 @@ class TahunAjaranController extends Controller
     }
 
     /**
-     * Daftar tahun ajaran yang diarsipkan (historis).
+     * Daftar tahun ajaran yang diarsipkan (historis). Dipaginate.
      */
     public function arsipList(): JsonResponse
     {
         $data = TahunAjaran::with('semesters')
             ->where('is_archived', true)
             ->orderByDesc('archived_at')
-            ->get();
+            ->paginate(request()->integer('per_page', 15));
 
         return $this->success($data);
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(string $ulid): JsonResponse
     {
-        $tahunAjaran = TahunAjaran::findOrFail($id);
+        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
         Gate::authorize('manage', $tahunAjaran);
 
         if ($tahunAjaran->is_active) {
@@ -393,7 +356,7 @@ class TahunAjaranController extends Controller
 
         if ($tahunAjaran->is_archived) {
             return $this->error(
-                'Tahun ajaran yang diarsipkan tidak dapat dihapus langsung. Keluarkan dari arsip terlebih dahulu jika ingin menghapus.',
+                'Tahun ajaran yang diarsipkan tidak dapat dihapus langsung. Keluarkan dari arsip terlebih dahulu.',
                 'CONFLICT',
                 422
             );
@@ -404,7 +367,7 @@ class TahunAjaranController extends Controller
             $tahunAjaran->semesters()->delete();
             $tahunAjaran->delete();
 
-            ActivityLog::log('delete', 'tahun_ajaran', $id, "Memindahkan tahun ajaran {$tahunAjaran->tahun} ke recycle bin.");
+            ActivityLog::log('delete', 'tahun_ajaran', $tahunAjaran->id, "Memindahkan tahun ajaran {$tahunAjaran->tahun} ke recycle bin.");
 
             DB::commit();
 
@@ -420,14 +383,14 @@ class TahunAjaranController extends Controller
         $data = TahunAjaran::onlyTrashed()
             ->with(['semesters' => fn($q) => $q->withTrashed()])
             ->orderByDesc('deleted_at')
-            ->get();
+            ->paginate(request()->integer('per_page', 15));
 
         return $this->success($data);
     }
 
-    public function restore(int $id): JsonResponse
+    public function restore(string $ulid): JsonResponse
     {
-        $tahunAjaran = TahunAjaran::onlyTrashed()->findOrFail($id);
+        $tahunAjaran = TahunAjaran::onlyTrashed()->where('ulid', $ulid)->firstOrFail();
         Gate::authorize('manage', $tahunAjaran);
 
         DB::beginTransaction();
@@ -435,32 +398,29 @@ class TahunAjaranController extends Controller
             $tahunAjaran->restore();
             $tahunAjaran->semesters()->withTrashed()->restore();
 
-            ActivityLog::log('restore', 'tahun_ajaran', $id, "Memulihkan tahun ajaran {$tahunAjaran->tahun} dari recycle bin.");
+            ActivityLog::log('restore', 'tahun_ajaran', $tahunAjaran->id, "Memulihkan tahun ajaran {$tahunAjaran->tahun} dari recycle bin.");
 
             DB::commit();
 
-            return $this->success(
-                $tahunAjaran->load('semesters'),
-                'Tahun ajaran berhasil dipulihkan.'
-            );
+            return $this->success($tahunAjaran->load('semesters'), 'Tahun ajaran berhasil dipulihkan.');
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->error('Gagal memulihkan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
-    public function forceDelete(int $id): JsonResponse
+    public function forceDelete(string $ulid): JsonResponse
     {
-        $tahunAjaran = TahunAjaran::onlyTrashed()->findOrFail($id);
+        $tahunAjaran = TahunAjaran::onlyTrashed()->where('ulid', $ulid)->firstOrFail();
         Gate::authorize('forceDelete', $tahunAjaran);
 
         $blockers = [
-            'kelas' => Kelas::withTrashed()->where('tahun_ajaran_id', $id)->exists(),
-            'plot_guru' => PlotGuruMapel::where('tahun_ajaran_id', $id)->exists(),
-            'riwayat' => RiwayatKelas::where('tahun_ajaran_id', $id)->exists(),
-            'absensi' => Absensi::where('tahun_ajaran_id', $id)->exists(),
-            'kalender' => KalenderAkademik::where('tahun_ajaran_id', $id)->exists(),
-            'wali_kelas' => UserWaliKelas::where('tahun_ajaran_id', $id)->exists(),
+            'kelas' => Kelas::withTrashed()->where('tahun_ajaran_id', $tahunAjaran->id)->exists(),
+            'plot_guru' => PlotGuruMapel::where('tahun_ajaran_id', $tahunAjaran->id)->exists(),
+            'riwayat' => RiwayatKelas::where('tahun_ajaran_id', $tahunAjaran->id)->exists(),
+            'absensi' => Absensi::where('tahun_ajaran_id', $tahunAjaran->id)->exists(),
+            'kalender' => KalenderAkademik::where('tahun_ajaran_id', $tahunAjaran->id)->exists(),
+            'wali_kelas' => UserWaliKelas::where('tahun_ajaran_id', $tahunAjaran->id)->exists(),
         ];
 
         if (in_array(true, $blockers, true)) {
@@ -476,7 +436,7 @@ class TahunAjaranController extends Controller
             $tahunAjaran->semesters()->withTrashed()->forceDelete();
             $tahunAjaran->forceDelete();
 
-            ActivityLog::log('force_delete', 'tahun_ajaran', $id, "Menghapus permanen tahun ajaran {$tahunAjaran->tahun}.");
+            ActivityLog::log('force_delete', 'tahun_ajaran', $tahunAjaran->id, "Menghapus permanen tahun ajaran {$tahunAjaran->tahun}.");
 
             DB::commit();
 

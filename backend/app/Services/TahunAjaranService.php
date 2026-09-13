@@ -8,7 +8,7 @@ use App\Models\GuruMutasi;
 use App\Models\JadwalPelajaran;
 use App\Models\KalenderAkademik;
 use App\Models\Kelas;
-use App\Models\Pengaturan;
+use App\Models\SchoolSetting;
 use App\Models\MataPelajaran;
 use App\Models\PlotGuruMapel;
 use App\Models\RiwayatKelas;
@@ -31,8 +31,10 @@ class TahunAjaranService
         $ganjil = $semesters->firstWhere('nama', 'Ganjil');
         $genap = $semesters->firstWhere('nama', 'Genap');
 
-        // ── Pengaturan kepsek (1 query) ───────────────────────────────────────
-        $pengaturan = Pengaturan::whereIn('key', ['kepala_madrasah', 'nip_kepala_madrasah'])
+        // ── Pengaturan kepsek — pakai SchoolSetting agar per-tenant (tenant-safe) ──
+        $schoolId = $tahunAjaran->school_id;
+        $pengaturan = SchoolSetting::where('school_id', $schoolId)
+            ->whereIn('key', ['kepala_madrasah', 'nip_kepala_madrasah'])
             ->pluck('value', 'key');
         $kepsekNama = $pengaturan->get('kepala_madrasah', '');
         $kepsekNip = $pengaturan->get('nip_kepala_madrasah', '');
@@ -65,7 +67,9 @@ class TahunAjaranService
             ->groupBy('kelas_id')
             ->pluck('jumlah', 'kelas_id');
 
-        $kelasList = Kelas::with(['wali:id,nuptk,nama', 'semester:id,nama', 'kurikulum:id,nama'])
+        // Hanya select id,nama untuk wali — nuptk adalah encrypted column dan
+        // partial select bisa menyebabkan decrypt failure. nuptk tidak dipakai di output.
+        $kelasList = Kelas::with(['wali:id,nama', 'semester:id,nama', 'kurikulum:id,nama'])
             ->where('tahun_ajaran_id', $id)
             ->orderBy('tingkat')
             ->orderBy('nama_kelas')
@@ -241,15 +245,15 @@ class TahunAjaranService
             ->take(8)
             ->get(['id', 'user_id', 'action', 'keterangan', 'created_at']);
 
-        // ── Navigasi prev/next TA ─────────────────────────────────────────────
-        $allTA = TahunAjaran::orderBy('tahun')->pluck('tahun', 'id');
-        $taIds = $allTA->keys()->values();
-        $curIdx = $taIds->search($tahunAjaran->id);
+        // ── Navigasi prev/next TA — pakai ulid agar konsisten dengan standar API ──
+        $allTA = TahunAjaran::orderBy('tahun')->pluck('tahun', 'ulid');
+        $taUlids = $allTA->keys()->values();
+        $curIdx = $taUlids->search($tahunAjaran->ulid);
         $taPrev = $curIdx > 0
-            ? TahunAjaran::find($taIds[$curIdx - 1], ['id', 'tahun', 'is_active'])
+            ? TahunAjaran::where('ulid', $taUlids[$curIdx - 1])->first(['ulid', 'tahun', 'is_active'])
             : null;
-        $taNext = ($curIdx !== false && $curIdx < $taIds->count() - 1)
-            ? TahunAjaran::find($taIds[$curIdx + 1], ['id', 'tahun', 'is_active'])
+        $taNext = ($curIdx !== false && $curIdx < $taUlids->count() - 1)
+            ? TahunAjaran::where('ulid', $taUlids[$curIdx + 1])->first(['ulid', 'tahun', 'is_active'])
             : null;
 
         // ── Checklist kesiapan ────────────────────────────────────────────────

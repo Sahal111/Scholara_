@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../../../contexts/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,7 +12,6 @@ import {
   fmt,
   fmtLong,
   daysBetween,
-  daysRemaining,
   calcProgress,
 } from "./utils/tahunAjaranHelpers";
 
@@ -2775,7 +2775,7 @@ export default function DetailTahunAjaran({
         {/* Previous Year Card */}
         {taPrev ? (
           <button
-            onClick={() => navigate(`${basePath}/${taPrev.id}`)}
+            onClick={() => navigate(`${basePath}/${taPrev.ulid}`)}
             className="group flex items-center gap-4 sm:gap-5 p-3.5 sm:p-4 sm:pr-8 bg-white/50 hover:bg-white rounded-2xl border border-[#bfc9c4]/20 hover:border-[#006e2a]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 ease-out"
           >
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#006e2a]/10 flex items-center justify-center text-[#006e2a] group-hover:bg-[#006e2a] group-hover:text-white transition-all duration-500 shrink-0">
@@ -2801,7 +2801,7 @@ export default function DetailTahunAjaran({
         {/* Next Year Card */}
         {taNext ? (
           <button
-            onClick={() => navigate(`${basePath}/${taNext.id}`)}
+            onClick={() => navigate(`${basePath}/${taNext.ulid}`)}
             className="group flex items-center justify-end sm:justify-start gap-4 sm:gap-5 p-3.5 sm:p-4 sm:pl-8 bg-white/50 hover:bg-white rounded-2xl border border-[#bfc9c4]/20 hover:border-[#006e2a]/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-500 ease-out"
           >
             <div className="flex flex-col text-right">

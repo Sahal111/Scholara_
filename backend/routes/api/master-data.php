@@ -244,24 +244,24 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
     
         Route::middleware('permission:master_data.tahun_ajaran.view')->group(function () {
             Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
-            // Static routes BEFORE /{id} wildcard
+            // Static routes BEFORE /{ulid} wildcard
             Route::get('/tahun-ajaran/trash', [TahunAjaranController::class, 'trash']);
             Route::get('/tahun-ajaran/arsip', [TahunAjaranController::class, 'arsipList']);
-            Route::get('/tahun-ajaran/{id}', [TahunAjaranController::class, 'show']);
+            Route::get('/tahun-ajaran/{ulid}', [TahunAjaranController::class, 'show']);
         });
 
         Route::middleware('permission:master_data.tahun_ajaran.manage')->group(function () {
             Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
-            Route::put('/tahun-ajaran/{id}', [TahunAjaranController::class, 'update']);
-            Route::patch('/tahun-ajaran/{id}/aktif', [TahunAjaranController::class, 'setAktif']);
-            Route::patch('/tahun-ajaran/{id}/semester-aktif', [TahunAjaranController::class, 'setSemesterAktif']);
+            Route::put('/tahun-ajaran/{ulid}', [TahunAjaranController::class, 'update']);
+            Route::patch('/tahun-ajaran/{ulid}/aktif', [TahunAjaranController::class, 'setAktif']);
+            Route::patch('/tahun-ajaran/{ulid}/semester-aktif', [TahunAjaranController::class, 'setSemesterAktif']);
             // Arsip — data historis (periode selesai), berbeda dengan recycle bin
-            Route::patch('/tahun-ajaran/{id}/arsip', [TahunAjaranController::class, 'arsip']);
-            Route::patch('/tahun-ajaran/{id}/unarsip', [TahunAjaranController::class, 'unarsip']);
+            Route::patch('/tahun-ajaran/{ulid}/arsip', [TahunAjaranController::class, 'arsip']);
+            Route::patch('/tahun-ajaran/{ulid}/unarsip', [TahunAjaranController::class, 'unarsip']);
             // Recycle bin
-            Route::delete('/tahun-ajaran/{id}', [TahunAjaranController::class, 'destroy']);
-            Route::patch('/tahun-ajaran/{id}/restore', [TahunAjaranController::class, 'restore']);
-            Route::delete('/tahun-ajaran/{id}/force-delete', [TahunAjaranController::class, 'forceDelete']);
+            Route::delete('/tahun-ajaran/{ulid}', [TahunAjaranController::class, 'destroy']);
+            Route::patch('/tahun-ajaran/{ulid}/restore', [TahunAjaranController::class, 'restore']);
+            Route::delete('/tahun-ajaran/{ulid}/force-delete', [TahunAjaranController::class, 'forceDelete']);
         });
 
         // Naik Kelas — butuh manage kelas + siswa

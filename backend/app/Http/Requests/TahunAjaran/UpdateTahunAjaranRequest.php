@@ -14,7 +14,8 @@ class UpdateTahunAjaranRequest extends FormRequest
 
     public function rules(): array
     {
-        $id = $this->route('id') ?? $this->route('tahun_ajaran');
+        // Route param adalah {ulid} — ignore by ulid column, bukan integer id
+        $ulid = $this->route('ulid');
         $schoolId = auth()->user()?->school_id;
 
         return [
@@ -23,7 +24,9 @@ class UpdateTahunAjaranRequest extends FormRequest
                 'string',
                 'max:9',
                 'regex:/^\d{4}\/\d{4}$/',
-                Rule::unique('tahun_ajarans', 'tahun')->where('school_id', $schoolId)->ignore($id),
+                Rule::unique('tahun_ajarans', 'tahun')
+                    ->where('school_id', $schoolId)
+                    ->whereNot('ulid', $ulid),
             ],
             'is_active' => 'nullable|boolean',
             'buat_semester' => 'nullable|boolean',
