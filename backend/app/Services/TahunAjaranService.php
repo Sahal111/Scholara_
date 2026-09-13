@@ -65,7 +65,7 @@ class TahunAjaranService
             ->groupBy('kelas_id')
             ->pluck('jumlah', 'kelas_id');
 
-        $kelasList = Kelas::with(['wali:id,nuptk,nama', 'semester:id,nama'])
+        $kelasList = Kelas::with(['wali:id,nuptk,nama', 'semester:id,nama', 'kurikulum:id,nama'])
             ->where('tahun_ajaran_id', $id)
             ->orderBy('tingkat')
             ->orderBy('nama_kelas')
@@ -76,7 +76,7 @@ class TahunAjaranService
                     'nama_kelas' => $k->nama_kelas,
                     'tingkat' => $k->tingkat,
                     'semester' => $k->semester?->nama ?? '-',
-                    'kurikulum' => $k->kurikulum,
+                    'kurikulum' => $k->kurikulum?->nama ?? $k->getRawOriginal('kurikulum'),
                     'kapasitas' => $k->kapasitas,
                     'ruangan' => $k->ruangan,
                     'is_active' => $k->is_active,

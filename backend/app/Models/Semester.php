@@ -23,8 +23,8 @@ class Semester extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
-        'tgl_mulai' => 'date',
-        'tgl_selesai' => 'date',
+        'tgl_mulai' => 'date:Y-m-d',
+        'tgl_selesai' => 'date:Y-m-d',
     ];
 
     // ── Relasi ──────────────────────────────────────────────

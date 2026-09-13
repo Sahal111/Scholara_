@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../../../contexts/AuthContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -34,6 +34,16 @@ export default function DetailTahunAjaran({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+    isDanger: true,
+  });
+  const openConfirm = (opts) => setConfirmState({ open: true, ...opts });
+  const closeConfirm = () =>
+    setConfirmState((s) => ({ ...s, open: false, onConfirm: null }));
   const [searchKelas, setSearchKelas] = useState("");
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -43,47 +53,47 @@ export default function DetailTahunAjaran({
     staleTime: 30_000,
   });
 
-    const setAktif = useMutation({
-      mutationFn: () => api.patch(`${apiBase}/${id}/aktif`),
-      onSuccess: () => {
-        toast.success("Tahun ajaran berhasil diaktifkan.");
-        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
-        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
-      },
-      onError: (err) =>
-        toast.error(
-          err.response?.data?.message ?? "Gagal mengaktifkan tahun ajaran.",
-        ),
-    });
+  const setAktif = useMutation({
+    mutationFn: () => api.patch(`${apiBase}/${id}/aktif`),
+    onSuccess: () => {
+      toast.success("Tahun ajaran berhasil diaktifkan.");
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
+    },
+    onError: (err) =>
+      toast.error(
+        err.response?.data?.message ?? "Gagal mengaktifkan tahun ajaran.",
+      ),
+  });
 
-    const setSemesterAktif = useMutation({
-      mutationFn: (semesterNama) =>
-        api.patch(`${apiBase}/${id}/semester-aktif`, {
-          semester_nama: semesterNama,
-        }),
-      onSuccess: (_, semesterNama) => {
-        toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
-        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
-        queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      },
-      onError: (err) =>
-        toast.error(
-          err.response?.data?.message ?? "Gagal mengganti semester aktif.",
-        ),
-    });
+  const setSemesterAktif = useMutation({
+    mutationFn: (semesterNama) =>
+      api.patch(`${apiBase}/${id}/semester-aktif`, {
+        semester_nama: semesterNama,
+      }),
+    onSuccess: (_, semesterNama) => {
+      toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+    },
+    onError: (err) =>
+      toast.error(
+        err.response?.data?.message ?? "Gagal mengganti semester aktif.",
+      ),
+  });
 
-   const arsipkanTA = useMutation({
-     mutationFn: () => api.patch(`${apiBase}/${id}/arsip`),
-     onSuccess: () => {
-       toast.success("Tahun ajaran berhasil diarsipkan.");
-       navigate(basePath);
-     },
-     onError: (err) =>
-       toast.error(
-         err.response?.data?.message ?? "Gagal mengarsipkan tahun ajaran.",
-       ),
-   });
+  const arsipkanTA = useMutation({
+    mutationFn: () => api.patch(`${apiBase}/${id}/arsip`),
+    onSuccess: () => {
+      toast.success("Tahun ajaran berhasil diarsipkan.");
+      navigate(basePath);
+    },
+    onError: (err) =>
+      toast.error(
+        err.response?.data?.message ?? "Gagal mengarsipkan tahun ajaran.",
+      ),
+  });
 
   // Close more menu when clicking outside
   useEffect(() => {
@@ -404,13 +414,12 @@ export default function DetailTahunAjaran({
                       <button
                         onClick={() => {
                           setMoreMenuOpen(false);
-                          if (
-                            confirm(
-                              `Jadikan "${ta.tahun}" sebagai tahun ajaran aktif?`,
-                            )
-                          ) {
-                            setAktif.mutate();
-                          }
+                          openConfirm({
+                            title: "Aktifkan Tahun Ajaran",
+                            message: `"${ta.tahun}" akan dijadikan tahun ajaran aktif. Tahun ajaran yang sedang aktif akan dinonaktifkan otomatis.`,
+                            isDanger: false,
+                            onConfirm: () => setAktif.mutate(),
+                          });
                         }}
                         className="w-full px-4 py-2.5 text-left text-xs font-bold text-[#006e2a] hover:bg-[#006e2a]/5 flex items-center gap-2.5"
                       >
@@ -425,13 +434,12 @@ export default function DetailTahunAjaran({
                         setMoreMenuOpen(false);
                         const target =
                           semAktif?.nama === "Ganjil" ? "Genap" : "Ganjil";
-                        if (
-                          confirm(
-                            `Pindah semester aktif ke Semester ${target}?`,
-                          )
-                        ) {
-                          setSemesterAktif.mutate(target);
-                        }
+                        openConfirm({
+                          title: `Ganti ke Semester ${target}`,
+                          message: `Semester aktif akan dipindahkan ke Semester ${target}.`,
+                          isDanger: false,
+                          onConfirm: () => setSemesterAktif.mutate(target),
+                        });
                       }}
                       className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#3f4945] hover:bg-[#f8faf9] flex items-center gap-2.5"
                     >
@@ -457,13 +465,18 @@ export default function DetailTahunAjaran({
                     <button
                       onClick={() => {
                         setMoreMenuOpen(false);
-                        if (
-                          confirm(
-                            `Apakah Anda yakin ingin mengarsipkan tahun ajaran "${ta.tahun}"?`,
-                          )
-                        ) {
-                          arsipkanTA.mutate();
+                        if (ta.is_active) {
+                          toast.error(
+                            "Nonaktifkan tahun ajaran ini sebelum mengarsipkan.",
+                          );
+                          return;
                         }
+                        openConfirm({
+                          title: "Arsipkan Tahun Ajaran",
+                          message: `"${ta.tahun}" akan diarsipkan. Data historis tetap terjaga.`,
+                          isDanger: true,
+                          onConfirm: () => arsipkanTA.mutate(),
+                        });
                       }}
                       className="w-full px-4 py-2.5 text-left text-xs font-bold text-[#ba1a1a] hover:bg-red-50 flex items-center gap-2.5"
                     >
@@ -1887,7 +1900,9 @@ export default function DetailTahunAjaran({
                 </span>
               )}
             </div>
-            <div className="space-y-4 sm:space-y-6 relative z-10 opacity-70">
+            <div
+              className={`space-y-4 sm:space-y-6 relative z-10 ${genap?.is_active ? "" : "opacity-70"}`}
+            >
               <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white/50">
                 <div className="flex items-center gap-3 sm:gap-4">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-[#3f4945]/10 flex items-center justify-center text-[#3f4945] group-hover:scale-110 transition-all duration-500">
@@ -1900,7 +1915,7 @@ export default function DetailTahunAjaran({
                   </span>
                 </div>
                 <span className="text-xl sm:text-2xl font-black text-[#3f4945]/50">
-                  —
+                  {genap?.is_active ? disp(totalSiswa) : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white/50">
@@ -1915,7 +1930,7 @@ export default function DetailTahunAjaran({
                   </span>
                 </div>
                 <span className="text-xl sm:text-2xl font-black text-[#3f4945]/50">
-                  —
+                  {genap?.is_active ? disp(totalKelas) : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white/50">
@@ -1930,7 +1945,7 @@ export default function DetailTahunAjaran({
                   </span>
                 </div>
                 <span className="text-xl sm:text-2xl font-black text-[#3f4945]/50">
-                  —
+                  {genap?.is_active ? disp(totalGuru) : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white/50">
@@ -1945,7 +1960,7 @@ export default function DetailTahunAjaran({
                   </span>
                 </div>
                 <span className="text-xl sm:text-2xl font-black text-[#3f4945]/50">
-                  —
+                  {genap?.is_active ? disp(totalMapel) : "—"}
                 </span>
               </div>
             </div>
@@ -2716,13 +2731,18 @@ export default function DetailTahunAjaran({
             <div className="flex flex-col gap-4 mt-2">
               <button
                 onClick={() => {
-                  if (
-                    confirm(
-                      `Apakah Anda yakin ingin mengarsipkan Tahun Ajaran "${ta.tahun}"? Data historis tetap terjaga.`,
-                    )
-                  ) {
-                    arsipkanTA.mutate();
+                  if (ta.is_active) {
+                    toast.error(
+                      "Nonaktifkan tahun ajaran ini sebelum mengarsipkan.",
+                    );
+                    return;
                   }
+                  openConfirm({
+                    title: "Arsipkan Tahun Ajaran",
+                    message: `"${ta.tahun}" akan diarsipkan. Data historis tetap terjaga.`,
+                    isDanger: true,
+                    onConfirm: () => arsipkanTA.mutate(),
+                  });
                 }}
                 disabled={arsipkanTA.isPending}
                 className="w-full py-3.5 sm:py-4 bg-white border-2 border-[#ba1a1a]/20 text-[#ba1a1a] font-bold rounded-2xl shadow-sm hover:shadow-xl hover:shadow-[#ba1a1a]/20 hover:bg-[#ba1a1a] hover:text-white hover:border-[#ba1a1a] hover:scale-[1.02] transition-all duration-500 flex items-center justify-center gap-3 group/btn text-sm"
@@ -2819,6 +2839,48 @@ export default function DetailTahunAjaran({
         checklist={checklist}
         navigate={navigate}
       />
+      {confirmState.open &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md p-4"
+            onClick={closeConfirm}
+          >
+            <div
+              className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                className={`h-1.5 w-full ${confirmState.isDanger ? "bg-[#ba1a1a]" : "bg-[#00c853]"}`}
+              />
+              <div className="p-6 flex flex-col gap-4">
+                <h3 className="font-bold text-lg text-[#00342b]">
+                  {confirmState.title}
+                </h3>
+                <p className="text-sm text-[#3f4945]/80 leading-relaxed">
+                  {confirmState.message}
+                </p>
+                <div className="flex gap-3 justify-end mt-2">
+                  <button
+                    onClick={closeConfirm}
+                    className="px-5 py-2.5 rounded-xl border border-[#bfc9c4]/50 text-[#3f4945] text-sm font-bold hover:bg-[#f2f4f3] transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    onClick={() => {
+                      confirmState.onConfirm?.();
+                      closeConfirm();
+                    }}
+                    className={`px-5 py-2.5 rounded-xl text-white text-sm font-bold transition-colors ${confirmState.isDanger ? "bg-[#ba1a1a] hover:bg-[#9b1414]" : "bg-[#004d40] hover:bg-[#00c853]"}`}
+                  >
+                    Konfirmasi
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
