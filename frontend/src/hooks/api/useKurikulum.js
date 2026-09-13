@@ -13,6 +13,14 @@ export const kurikulumKeys = {
   detail: (ulid) => [...kurikulumKeys.details(), ulid],
   dropdowns: () => [...kurikulumKeys.all, "dropdown"],
   dropdown: () => [...kurikulumKeys.dropdowns()],
+  // BUG 4 FIX: tambah keys untuk trash dan tahun ajaran
+  trashes: () => [...kurikulumKeys.all, "trash"],
+  trash: (filters) => [...kurikulumKeys.trashes(), filters],
+  tahunAjarans: () => [...kurikulumKeys.all, "tahun-ajaran"],
+  tahunAjaran: (tahunAjaranId) => [
+    ...kurikulumKeys.tahunAjarans(),
+    tahunAjaranId,
+  ],
 };
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -47,6 +55,32 @@ export function useKurikulumDropdown() {
       return data;
     },
     staleTime: 60_000,
+  });
+}
+
+// BUG 4 FIX: query trash (recycle bin)
+export function useKurikulumTrash(params = {}) {
+  return useQuery({
+    queryKey: kurikulumKeys.trash(params),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/trash`, { params });
+      return data;
+    },
+    placeholderData: (prev) => prev,
+    staleTime: 30_000,
+  });
+}
+
+// BUG 4 FIX: kurikulum yang berlaku di tahun ajaran tertentu
+export function useKurikulumUntukTahunAjaran(tahunAjaranId) {
+  return useQuery({
+    queryKey: kurikulumKeys.tahunAjaran(tahunAjaranId),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/tahun-ajaran/${tahunAjaranId}`);
+      return data;
+    },
+    enabled: !!tahunAjaranId,
+    staleTime: 30_000,
   });
 }
 
@@ -101,6 +135,24 @@ export function useDeactivateKurikulum() {
   });
 }
 
+// BUG 4 FIX: activate kurikulum yang sebelumnya dinonaktifkan
+export function useActivateKurikulum() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/activate`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: kurikulumKeys.lists() });
+      qc.invalidateQueries({ queryKey: kurikulumKeys.dropdowns() });
+      toast.success("Kurikulum berhasil diaktifkan kembali.");
+    },
+    onError: (err) => {
+      const msg =
+        err.response?.data?.message ?? "Gagal mengaktifkan kurikulum.";
+      toast.error(msg);
+    },
+  });
+}
+
 export function useDeleteKurikulum() {
   const qc = useQueryClient();
   return useMutation({
@@ -112,6 +164,49 @@ export function useDeleteKurikulum() {
     },
     onError: (err) => {
       const msg = err.response?.data?.message ?? "Gagal menghapus kurikulum.";
+      toast.error(msg);
+    },
+  });
+}
+
+// BUG 4 FIX: restore dari recycle bin
+export function useRestoreKurikulum() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/restore`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: kurikulumKeys.lists() });
+      qc.invalidateQueries({ queryKey: kurikulumKeys.trashes() });
+      qc.invalidateQueries({ queryKey: kurikulumKeys.dropdowns() });
+      toast.success("Kurikulum berhasil dipulihkan.");
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.message ?? "Gagal memulihkan kurikulum.";
+      toast.error(msg);
+    },
+  });
+}
+
+// BUG 4 FIX: daftarkan kurikulum ke tahun ajaran
+export function useDaftarkanKurikulumKeTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload) =>
+      api.post(`${BASE}/tahun-ajaran/daftarkan`, payload),
+    onSuccess: (_, { tahun_ajaran_ulid }) => {
+      qc.invalidateQueries({ queryKey: kurikulumKeys.tahunAjarans() });
+      // Invalidate detail tahun ajaran yang bersangkutan jika diketahui
+      if (tahun_ajaran_ulid) {
+        qc.invalidateQueries({
+          queryKey: kurikulumKeys.tahunAjaran(tahun_ajaran_ulid),
+        });
+      }
+      toast.success("Kurikulum berhasil didaftarkan ke tahun ajaran.");
+    },
+    onError: (err) => {
+      const msg =
+        err.response?.data?.message ??
+        "Gagal mendaftarkan kurikulum ke tahun ajaran.";
       toast.error(msg);
     },
   });

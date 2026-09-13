@@ -28,18 +28,19 @@ class KurikulumDetailResource extends JsonResource
             'komponen_nilais' => $this->whenLoaded(
                 'komponenNilais',
                 fn() =>
-                $this->komponenNilais->map(fn($k) => [
-                    'id' => $k->id,
-                    'nama' => $k->nama,
-                    'kode' => $k->kode,
-                    'kategori' => $k->kategori,
-                    'kategori_label' => $k->kategori_label,
-                    'bobot_persen' => $k->bobot_persen,
-                    'urutan' => $k->urutan,
-                    'is_wajib' => (bool) $k->is_wajib,
-                    'is_active' => (bool) $k->is_active,
-                    'is_platform' => is_null($k->school_id),
-                ])
+                    $this->komponenNilais->map(fn($k) => [
+                        // BUG 8 FIX: hapus 'id' => $k->id (integer primary key tidak boleh diekspos)
+                        // Frontend mengidentifikasi komponen via kombinasi kode + urutan saat edit
+                        'nama' => $k->nama,
+                        'kode' => $k->kode,
+                        'kategori' => $k->kategori,
+                        'kategori_label' => $k->kategori_label,
+                        'bobot_persen' => $k->bobot_persen,
+                        'urutan' => $k->urutan,
+                        'is_wajib' => (bool) $k->is_wajib,
+                        'is_active' => (bool) $k->is_active,
+                        'is_platform' => is_null($k->school_id),
+                    ])
             ),
         ];
     }

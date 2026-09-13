@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Kurikulum\DaftarkanKurikulumRequest;
 use App\Http\Requests\Kurikulum\StoreKurikulumRequest;
 use App\Http\Requests\Kurikulum\UpdateKurikulumRequest;
 use App\Http\Resources\KurikulumDetailResource;
 use App\Http\Resources\KurikulumResource;
+use App\Models\Kurikulum;
+use App\Models\TahunAjaran;
 use App\Services\KurikulumService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -101,7 +104,7 @@ class KurikulumController extends Controller
 
     /**
      * DELETE /v1/master-data/kurikulum/{ulid}
-     * Hapus kurikulum custom. Gagal jika masih dipakai kelas.
+     * Hapus kurikulum custom. Gagal jika masih dipakai kelas atau mapel.
      */
     public function destroy(string $ulid): JsonResponse
     {
@@ -182,24 +185,42 @@ class KurikulumController extends Controller
     /**
      * POST /v1/master-data/kurikulum/tahun-ajaran/daftarkan
      * Daftarkan kurikulum ke tahun ajaran sekolah.
+     *
+     * BUG 3 FIX: ganti inline $request->validate() → DaftarkanKurikulumRequest (FormRequest).
+     * Input diterima sebagai ULID (bukan integer id), lalu di-resolve ke id di service.
      */
-    public function daftarkanKeTahunAjaran(Request $request): JsonResponse
+    public function daftarkanKeTahunAjaran(DaftarkanKurikulumRequest $request): JsonResponse
     {
         $schoolId = $this->resolveSchoolId();
         if ($schoolId === null) {
             return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
         }
 
-        $data = $request->validate([
-            'kurikulum_id' => ['required', 'integer', 'exists:kurikulums,id'],
-            'tahun_ajaran_id' => ['required', 'integer', 'exists:tahun_ajarans,id'],
-            'semester_id' => ['nullable', 'integer', 'exists:semesters,id'],
-            'tingkat_kelas' => ['nullable', 'array'],
-            'tingkat_kelas.*' => ['integer', 'min:1', 'max:12'],
-            'catatan' => ['nullable', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
-        $this->kurikulumService->daftarkanKeTahunAjaran($schoolId, $data);
+        // Resolve ulid → integer id (konvensi Scholara: expose ULID, internal pakai id)
+        $kurikulum = Kurikulum::availableForSchool($schoolId)
+            ->where('ulid', $validated['kurikulum_ulid'])
+            ->firstOrFail();
+
+        $tahunAjaran = TahunAjaran::where('school_id', $schoolId)
+            ->where('ulid', $validated['tahun_ajaran_ulid'])
+            ->firstOrFail();
+
+        $semesterId = null;
+        if (!empty($validated['semester_ulid'])) {
+            $semesterId = \App\Models\Semester::where('tahun_ajaran_id', $tahunAjaran->id)
+                ->where('ulid', $validated['semester_ulid'])
+                ->value('id');
+        }
+
+        $this->kurikulumService->daftarkanKeTahunAjaran($schoolId, [
+            'kurikulum_id' => $kurikulum->id,
+            'tahun_ajaran_id' => $tahunAjaran->id,
+            'semester_id' => $semesterId,
+            'tingkat_kelas' => $validated['tingkat_kelas'] ?? null,
+            'catatan' => $validated['catatan'] ?? null,
+        ]);
 
         return $this->success(message: 'Kurikulum berhasil didaftarkan ke tahun ajaran.');
     }

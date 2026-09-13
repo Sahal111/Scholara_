@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
  *   - Kurikulum platform (school_id NULL) hanya bisa dikelola super admin
  *   - Setiap sekolah bisa tambah kurikulum custom (school_id = sekolah tersebut)
  *   - Hanya SATU is_platform_default = true per jenis (nasional, internasional, dll)
- *   - Kurikulum yang sudah dipakai kelas TIDAK bisa dihapus — hanya dinonaktifkan
+ *   - Kurikulum yang sudah dipakai kelas atau mapel TIDAK bisa dinonaktifkan/dihapus
  *   - Sekolah mendapat akses ke platform defaults + custom mereka sendiri
  */
 class KurikulumService
@@ -27,15 +27,12 @@ class KurikulumService
     public function availableForSchool(int $schoolId, array $filters = []): LengthAwarePaginator
     {
         return Kurikulum::availableForSchool($schoolId)
-            // Filter is_active: default tampilkan semua (aktif + nonaktif).
-            // Jika frontend mengirim is_active=1, tampilkan aktif saja; is_active=0 → nonaktif saja.
             ->when(
                 isset($filters['is_active']),
                 fn($q) => $q->where('is_active', (bool) $filters['is_active'])
             )
             ->when(
                 $filters['search'] ?? null,
-                // Bungkus dalam closure agar OR tidak memecah kondisi isolasi tenant (BUG 7).
                 fn($q, $s) => $q->where(
                     fn($sub) => $sub
                         ->where('nama', 'like', "%{$s}%")
@@ -47,7 +44,7 @@ class KurikulumService
                 fn($q, $j) => $q->where('jenis', $j)
             )
             ->with('komponenNilais')
-            ->orderByRaw('school_id IS NULL DESC') // platform defaults duluan
+            ->orderByRaw('school_id IS NULL DESC')
             ->orderBy('tahun_berlaku', 'desc')
             ->paginate($filters['per_page'] ?? 15);
     }
@@ -95,11 +92,10 @@ class KurikulumService
         return DB::transaction(function () use ($schoolId, $data) {
             $kurikulum = Kurikulum::create([
                 ...$data,
-                'school_id' => $schoolId, // force ke sekolah yang request
-                'is_platform_default' => false, // custom sekolah tidak bisa jadi platform default
+                'school_id' => $schoolId,
+                'is_platform_default' => false,
             ]);
 
-            // Jika ada komponen nilai yang dikirim, simpan sekaligus
             if (!empty($data['komponen_nilais'])) {
                 $this->syncKomponenNilais($kurikulum, $schoolId, $data['komponen_nilais']);
             }
@@ -131,7 +127,10 @@ class KurikulumService
 
     /**
      * Nonaktifkan kurikulum (soft approach — tidak hapus).
-     * Kurikulum yang masih dipakai kelas tidak bisa dihapus sama sekali.
+     *
+     * BUG 5 FIX: cek pemakaian di mapels juga, tidak hanya kelas.
+     * Sebelumnya hanya cek kelas, tapi kurikulum yang masih dipakai mapel
+     * juga tidak boleh dinonaktifkan.
      */
     public function deactivate(string $ulid, int $schoolId): void
     {
@@ -143,7 +142,16 @@ class KurikulumService
         if ($kelasCount > 0) {
             throw new \DomainException(
                 "Kurikulum \"{$kurikulum->nama}\" masih digunakan oleh {$kelasCount} kelas. " .
-                "Nonaktifkan kelas terlebih dahulu atau ganti kurikulum kelas tersebut."
+                "Ganti kurikulum kelas tersebut terlebih dahulu."
+            );
+        }
+
+        // BUG 5 FIX: tambah cek mapels (konsisten dengan delete())
+        $mapelCount = $kurikulum->mapels()->count();
+        if ($mapelCount > 0) {
+            throw new \DomainException(
+                "Kurikulum \"{$kurikulum->nama}\" masih digunakan oleh {$mapelCount} mata pelajaran. " .
+                "Ganti kurikulum mata pelajaran tersebut terlebih dahulu."
             );
         }
 
@@ -197,7 +205,7 @@ class KurikulumService
     }
 
     /**
-     * Hapus permanen — hanya jika tidak ada kelas yang pakai.
+     * Hapus permanen — hanya jika tidak ada kelas atau mapel yang pakai.
      */
     public function delete(string $ulid, int $schoolId): void
     {
@@ -281,7 +289,6 @@ class KurikulumService
             ->where('tahun_ajaran_id', $tahunAjaranId)
             ->where('is_active', true);
 
-        // Cek semester: bisa semester spesifik ATAU entry yang berlaku semua semester (NULL)
         $query->where(function ($q) use ($semesterId) {
             $q->whereNull('semester_id');
             if ($semesterId) {
@@ -301,7 +308,6 @@ class KurikulumService
             );
         }
 
-        // Jika pivot punya tingkat_kelas spesifik, validasi tingkat kelas ini termasuk
         if ($tingkat && $pivot->tingkat_kelas) {
             $tingkatYangBoleh = json_decode($pivot->tingkat_kelas, true) ?? [];
             if (!empty($tingkatYangBoleh) && !in_array($tingkat, $tingkatYangBoleh)) {
@@ -318,16 +324,14 @@ class KurikulumService
 
     /**
      * Daftarkan kurikulum ke tahun ajaran sekolah.
-     * Operator memanggil ini saat setup awal tahun ajaran baru.
+     * Dipanggil dari KurikulumController::daftarkanKeTahunAjaran().
      */
     public function daftarkanKeTahunAjaran(int $schoolId, array $data): void
     {
-        // Pastikan kurikulum tersedia untuk sekolah ini
         $kurikulum = Kurikulum::availableForSchool($schoolId)
             ->where('id', $data['kurikulum_id'])
             ->firstOrFail();
 
-        // Pastikan tahun ajaran milik sekolah ini
         $tahunAjaran = \App\Models\TahunAjaran::where('school_id', $schoolId)
             ->where('id', $data['tahun_ajaran_id'])
             ->firstOrFail();
@@ -350,7 +354,7 @@ class KurikulumService
 
     /**
      * Daftar kurikulum yang berlaku di tahun ajaran tertentu.
-     * Dipakai saat operator buka form buat kelas — hanya tampilkan kurikulum yang valid.
+     * Dipakai saat operator buka form buat kelas.
      */
     public function kurikulumUntukTahunAjaran(int $schoolId, int $tahunAjaranId): \Illuminate\Support\Collection
     {
@@ -383,7 +387,6 @@ class KurikulumService
 
     /**
      * Tambah kompatibilitas kurikulum ↔ program pendidikan (custom per sekolah).
-     * Platform-level dikelola via seeder/super admin.
      */
     public function tambahKompatibilitasProgram(
         int $schoolId,
@@ -404,7 +407,6 @@ class KurikulumService
 
     /**
      * Program pendidikan yang kompatibel dengan kurikulum tertentu di sekolah ini.
-     * Menggabungkan platform-level (school_id NULL) + custom sekolah.
      */
     public function programKompatibel(int $schoolId, int $kurikulumId): \Illuminate\Support\Collection
     {
@@ -413,8 +415,8 @@ class KurikulumService
             ->where('kpp.kurikulum_id', $kurikulumId)
             ->where('kpp.is_active', true)
             ->where(function ($q) use ($schoolId) {
-                $q->whereNull('kpp.school_id')      // platform default
-                    ->orWhere('kpp.school_id', $schoolId); // custom sekolah
+                $q->whereNull('kpp.school_id')
+                    ->orWhere('kpp.school_id', $schoolId);
             })
             ->whereNull('pp.deleted_at')
             ->select(['pp.id', 'pp.ulid', 'pp.nama', 'pp.jenis', 'pp.jenjang_sasaran', 'kpp.catatan'])
@@ -426,7 +428,6 @@ class KurikulumService
 
     private function syncKomponenNilais(Kurikulum $kurikulum, int $schoolId, array $komponens): void
     {
-        // Soft delete yang lama (custom sekolah saja — jangan hapus platform defaults)
         $kurikulum->komponenNilais()->where('school_id', $schoolId)->delete();
 
         $now = now();

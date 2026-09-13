@@ -1,18 +1,13 @@
-import { useState, useEffect } from "react";
-import {
-  Search,
-  Plus,
-  BookOpen,
-  Globe,
-  School,
-  ToggleLeft,
-} from "lucide-react";
+import { useState } from "react";
+import { BookOpen, Globe, School, ToggleLeft } from "lucide-react";
 import {
   useKurikulumList,
   useKurikulumDetail,
   useDeleteKurikulum,
   useDeactivateKurikulum,
 } from "@/hooks/api/useKurikulum";
+import DataTable from "@/components/ui/DataTable";
+import Confirm from "@/components/ui/Confirm";
 import ModalKurikulum from "@/pages/wakasek/akademik/kurikulum/components/ModalKurikulum";
 
 // ── Badge status ──────────────────────────────────────────────────────────────
@@ -58,33 +53,6 @@ function StatCard({ label, value, icon: Icon, color }) {
   );
 }
 
-// ── Confirm dialog kecil ──────────────────────────────────────────────────────
-function ConfirmDialog({ open, message, onConfirm, onCancel, loading }) {
-  if (!open) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
-        <p className="text-sm text-gray-700 mb-5">{message}</p>
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            Batal
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={loading}
-            className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-60"
-          >
-            {loading ? "Memproses..." : "Ya, Lanjutkan"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function MasterKurikulum() {
   const [search, setSearch] = useState("");
@@ -93,19 +61,17 @@ export default function MasterKurikulum() {
   const [page, setPage] = useState(1);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editData, setEditData] = useState(null);
   const [editUlid, setEditUlid] = useState(null);
-  const { data: detailData } = useKurikulumDetail(editUlid);
+
+  // BUG 1 FIX: ambil detail (termasuk komponen_nilais) dan teruskan ke modal
+  const { data: detailResponse, isLoading: detailLoading } =
+    useKurikulumDetail(editUlid);
 
   const [confirm, setConfirm] = useState({
     open: false,
     type: null,
     target: null,
   });
-
-  useEffect(() => {
-    setPage(1);
-  }, [search, filterJenis, filterStatus]);
 
   const { data, isLoading } = useKurikulumList({
     search,
@@ -118,8 +84,7 @@ export default function MasterKurikulum() {
   const nonaktifkan = useDeactivateKurikulum();
 
   const list = data?.data ?? [];
-  const meta = data?.meta ?? {};
-  const lastPage = meta?.last_page ?? 1;
+  const meta = data?.meta ?? null;
   const total = meta?.total ?? 0;
 
   // Stat sederhana dari data yang ada di halaman
@@ -128,13 +93,18 @@ export default function MasterKurikulum() {
   const totalAktif = list.filter((k) => k.is_active).length;
 
   const openTambah = () => {
-    setEditData(null);
+    setEditUlid(null);
     setModalOpen(true);
   };
+
   const openEdit = (k) => {
     setEditUlid(k.ulid);
-    setEditData(k); // data awal sementara (tanpa komponen_nilais)
     setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setEditUlid(null);
   };
 
   const handleConfirm = async () => {
@@ -145,6 +115,91 @@ export default function MasterKurikulum() {
     }
     setConfirm({ open: false, type: null, target: null });
   };
+
+  // ── Kolom DataTable ───────────────────────────────────────────────────────
+  const columns = [
+    {
+      accessorKey: "nama",
+      header: "Kurikulum",
+      cell: ({ row }) => (
+        <span className="font-medium text-gray-800">{row.original.nama}</span>
+      ),
+    },
+    {
+      accessorKey: "kode",
+      header: "Kode",
+      cell: ({ row }) => (
+        <span className="text-gray-500 font-mono text-xs">
+          {row.original.kode}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "jenis",
+      header: "Jenis",
+      cell: ({ row }) => (
+        <span className="text-gray-600 capitalize">
+          {row.original.jenis_label ?? row.original.jenis}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "tahun_berlaku",
+      header: "Tahun",
+      cell: ({ row }) => (
+        <span className="text-gray-600">
+          {row.original.tahun_berlaku}
+          {row.original.tahun_berakhir ? `–${row.original.tahun_berakhir}` : ""}
+        </span>
+      ),
+    },
+    {
+      id: "sumber",
+      header: "Sumber",
+      cell: ({ row }) => <SourceBadge isPlatform={row.original.is_platform} />,
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => <StatusBadge active={row.original.is_active} />,
+    },
+    {
+      id: "aksi",
+      header: () => <span className="sr-only">Aksi</span>,
+      cell: ({ row }) => {
+        const k = row.original;
+        if (k.is_platform) return null;
+        return (
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={() => openEdit(k)}
+              className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Edit
+            </button>
+            {k.is_active && (
+              <button
+                onClick={() =>
+                  setConfirm({ open: true, type: "nonaktif", target: k })
+                }
+                className="text-xs px-3 py-1 rounded-lg border border-amber-200 text-amber-600 hover:bg-amber-50 transition-colors"
+              >
+                Nonaktifkan
+              </button>
+            )}
+            <button
+              onClick={() =>
+                setConfirm({ open: true, type: "hapus", target: k })
+              }
+              className="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+            >
+              Hapus
+            </button>
+          </div>
+        );
+      },
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -192,35 +247,41 @@ export default function MasterKurikulum() {
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
           <div className="relative flex-1">
-            <Search
-              size={15}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
             <input
               type="text"
               placeholder="Cari nama atau kode kurikulum..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="w-full pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
             />
           </div>
 
-          {/* Filter jenis */}
+          {/* Filter jenis — BUG 2 FIX: opsi disesuaikan dengan enum backend */}
           <select
             value={filterJenis}
-            onChange={(e) => setFilterJenis(e.target.value)}
+            onChange={(e) => {
+              setFilterJenis(e.target.value);
+              setPage(1);
+            }}
             className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
           >
             <option value="">Semua Jenis</option>
             <option value="nasional">Nasional</option>
             <option value="internasional">Internasional</option>
-            <option value="lokal">Lokal / Mulok</option>
+            <option value="khusus">Kurikulum Khusus</option>
+            <option value="custom">Kurikulum Mandiri</option>
           </select>
 
           {/* Filter status */}
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+            onChange={(e) => {
+              setFilterStatus(e.target.value);
+              setPage(1);
+            }}
             className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
           >
             <option value="">Semua Status</option>
@@ -232,153 +293,49 @@ export default function MasterKurikulum() {
             onClick={openTambah}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#006e2a] text-white rounded-lg hover:bg-[#005a22] transition-colors whitespace-nowrap"
           >
-            <Plus size={15} /> Tambah Kurikulum
+            + Tambah Kurikulum
           </button>
         </div>
       </div>
 
-      {/* Table */}
+      {/* BUG 6 FIX: DataTable menggantikan raw <table> */}
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-48 text-sm text-gray-400">
-            Memuat data...
-          </div>
-        ) : list.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-            <BookOpen size={32} className="mb-2 opacity-30" />
-            <p className="text-sm">Tidak ada kurikulum ditemukan.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50 text-xs text-gray-500 font-medium uppercase tracking-wide">
-                  <th className="text-left px-4 py-3">Kurikulum</th>
-                  <th className="text-left px-4 py-3">Kode</th>
-                  <th className="text-left px-4 py-3">Jenis</th>
-                  <th className="text-left px-4 py-3">Tahun</th>
-                  <th className="text-left px-4 py-3">Sumber</th>
-                  <th className="text-left px-4 py-3">Status</th>
-                  <th className="text-right px-4 py-3">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {list.map((k) => (
-                  <tr
-                    key={k.ulid}
-                    className="hover:bg-gray-50/50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-medium text-gray-800">
-                      {k.nama}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 font-mono text-xs">
-                      {k.kode}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 capitalize">
-                      {k.jenis_label ?? k.jenis}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {k.tahun_berlaku}
-                      {k.tahun_berakhir ? `–${k.tahun_berakhir}` : ""}
-                    </td>
-                    <td className="px-4 py-3">
-                      <SourceBadge isPlatform={k.is_platform} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge active={k.is_active} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
-                        {/* Edit hanya untuk kurikulum custom */}
-                        {!k.is_platform && (
-                          <button
-                            onClick={() => openEdit(k)}
-                            className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-                          >
-                            Edit
-                          </button>
-                        )}
-                        {!k.is_platform && k.is_active && (
-                          <button
-                            onClick={() =>
-                              setConfirm({
-                                open: true,
-                                type: "nonaktif",
-                                target: k,
-                              })
-                            }
-                            className="text-xs px-3 py-1 rounded-lg border border-amber-200 text-amber-600 hover:bg-amber-50 transition-colors"
-                          >
-                            Nonaktifkan
-                          </button>
-                        )}
-                        {!k.is_platform && (
-                          <button
-                            onClick={() =>
-                              setConfirm({
-                                open: true,
-                                type: "hapus",
-                                target: k,
-                              })
-                            }
-                            className="text-xs px-3 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
-                          >
-                            Hapus
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {lastPage > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100">
-            <span className="text-xs text-gray-400">
-              Halaman {page} dari {lastPage}
-            </span>
-            <div className="flex gap-2">
-              <button
-                disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
-              >
-                ← Sebelumnya
-              </button>
-              <button
-                disabled={page >= lastPage}
-                onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 text-xs border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50 transition-colors"
-              >
-                Berikutnya →
-              </button>
-            </div>
-          </div>
-        )}
+        <DataTable
+          columns={columns}
+          data={list}
+          isLoading={isLoading}
+          meta={meta}
+          onPageChange={setPage}
+          emptyMessage="Tidak ada kurikulum ditemukan."
+        />
       </div>
 
-      {/* Modal Form */}
+      {/* BUG 1 FIX: kirim detailResponse?.data (berisi komponen_nilais) ke modal */}
       <ModalKurikulum
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        editData={editData}
+        onClose={handleCloseModal}
+        editData={editUlid ? (detailResponse?.data ?? null) : null}
+        loadingDetail={detailLoading && !!editUlid}
       />
 
-      {/* Confirm Dialog */}
-      <ConfirmDialog
-        open={confirm.open}
+      {/* BUG 7 FIX: pakai shared <Confirm> bukan custom ConfirmDialog */}
+      <Confirm
+        isOpen={confirm.open}
+        onClose={() => setConfirm({ open: false, type: null, target: null })}
+        onConfirm={handleConfirm}
+        title={
+          confirm.type === "hapus" ? "Hapus Kurikulum" : "Nonaktifkan Kurikulum"
+        }
         message={
           confirm.type === "hapus"
-            ? `Hapus kurikulum "${confirm.target?.nama}"? Pastikan tidak ada kelas yang masih menggunakan kurikulum ini.`
+            ? `Hapus kurikulum "${confirm.target?.nama}"? Pastikan tidak ada kelas yang masih menggunakannya.`
             : `Nonaktifkan kurikulum "${confirm.target?.nama}"? Kurikulum tidak akan bisa dipilih untuk kelas baru.`
         }
-        onConfirm={handleConfirm}
-        onCancel={() => setConfirm({ open: false, type: null, target: null })}
-        loading={hapus.isPending || nonaktifkan.isPending}
+        variant={confirm.type === "hapus" ? "danger" : "warning"}
+        confirmLabel={
+          confirm.type === "hapus" ? "Ya, Hapus" : "Ya, Nonaktifkan"
+        }
+        isLoading={hapus.isPending || nonaktifkan.isPending}
       />
     </div>
   );

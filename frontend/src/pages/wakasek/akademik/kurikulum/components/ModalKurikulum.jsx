@@ -1,14 +1,18 @@
 import { useEffect, useState } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import {
   useCreateKurikulum,
   useUpdateKurikulum,
 } from "@/hooks/api/useKurikulum";
+import Modal from "@/components/ui/Modal";
 
+// BUG 2 FIX: disesuaikan dengan enum backend
+// nasional | internasional | khusus | custom
 const JENIS_OPTIONS = [
   { value: "nasional", label: "Nasional" },
   { value: "internasional", label: "Internasional" },
-  { value: "lokal", label: "Lokal / Mulok" },
+  { value: "khusus", label: "Kurikulum Khusus" },
+  { value: "custom", label: "Kurikulum Mandiri" },
 ];
 
 const KATEGORI_OPTIONS = [
@@ -27,6 +31,18 @@ const EMPTY_KOMPONEN = {
   bobot_persen: "",
   urutan: 1,
   is_wajib: true,
+};
+
+const EMPTY_FORM = {
+  nama: "",
+  kode: "",
+  jenis: "nasional",
+  tahun_berlaku: new Date().getFullYear(),
+  tahun_berakhir: "",
+  penerbit: "",
+  deskripsi: "",
+  is_active: true,
+  komponen_nilais: [],
 };
 
 function KomponenRow({ komponen, index, onChange, onRemove, canRemove }) {
@@ -74,7 +90,7 @@ function KomponenRow({ komponen, index, onChange, onRemove, canRemove }) {
           className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
         />
       </div>
-      <div className="col-span-1 flex items-center justify-center">
+      <div className="col-span-1 flex items-center justify-center pt-2">
         <input
           type="checkbox"
           checked={komponen.is_wajib}
@@ -83,7 +99,7 @@ function KomponenRow({ komponen, index, onChange, onRemove, canRemove }) {
           className="w-4 h-4 accent-[#006e2a]"
         />
       </div>
-      <div className="col-span-1 flex items-center justify-center">
+      <div className="col-span-1 flex items-center justify-center pt-2">
         {canRemove && (
           <button
             type="button"
@@ -98,51 +114,41 @@ function KomponenRow({ komponen, index, onChange, onRemove, canRemove }) {
   );
 }
 
-export default function ModalKurikulum({ open, onClose, editData }) {
+// BUG 1 FIX: tambah prop loadingDetail untuk handle state loading detail
+export default function ModalKurikulum({
+  open,
+  onClose,
+  editData,
+  loadingDetail = false,
+}) {
   const isEdit = !!editData;
 
-  const [form, setForm] = useState({
-    nama: "",
-    kode: "",
-    jenis: "nasional",
-    tahun_berlaku: new Date().getFullYear(),
-    tahun_berakhir: "",
-    penerbit: "",
-    deskripsi: "",
-    is_active: true,
-    komponen_nilais: [],
-  });
+  const [form, setForm] = useState(EMPTY_FORM);
 
   const create = useCreateKurikulum();
   const update = useUpdateKurikulum();
   const loading = create.isPending || update.isPending;
 
   useEffect(() => {
+    if (!open) return;
+
     if (editData) {
       setForm({
         nama: editData.nama ?? "",
         kode: editData.kode ?? "",
+        // BUG 2 FIX: jenis dari backend sudah sesuai enum (nasional/internasional/khusus/custom)
         jenis: editData.jenis ?? "nasional",
         tahun_berlaku: editData.tahun_berlaku ?? new Date().getFullYear(),
         tahun_berakhir: editData.tahun_berakhir ?? "",
         penerbit: editData.penerbit ?? "",
         deskripsi: editData.deskripsi ?? "",
         is_active: editData.is_active ?? true,
+        // BUG 1 FIX: komponen_nilais sekarang tersedia karena editData = detailResponse
         komponen_nilais:
           editData.komponen_nilais?.filter((k) => !k.is_platform) ?? [],
       });
     } else {
-      setForm({
-        nama: "",
-        kode: "",
-        jenis: "nasional",
-        tahun_berlaku: new Date().getFullYear(),
-        tahun_berakhir: "",
-        penerbit: "",
-        deskripsi: "",
-        is_active: true,
-        komponen_nilais: [],
-      });
+      setForm(EMPTY_FORM);
     }
   }, [editData, open]);
 
@@ -194,25 +200,21 @@ export default function ModalKurikulum({ open, onClose, editData }) {
     action.then(() => onClose());
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white flex items-center justify-between px-6 py-4 border-b border-gray-100 z-10">
-          <h2 className="text-base font-semibold text-gray-800">
-            {isEdit ? "Edit Kurikulum" : "Tambah Kurikulum"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X size={20} />
-          </button>
+    // BUG 7 FIX: ganti overlay manual → shared <Modal>
+    <Modal
+      isOpen={open}
+      onClose={onClose}
+      title={isEdit ? "Edit Kurikulum" : "Tambah Kurikulum"}
+      size="xl"
+    >
+      {/* Loading state saat fetch detail */}
+      {loadingDetail ? (
+        <div className="flex items-center justify-center h-48 text-sm text-gray-400">
+          Memuat data kurikulum...
         </div>
-
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5">
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-5 pb-2">
           {/* Nama + Kode */}
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 sm:col-span-1">
@@ -355,8 +357,7 @@ export default function ModalKurikulum({ open, onClose, editData }) {
               </p>
             ) : (
               <div className="space-y-2">
-                {/* Header row */}
-                <div className="grid grid-cols-12 gap-2 text-xs text-gray-400 font-medium px-0">
+                <div className="grid grid-cols-12 gap-2 text-xs text-gray-400 font-medium">
                   <div className="col-span-3">Nama</div>
                   <div className="col-span-2">Kode</div>
                   <div className="col-span-3">Kategori</div>
@@ -400,7 +401,7 @@ export default function ModalKurikulum({ open, onClose, editData }) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      )}
+    </Modal>
   );
 }
