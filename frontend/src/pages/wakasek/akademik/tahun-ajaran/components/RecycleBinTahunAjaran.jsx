@@ -156,7 +156,7 @@ function TrashRow({ item, index, onRestore, onForceDelete, canManage }) {
 
   return semesters.map((sem, si) => (
     <tr
-      key={sem.id ?? si}
+      key={sem.ulid ?? si}
       className="hover:bg-[#006e2a]/5 transition-all duration-300 group"
     >
       {si === 0 && (
@@ -262,7 +262,7 @@ function TrashCard({ item, onRestore, onForceDelete, canManage }) {
         <div className="flex flex-wrap gap-2">
           {semesters.map((sem, si) => (
             <span
-              key={sem.id ?? si}
+              key={sem.ulid ?? si}
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e6e9e8] text-[#3f4945] text-[10px] font-black tracking-widest uppercase border border-[#bfc9c4]/30"
             >
               {sem.nama?.toUpperCase() ?? "-"}
