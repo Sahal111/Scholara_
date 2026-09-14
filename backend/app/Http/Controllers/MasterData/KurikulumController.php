@@ -37,6 +37,18 @@ class KurikulumController extends Controller
         return $this->success(KurikulumResource::collection($kurikulums));
     }
 
+    public function stats(): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $data = $this->kurikulumService->getStats($schoolId);
+
+        return $this->success($data);
+    }
+
     /**
      * GET /v1/master-data/kurikulum/dropdown
      * Dropdown ringan untuk pilihan kelas/mapel.
@@ -226,17 +238,29 @@ class KurikulumController extends Controller
     }
 
     /**
-     * GET /v1/master-data/kurikulum/tahun-ajaran/{tahunAjaranId}
+     * GET /v1/master-data/kurikulum/tahun-ajaran/{tahunAjaran}
      * Daftar kurikulum yang berlaku di tahun ajaran tertentu.
+     *
+     * Parameter {tahunAjaran} diterima sebagai ULID (standar API Scholara).
+     * Di-resolve ke integer PK sebelum diteruskan ke service.
      */
-    public function kurikulumUntukTahunAjaran(int $tahunAjaranId): JsonResponse
+    public function kurikulumUntukTahunAjaran(string $tahunAjaran): JsonResponse
     {
         $schoolId = $this->resolveSchoolId();
         if ($schoolId === null) {
             return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
         }
 
-        $data = $this->kurikulumService->kurikulumUntukTahunAjaran($schoolId, $tahunAjaranId);
+        $tahunAjaranRecord = \App\Models\TahunAjaran::withoutGlobalScopes()
+            ->where('ulid', $tahunAjaran)
+            ->select('id')
+            ->first();
+
+        if ($tahunAjaranRecord === null) {
+            return $this->notFound('Tahun ajaran tidak ditemukan.');
+        }
+
+        $data = $this->kurikulumService->kurikulumUntukTahunAjaran($schoolId, $tahunAjaranRecord->id);
 
         return $this->success($data);
     }

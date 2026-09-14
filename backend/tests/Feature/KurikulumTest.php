@@ -12,14 +12,23 @@ use Tests\TestCase;
  *
  * Coverage:
  *   - index: platform defaults + custom sekolah muncul, custom sekolah lain tidak
- *   - store: sekolah tidak bisa set is_platform_default = true
+ *   - store: wakasek bisa buat kurikulum, is_platform_default dipaksa false oleh service
+ *   - store: operator (view-only) ditolak 403
  *   - destroy: gagal jika kelas masih pakai kurikulum
- *   - cross-tenant isolation: sekolah A tidak lihat custom sekolah B
+ *   - cross-tenant isolation: sekolah A tidak bisa update custom sekolah B
  *   - bound check: tanpa tenant context → 400, bukan 500
+ *
+ * CATATAN URL: Semua endpoint kurikulum berada di /api/operator/master-data/kurikulum
+ * (bukan /api/v1/master-data/kurikulum) sesuai routing aktif di master-data.php.
+ *
+ * CATATAN RBAC: master_data.kurikulum.manage hanya dimiliki wakasek (bukan operator)
+ * setelah RBAC split September 2026 (2026_09_04_000001_fix_rbac_wakasek_operator_academic_split).
  */
 class KurikulumTest extends TestCase
 {
     use RefreshDatabase;
+
+    private const BASE_URL = '/api/operator/master-data/kurikulum';
 
     private School $schoolA;
     private School $schoolB;
@@ -36,20 +45,20 @@ class KurikulumTest extends TestCase
 
     public function test_index_returns_platform_defaults_and_own_custom(): void
     {
-        // Platform default (school_id NULL)
-        $platform = Kurikulum::withoutGlobalScopes()->create($this->kurikulumData(null, 'K13_PLATFORM'));
+        // Platform default (school_id NULL) — Observer skip log untuk ini
+        $this->createKurikulum(null, 'K13_PLATFORM');
 
-        // Custom sekolah A
-        $customA = Kurikulum::withoutGlobalScopes()->create($this->kurikulumData($this->schoolA->id, 'K13_A'));
+        // Custom sekolah A — Observer log hanya jika school_id non-null
+        $this->createKurikulum($this->schoolA->id, 'K13_A');
 
         // Custom sekolah B — tidak boleh muncul untuk A
-        Kurikulum::withoutGlobalScopes()->create($this->kurikulumData($this->schoolB->id, 'K13_B'));
+        $this->createKurikulum($this->schoolB->id, 'K13_B');
 
         $user = $this->createUserWithRole($this->schoolA->id, 'operator');
         $this->actingAs($user, 'sanctum');
         $this->setTenant($this->schoolA->id);
 
-        $response = $this->getJson('/api/v1/master-data/kurikulum');
+        $response = $this->getJson(self::BASE_URL);
 
         $response->assertOk();
 
@@ -62,13 +71,17 @@ class KurikulumTest extends TestCase
 
     // ── store ─────────────────────────────────────────────────────────────────
 
-    public function test_store_cannot_set_is_platform_default_true(): void
+    /**
+     * Wakasek (pemilik kebijakan akademik) bisa membuat kurikulum.
+     * is_platform_default = true harus diabaikan service — selalu false untuk tenant.
+     */
+    public function test_store_wakasek_cannot_set_is_platform_default_true(): void
     {
-        $user = $this->createUserWithRole($this->schoolA->id, 'operator');
+        $user = $this->createUserWithRole($this->schoolA->id, 'wakasek');
         $this->actingAs($user, 'sanctum');
         $this->setTenant($this->schoolA->id);
 
-        $response = $this->postJson('/api/v1/master-data/kurikulum', [
+        $response = $this->postJson(self::BASE_URL, [
             'nama' => 'Kurikulum Custom',
             'kode' => 'CUSTOM_01',
             'jenis' => 'nasional',
@@ -81,17 +94,35 @@ class KurikulumTest extends TestCase
         $this->assertDatabaseHas('kurikulums', [
             'kode' => 'CUSTOM_01',
             'school_id' => $this->schoolA->id,
-            'is_platform_default' => false, // service paksa false
+            'is_platform_default' => false,
         ]);
+    }
+
+    /**
+     * Operator pasca-RBAC-split tidak lagi punya master_data.kurikulum.manage.
+     * Harus ditolak 403 Forbidden.
+     */
+    public function test_store_operator_is_forbidden(): void
+    {
+        $user = $this->createUserWithRole($this->schoolA->id, 'operator');
+        $this->actingAs($user, 'sanctum');
+        $this->setTenant($this->schoolA->id);
+
+        $response = $this->postJson(self::BASE_URL, [
+            'nama' => 'Kurikulum Coba',
+            'kode' => 'COBA_01',
+            'jenis' => 'nasional',
+            'tahun_berlaku' => 2024,
+        ]);
+
+        $response->assertForbidden();
     }
 
     // ── destroy ───────────────────────────────────────────────────────────────
 
     public function test_destroy_fails_if_kurikulum_used_by_kelas(): void
     {
-        $kurikulum = Kurikulum::withoutGlobalScopes()->create(
-            $this->kurikulumData($this->schoolA->id, 'K13_USED')
-        );
+        $kurikulum = $this->createKurikulum($this->schoolA->id, 'K13_USED');
 
         // Simulasi ada kelas yang pakai kurikulum ini
         \DB::table('kelas')->insert([
@@ -103,11 +134,11 @@ class KurikulumTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $user = $this->createUserWithRole($this->schoolA->id, 'operator');
+        $user = $this->createUserWithRole($this->schoolA->id, 'wakasek');
         $this->actingAs($user, 'sanctum');
         $this->setTenant($this->schoolA->id);
 
-        $response = $this->deleteJson("/api/v1/master-data/kurikulum/{$kurikulum->ulid}");
+        $response = $this->deleteJson(self::BASE_URL . "/{$kurikulum->ulid}");
 
         $response->assertStatus(422);
         $this->assertDatabaseHas('kurikulums', ['id' => $kurikulum->id, 'deleted_at' => null]);
@@ -117,15 +148,13 @@ class KurikulumTest extends TestCase
 
     public function test_school_a_cannot_update_school_b_custom_kurikulum(): void
     {
-        $kurikulumB = Kurikulum::withoutGlobalScopes()->create(
-            $this->kurikulumData($this->schoolB->id, 'K13_B_PRIVATE')
-        );
+        $kurikulumB = $this->createKurikulum($this->schoolB->id, 'K13_B_PRIVATE');
 
-        $user = $this->createUserWithRole($this->schoolA->id, 'operator');
+        $user = $this->createUserWithRole($this->schoolA->id, 'wakasek');
         $this->actingAs($user, 'sanctum');
         $this->setTenant($this->schoolA->id);
 
-        $response = $this->putJson("/api/v1/master-data/kurikulum/{$kurikulumB->ulid}", [
+        $response = $this->putJson(self::BASE_URL . "/{$kurikulumB->ulid}", [
             'nama' => 'Hacked',
         ]);
 
@@ -140,7 +169,7 @@ class KurikulumTest extends TestCase
         $this->actingAs($user, 'sanctum');
         $this->clearTenant(); // simulasi TenantMiddleware gagal
 
-        $response = $this->getJson('/api/v1/master-data/kurikulum');
+        $response = $this->getJson(self::BASE_URL);
 
         // Harus 400, bukan 500 (BindingResolutionException)
         $response->assertStatus(400);
@@ -148,16 +177,29 @@ class KurikulumTest extends TestCase
 
     // ── helpers ───────────────────────────────────────────────────────────────
 
-    private function kurikulumData(?int $schoolId, string $kode): array
+    /**
+     * Buat kurikulum langsung via DB::table untuk bypass Observer
+     * (Observer crash jika school_id non-null tapi current_school_id belum di-bind).
+     * Lalu load model dari DB untuk mendapat ULID.
+     */
+    private function createKurikulum(?int $schoolId, string $kode): Kurikulum
     {
-        return [
+        $now = now();
+        $ulid = \Illuminate\Support\Str::ulid()->toString();
+
+        \DB::table('kurikulums')->insert([
             'school_id' => $schoolId,
+            'ulid' => $ulid,
             'nama' => "Kurikulum {$kode}",
             'kode' => $kode,
             'jenis' => 'nasional',
             'tahun_berlaku' => 2023,
-            'is_platform_default' => false,
+            'is_platform_default' => $schoolId === null,
             'is_active' => true,
-        ];
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        return Kurikulum::withoutGlobalScopes()->where('ulid', $ulid)->firstOrFail();
     }
 }

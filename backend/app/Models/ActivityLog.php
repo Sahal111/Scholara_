@@ -71,8 +71,14 @@ class ActivityLog extends Model
         string $keterangan = '',
         ?array $changes = null,
     ): static {
+        $schoolId = app()->bound('current_school_id') ? app('current_school_id') : null;
+
+        if ($schoolId === null) {
+            return new static(); // skip insert, kembalikan empty model
+        }
+
         return static::create([
-            'school_id' => app()->bound('current_school_id') ? app('current_school_id') : null,
+            'school_id' => $schoolId,
             'user_id' => auth()->id(),
             'action' => $action,
             'module' => $module,

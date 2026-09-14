@@ -58,7 +58,7 @@ abstract class TestCase extends BaseTestCase
             'is_active' => true,
         ], $overrides));
 
-        $user->roles()->attach($role);
+        $user->roles()->attach($role, ['school_id' => $schoolId]);
 
         return $user;
     }

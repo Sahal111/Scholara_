@@ -450,4 +450,17 @@ class KurikulumService
 
         KurikulumKomponenNilai::insert($insert);
     }
+
+    public function getStats(int $schoolId): array
+    {
+        $base = Kurikulum::availableForSchool($schoolId);
+
+        return [
+            'total' => (clone $base)->count(),
+            'platform' => (clone $base)->whereNull('school_id')->count(),
+            'custom' => (clone $base)->where('school_id', $schoolId)->count(),
+            'aktif' => (clone $base)->where('is_active', true)->count(),
+            'nonaktif' => (clone $base)->where('is_active', false)->count(),
+        ];
+    }
 }

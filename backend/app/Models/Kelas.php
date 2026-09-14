@@ -52,8 +52,13 @@ class Kelas extends Model
     /**
      * Relasi ke kurikulum yang digunakan kelas ini.
      * Menggunakan FK kurikulum_id (bukan kolom enum lama).
+     *
+     * PERHATIAN: Sengaja dinamai `kurikulumRef` (bukan `kurikulum`) karena
+     * kolom legacy `kurikulum` (string) masih ada di $attributes.
+     * Jika dinamai sama, Eloquent akan mengembalikan nilai kolom string
+     * dan bukan instance model Kurikulum.
      */
-    public function kurikulum(): BelongsTo
+    public function kurikulumRef(): BelongsTo
     {
         return $this->belongsTo(Kurikulum::class, 'kurikulum_id');
     }
@@ -64,7 +69,7 @@ class Kelas extends Model
      */
     public function getNamaKurikulumAttribute(): string
     {
-        return $this->kurikulum?->nama ?? $this->getOriginal('kurikulum') ?? '-';
+        return $this->kurikulumRef?->nama ?? $this->attributes['kurikulum'] ?? '-';
     }
 
     public function tahunAjaran()

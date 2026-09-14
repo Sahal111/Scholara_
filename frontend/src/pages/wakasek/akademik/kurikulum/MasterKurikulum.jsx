@@ -1,10 +1,15 @@
 import { useState } from "react";
-import { BookOpen, Globe, School, ToggleLeft } from "lucide-react";
+import { BookOpen, Globe, School, ToggleLeft, Trash2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   useKurikulumList,
   useKurikulumDetail,
+  useKurikulumStats,
   useDeleteKurikulum,
   useDeactivateKurikulum,
+  useActivateKurikulum,
+  useKurikulumTrash,
+  useRestoreKurikulum,
 } from "@/hooks/api/useKurikulum";
 import DataTable from "@/components/ui/DataTable";
 import Confirm from "@/components/ui/Confirm";
@@ -55,6 +60,9 @@ function StatCard({ label, value, icon: Icon, color }) {
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function MasterKurikulum() {
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("master_data.kurikulum.manage");
+
   const [search, setSearch] = useState("");
   const [filterJenis, setFilterJenis] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -80,18 +88,24 @@ export default function MasterKurikulum() {
     page,
   });
 
+  const [tab, setTab] = useState("aktif"); // "aktif" | "trash"
+
   const hapus = useDeleteKurikulum();
   const nonaktifkan = useDeactivateKurikulum();
+  const aktifkan = useActivateKurikulum();
+  const restore = useRestoreKurikulum();
+
+  const { data: trashData, isLoading: trashLoading } = useKurikulumTrash();
+  const trashList = trashData?.data ?? [];
 
   const list = data?.data ?? [];
   const meta = data?.meta ?? null;
-  const total = meta?.total ?? 0;
 
-  // Stat sederhana dari data yang ada di halaman
-  const totalPlatform = list.filter((k) => k.is_platform).length;
-  const totalCustom = list.filter((k) => !k.is_platform).length;
-  const totalAktif = list.filter((k) => k.is_active).length;
-
+  const { data: statsData } = useKurikulumStats();
+  const total = statsData?.data?.total ?? meta?.total ?? 0;
+  const totalPlatform = statsData?.data?.platform ?? 0;
+  const totalCustom = statsData?.data?.custom ?? 0;
+  const totalAktif = statsData?.data?.aktif ?? 0;
   const openTambah = () => {
     setEditUlid(null);
     setModalOpen(true);
@@ -112,6 +126,8 @@ export default function MasterKurikulum() {
       await hapus.mutateAsync(confirm.target.ulid);
     } else if (confirm.type === "nonaktif") {
       await nonaktifkan.mutateAsync(confirm.target.ulid);
+    } else if (confirm.type === "aktif") {
+      await aktifkan.mutateAsync(confirm.target.ulid);
     }
     setConfirm({ open: false, type: null, target: null });
   };
@@ -168,25 +184,51 @@ export default function MasterKurikulum() {
       header: () => <span className="sr-only">Aksi</span>,
       cell: ({ row }) => {
         const k = row.original;
-        if (k.is_platform) return null;
+        if (k.is_platform) {
+          return (
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  setEditUlid(k.ulid);
+                  setModalOpen(true);
+                }}
+                className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Lihat Detail
+              </button>
+            </div>
+          );
+        }
         return (
           <div className="flex items-center justify-end gap-2">
-            <button
-              onClick={() => openEdit(k)}
-              className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
-            >
-              Edit
-            </button>
-            {k.is_active && (
+            {canManage && (
               <button
-                onClick={() =>
-                  setConfirm({ open: true, type: "nonaktif", target: k })
-                }
-                className="text-xs px-3 py-1 rounded-lg border border-amber-200 text-amber-600 hover:bg-amber-50 transition-colors"
+                onClick={() => openEdit(k)}
+                className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
               >
-                Nonaktifkan
+                Edit
               </button>
             )}
+            {canManage &&
+              (k.is_active ? (
+                <button
+                  onClick={() =>
+                    setConfirm({ open: true, type: "nonaktif", target: k })
+                  }
+                  className="text-xs px-3 py-1 rounded-lg border border-amber-200 text-amber-600 hover:bg-amber-50 transition-colors"
+                >
+                  Nonaktifkan
+                </button>
+              ) : (
+                <button
+                  onClick={() =>
+                    setConfirm({ open: true, type: "aktif", target: k })
+                  }
+                  className="text-xs px-3 py-1 rounded-lg border border-green-200 text-green-600 hover:bg-green-50 transition-colors"
+                >
+                  Aktifkan
+                </button>
+              ))}
             <button
               onClick={() =>
                 setConfirm({ open: true, type: "hapus", target: k })
@@ -212,6 +254,38 @@ export default function MasterKurikulum() {
         <p className="text-sm text-gray-500 mt-0.5">
           Kelola kurikulum platform dan custom sekolah
         </p>
+      </div>
+
+      {/* Tab toggle */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setTab("aktif")}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            tab === "aktif"
+              ? "bg-[#006e2a] text-white"
+              : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          Daftar Kurikulum
+        </button>
+        {canManage && (
+          <button
+            onClick={() => setTab("trash")}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
+              tab === "trash"
+                ? "bg-red-500 text-white"
+                : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            <Trash2 size={14} />
+            Recycle Bin
+            {trashList.length > 0 && (
+              <span className="bg-red-100 text-red-600 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                {trashList.length}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Stats */}
@@ -289,27 +363,92 @@ export default function MasterKurikulum() {
             <option value="0">Nonaktif</option>
           </select>
 
-          <button
-            onClick={openTambah}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#006e2a] text-white rounded-lg hover:bg-[#005a22] transition-colors whitespace-nowrap"
-          >
-            + Tambah Kurikulum
-          </button>
+          {canManage && (
+            <button
+              onClick={openTambah}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#006e2a] text-white rounded-lg hover:bg-[#005a22] transition-colors whitespace-nowrap"
+            >
+              + Tambah Kurikulum
+            </button>
+          )}
         </div>
       </div>
 
       {/* BUG 6 FIX: DataTable menggantikan raw <table> */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <DataTable
-          columns={columns}
-          data={list}
-          isLoading={isLoading}
-          meta={meta}
-          onPageChange={setPage}
-          emptyMessage="Tidak ada kurikulum ditemukan."
-        />
-      </div>
-
+      {tab === "aktif" && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <DataTable
+            columns={columns}
+            data={list}
+            isLoading={isLoading}
+            meta={meta}
+            onPageChange={setPage}
+            emptyMessage="Tidak ada kurikulum ditemukan."
+          />
+        </div>
+      )}
+      {tab === "trash" && (
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          {trashLoading ? (
+            <div className="p-8 space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-12 bg-gray-100 rounded-lg animate-pulse"
+                />
+              ))}
+            </div>
+          ) : trashList.length === 0 ? (
+            <div className="text-center py-16 text-sm text-gray-400">
+              Recycle bin kosong.
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="border-b border-gray-100 bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">
+                    Nama
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">
+                    Kode
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">
+                    Dihapus
+                  </th>
+                  <th className="px-4 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {trashList.map((k) => (
+                  <tr key={k.ulid} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-medium text-gray-800">
+                      {k.nama}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                      {k.kode}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">
+                      {k.deleted_at
+                        ? new Date(k.deleted_at).toLocaleDateString("id-ID")
+                        : "-"}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => restore.mutateAsync(k.ulid)}
+                        disabled={restore.isPending}
+                        className="text-xs px-3 py-1 rounded-lg border border-green-200 text-green-600 hover:bg-green-50 transition-colors disabled:opacity-50"
+                      >
+                        Pulihkan
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+      
       {/* BUG 1 FIX: kirim detailResponse?.data (berisi komponen_nilais) ke modal */}
       <ModalKurikulum
         open={modalOpen}
@@ -324,18 +463,30 @@ export default function MasterKurikulum() {
         onClose={() => setConfirm({ open: false, type: null, target: null })}
         onConfirm={handleConfirm}
         title={
-          confirm.type === "hapus" ? "Hapus Kurikulum" : "Nonaktifkan Kurikulum"
+          confirm.type === "hapus"
+            ? "Hapus Kurikulum"
+            : confirm.type === "nonaktif"
+              ? "Nonaktifkan Kurikulum"
+              : "Aktifkan Kurikulum"
         }
         message={
           confirm.type === "hapus"
             ? `Hapus kurikulum "${confirm.target?.nama}"? Pastikan tidak ada kelas yang masih menggunakannya.`
-            : `Nonaktifkan kurikulum "${confirm.target?.nama}"? Kurikulum tidak akan bisa dipilih untuk kelas baru.`
+            : confirm.type === "nonaktif"
+              ? `Nonaktifkan kurikulum "${confirm.target?.nama}"? Kurikulum tidak akan bisa dipilih untuk kelas baru.`
+              : `Aktifkan kembali kurikulum "${confirm.target?.nama}"?`
         }
         variant={confirm.type === "hapus" ? "danger" : "warning"}
         confirmLabel={
-          confirm.type === "hapus" ? "Ya, Hapus" : "Ya, Nonaktifkan"
+          confirm.type === "hapus"
+            ? "Ya, Hapus"
+            : confirm.type === "nonaktif"
+              ? "Ya, Nonaktifkan"
+              : "Ya, Aktifkan"
         }
-        isLoading={hapus.isPending || nonaktifkan.isPending}
+        isLoading={
+          hapus.isPending || nonaktifkan.isPending || aktifkan.isPending
+        }
       />
     </div>
   );

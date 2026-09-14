@@ -83,8 +83,12 @@ class MataPelajaran extends Model
      * Kurikulum spesifik mapel ini.
      * NULL = mapel berlaku untuk semua kurikulum (mapel umum seperti Matematika, B.Indonesia).
      * non-NULL = mapel hanya ada di kurikulum tertentu (misal: P5 hanya ada di Merdeka).
+     *
+     * PERHATIAN: Sengaja dinamai `kurikulumRef` (bukan `kurikulum`) karena
+     * kolom legacy `kurikulum` (string) masih ada di $fillable/$attributes.
+     * Eloquent akan selalu mengembalikan nilai kolom jika nama method = nama kolom.
      */
-    public function kurikulum(): BelongsTo
+    public function kurikulumRef(): BelongsTo
     {
         return $this->belongsTo(Kurikulum::class, 'kurikulum_id');
     }

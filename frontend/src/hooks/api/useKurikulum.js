@@ -58,6 +58,17 @@ export function useKurikulumDropdown() {
   });
 }
 
+export function useKurikulumStats() {
+  return useQuery({
+    queryKey: [...kurikulumKeys.all, "stats"],
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/stats`);
+      return data;
+    },
+    staleTime: 30_000,
+  });
+}
+
 // BUG 4 FIX: query trash (recycle bin)
 export function useKurikulumTrash(params = {}) {
   return useQuery({

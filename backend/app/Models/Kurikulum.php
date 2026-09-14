@@ -94,7 +94,7 @@ class Kurikulum extends Model
 
         static::deleting(function ($model) {
             $model->deleted_by = auth()->id();
-            $model->save();
+            $model->saveQuietly();
         });
     }
 

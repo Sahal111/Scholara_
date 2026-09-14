@@ -122,15 +122,19 @@ export default function ModalKurikulum({
   loadingDetail = false,
 }) {
   const isEdit = !!editData;
-
+  const isReadOnly = editData?.is_platform ?? false;
   const [form, setForm] = useState(EMPTY_FORM);
 
   const create = useCreateKurikulum();
   const update = useUpdateKurikulum();
   const loading = create.isPending || update.isPending;
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setErrors({});
+      return;
+    }
 
     if (editData) {
       setForm({
@@ -193,11 +197,17 @@ export default function ModalKurikulum({
       })),
     };
 
+    setErrors({});
     const action = isEdit
       ? update.mutateAsync({ ulid: editData.ulid, ...payload })
       : create.mutateAsync(payload);
 
-    action.then(() => onClose());
+    action
+      .then(() => onClose())
+      .catch((err) => {
+        const validationErrors = err.response?.data?.errors ?? {};
+        setErrors(validationErrors);
+      });
   };
 
   return (
@@ -227,8 +237,11 @@ export default function ModalKurikulum({
                 value={form.nama}
                 onChange={(e) => set("nama", e.target.value)}
                 placeholder="Contoh: Kurikulum Merdeka 2024"
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
+                className={`w-full text-sm border rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30 ${errors.nama ? "border-red-300" : "border-gray-200"}`}
               />
+              {errors.nama && (
+                <p className="text-xs text-red-500 mt-1">{errors.nama[0]}</p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -240,8 +253,11 @@ export default function ModalKurikulum({
                 value={form.kode}
                 onChange={(e) => set("kode", e.target.value.toUpperCase())}
                 placeholder="Contoh: MERDEKA_2024"
-                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
+                className={`w-full text-sm border rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30 ${errors.kode ? "border-red-300" : "border-gray-200"}`}
               />
+              {errors.kode && (
+                <p className="text-xs text-red-500 mt-1">{errors.kode[0]}</p>
+              )}
             </div>
           </div>
 
@@ -270,7 +286,7 @@ export default function ModalKurikulum({
               <input
                 type="number"
                 required
-                min={2000}
+                min={1900}
                 max={2100}
                 value={form.tahun_berlaku}
                 onChange={(e) => set("tahun_berlaku", e.target.value)}
@@ -283,7 +299,7 @@ export default function ModalKurikulum({
               </label>
               <input
                 type="number"
-                min={2000}
+                min={1900}
                 max={2100}
                 value={form.tahun_berakhir}
                 onChange={(e) => set("tahun_berakhir", e.target.value)}
@@ -386,19 +402,21 @@ export default function ModalKurikulum({
               onClick={onClose}
               className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Batal
+              Tutup
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-5 py-2 text-sm font-medium bg-[#006e2a] text-white rounded-lg hover:bg-[#005a22] transition-colors disabled:opacity-60"
-            >
-              {loading
-                ? "Menyimpan..."
-                : isEdit
-                  ? "Simpan Perubahan"
-                  : "Tambah Kurikulum"}
-            </button>
+            {!isReadOnly && (
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-5 py-2 text-sm font-medium bg-[#006e2a] text-white rounded-lg hover:bg-[#005a22] transition-colors disabled:opacity-60"
+              >
+                {loading
+                  ? "Menyimpan..."
+                  : isEdit
+                    ? "Simpan Perubahan"
+                    : "Tambah Kurikulum"}
+              </button>
+            )}
           </div>
         </form>
       )}

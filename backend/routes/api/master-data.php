@@ -343,6 +343,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
         // Static routes SEBELUM {ulid} wildcard (aturan Scholara)
         Route::middleware('permission:master_data.kurikulum.view')->group(function () {
             // Static routes BEFORE wildcards
+            Route::get('/kurikulum/stats', [KurikulumController::class, 'stats'])
+                ->name('master-data.kurikulum.stats');
             Route::get('/kurikulum/dropdown', [KurikulumController::class, 'dropdown'])
                 ->name('master-data.kurikulum.dropdown');
             Route::get('/kurikulum/trash', [KurikulumController::class, 'trash'])
