@@ -74,42 +74,188 @@ export function getTglSelesai(t) {
   return genap ? genap.tgl_selesai : ganjil ? ganjil.tgl_selesai : null;
 }
 
+// ── Status Workflow ──────────────────────────────────────────────────────────
+
 /**
- * Tentukan status lifecycle Tahun Ajaran berdasarkan posisi relatif
- * terhadap Tahun Ajaran yang sedang aktif.
+ * Status values yang datang dari backend (StatusTahunAjaran enum).
+ * Selalu pakai konstanta ini — jangan hardcode string di komponen.
+ */
+export const TA_STATUS = {
+  DRAFT: "draft",
+  UNDER_REVIEW: "under_review",
+  APPROVED: "approved",
+  ACTIVE: "active",
+  COMPLETED: "completed",
+  ARCHIVED: "archived",
+};
+
+/**
+ * Label Bahasa Indonesia per status — sinkron dengan backend enum.
+ */
+export const TA_STATUS_LABEL = {
+  draft: "Draft",
+  under_review: "Menunggu Review",
+  approved: "Disetujui",
+  active: "Aktif",
+  completed: "Selesai",
+  archived: "Diarsipkan",
+};
+
+/**
+ * Config visual (warna, icon) per status — dipakai oleh badge & action menu.
+ */
+export const TA_STATUS_CONFIG = {
+  draft: {
+    label: "Draft",
+    color: "text-[#3f4945]",
+    bg: "bg-[#eceeed]",
+    border: "border-[#bfc9c4]/40",
+    dot: "bg-[#3f4945]",
+    icon: "draft",
+  },
+  under_review: {
+    label: "Menunggu Review",
+    color: "text-[#7a4f00]",
+    bg: "bg-[#ffdeac]/40",
+    border: "border-[#ffdeac]",
+    dot: "bg-[#f59e0b]",
+    icon: "pending",
+  },
+  approved: {
+    label: "Disetujui",
+    color: "text-[#005db5]",
+    bg: "bg-blue-50",
+    border: "border-blue-200",
+    dot: "bg-blue-500",
+    icon: "verified",
+  },
+  active: {
+    label: "Aktif",
+    color: "text-[#006e2a]",
+    bg: "bg-[#006e2a]/10",
+    border: "border-[#006e2a]/20",
+    dot: "bg-[#006e2a]",
+    icon: "check_circle",
+    pulse: true,
+  },
+  completed: {
+    label: "Selesai",
+    color: "text-[#3f4945]",
+    bg: "bg-[#eceeed]",
+    border: "border-[#bfc9c4]/30",
+    dot: "bg-[#3f4945]/60",
+    icon: "task_alt",
+  },
+  archived: {
+    label: "Diarsipkan",
+    color: "text-[#3f4945]/50",
+    bg: "bg-[#eceeed]/60",
+    border: "border-[#bfc9c4]/20",
+    dot: "bg-[#3f4945]/30",
+    icon: "inventory_2",
+  },
+};
+
+/**
+ * Ambil status workflow dari field `status` backend.
+ * Pakai ini sebagai source of truth — bukan is_active boolean.
  *
- * Prinsip:
- *   - is_active=true         → AKTIF
- *   - tahun < tahun aktif    → SELESAI
- *   - tahun > tahun aktif    → AKAN DATANG
- *   - fallback (tanpa aktif) → gunakan posisi tahun vs tahun sekarang
- *
- * Tanggal semester TIDAK dipakai sebagai penentu status lifecycle.
- * Status periode dan progress data akademik adalah dua hal yang independen.
- *
- * @param {object}      t           - objek TahunAjaran
- * @param {string|null} activeTahun - nilai `tahun` dari TA yang is_active=true,
- *                                    e.g. "2025/2026". Pass null jika tidak ada.
+ * Fallback ke derivasi lama (is_active) kalau field status belum ada
+ * di respons API (misal: cache lama sebelum migration dijalankan).
+ */
+export function getWorkflowStatus(t) {
+  if (t?.status && TA_STATUS_CONFIG[t.status]) return t.status;
+
+  // Fallback legacy
+  if (t?.is_active) return TA_STATUS.ACTIVE;
+  if (t?.is_archived) return TA_STATUS.ARCHIVED;
+  return TA_STATUS.DRAFT;
+}
+
+/**
+ * @deprecated Pakai getWorkflowStatus() + TA_STATUS_CONFIG.
+ * Dipertahankan agar komponen lain yang belum dimigrasi tidak breaking.
  */
 export function getStatusTahunAjaran(t, activeTahun = null) {
-  if (t.is_active) return "AKTIF";
-
-  const yearStart = (tahun) => parseInt(tahun?.split("/")[0] ?? "0", 10);
-
-  if (activeTahun) {
-    const tStart = yearStart(t.tahun);
-    const activeStart = yearStart(activeTahun);
-    if (tStart < activeStart) return "SELESAI";
-    if (tStart > activeStart) return "AKAN DATANG";
+  const ws = getWorkflowStatus(t);
+  if (ws === TA_STATUS.ACTIVE) return "AKTIF";
+  if (ws === TA_STATUS.COMPLETED || ws === TA_STATUS.ARCHIVED) return "SELESAI";
+  if (
+    ws === TA_STATUS.DRAFT ||
+    ws === TA_STATUS.UNDER_REVIEW ||
+    ws === TA_STATUS.APPROVED
+  ) {
+    // Kalau ada TA aktif sebagai referensi, bandingkan tahun
+    if (activeTahun) {
+      const yearStart = (tahun) => parseInt(tahun?.split("/")[0] ?? "0", 10);
+      const tStart = yearStart(t.tahun);
+      const activeStart = yearStart(activeTahun);
+      if (tStart > activeStart) return "AKAN DATANG";
+    }
   }
-
-  // Fallback: tidak ada TA aktif → posisi relatif vs tahun kalender sekarang
-  const tahunMulai = yearStart(t.tahun);
-  const tahunSelesai = t.tahun ? parseInt(t.tahun.split("/")[1], 10) : null;
-  const tahunSekarang = new Date().getFullYear();
-
-  if (!tahunMulai) return "SELESAI";
-  if (tahunMulai > tahunSekarang) return "AKAN DATANG";
-  if (tahunSelesai && tahunSelesai <= tahunSekarang) return "SELESAI";
   return "SELESAI";
+}
+
+// ── Role-based Action Permissions ────────────────────────────────────────────
+
+/**
+ * Tentukan aksi mana yang boleh ditampilkan di action menu
+ * berdasarkan role user dan status TA saat ini.
+ *
+ * Return object boolean — komponen tinggal pakai destructuring.
+ *
+ * @param {object} t        - objek TahunAjaran dari API
+ * @param {object} perms    - hasil hasPermission() dari AuthContext
+ *
+ * Contoh:
+ *   const actions = getTahunAjaranActions(ta, {
+ *     canManage:      hasPermission("master_data.tahun_ajaran.manage"),
+ *     canReview:      hasPermission("master_data.tahun_ajaran.review"),
+ *     canApprove:     hasPermission("master_data.tahun_ajaran.approve"),
+ *     canActivate:    hasPermission("master_data.tahun_ajaran.activate"),
+ *   });
+ *   if (actions.showSubmitReview) { ... }
+ */
+export function getTahunAjaranActions(t, perms = {}) {
+  const {
+    canManage = false,
+    canReview = false,
+    canApprove = false,
+    canActivate = false,
+  } = perms;
+  const status = getWorkflowStatus(t);
+
+  return {
+    // ── View — semua role yang punya akses bisa lihat detail
+    showDetail: true,
+
+    // ── Operator: edit & hapus hanya saat DRAFT
+    showEdit: canManage && status === TA_STATUS.DRAFT,
+    showDelete: canManage && status === TA_STATUS.DRAFT,
+
+    // ── Wakasek: submit ke review — hanya dari DRAFT
+    showSubmitReview: canReview && status === TA_STATUS.DRAFT,
+
+    // ── Kepsek: approve / reject — hanya saat UNDER_REVIEW
+    showApprove: canApprove && status === TA_STATUS.UNDER_REVIEW,
+    showReject: canApprove && status === TA_STATUS.UNDER_REVIEW,
+
+    // ── Kepsek: aktifkan — hanya saat APPROVED
+    showAktifkan: canActivate && status === TA_STATUS.APPROVED,
+
+    // ── Wakasek: ganti semester aktif — hanya saat ACTIVE
+    showSetSemesterAktif: canReview && status === TA_STATUS.ACTIVE,
+
+    // ── Wakasek: selesaikan / tutup buku — hanya saat ACTIVE
+    showSelesaikan: canReview && status === TA_STATUS.ACTIVE,
+
+    // ── Operator: arsipkan — hanya saat COMPLETED
+    showArsip: canManage && status === TA_STATUS.COMPLETED,
+
+    // ── Operator: unarsip — hanya saat ARCHIVED
+    showUnarsip: canManage && status === TA_STATUS.ARCHIVED,
+
+    // ── Kepsek bisa lihat catatan review
+    showCatatanReview: canApprove || canActivate,
+  };
 }

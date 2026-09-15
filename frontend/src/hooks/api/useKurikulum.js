@@ -22,6 +22,45 @@ export const kurikulumKeys = {
     tahunAjaranId,
   ],
 };
+// ── Permission helpers — RBAC Kurikulum ──────────────────────────────────────
+/**
+ * Status workflow Kurikulum (sinkron dengan backend jika ada).
+ * Untuk sekarang kurikulum pakai is_active boolean,
+ * bukan status enum seperti TahunAjaran.
+ */
+export const KURIKULUM_STATUS = {
+  ACTIVE: "active",
+  INACTIVE: "inactive",
+  DELETED: "deleted",
+};
+
+/**
+ * Tentukan aksi yang boleh ditampilkan di UI kurikulum
+ * berdasarkan role + kondisi kurikulum saat ini.
+ *
+ * RBAC Kurikulum:
+ *   - Wakasek → full CRUD + activate/deactivate
+ *   - Kepsek  → view only (approve jika ada workflow di masa depan)
+ *   - Operator → view only (READ sesuai PROJECT_CONTEXT.md)
+ *   - Guru    → view only
+ *
+ * @param {object} k       - objek Kurikulum dari API
+ * @param {object} perms   - { canManageKurikulum, canViewKurikulum }
+ */
+export function getKurikulumActions(k, perms = {}) {
+  const { canManageKurikulum = false } = perms;
+  const isActive = !!k?.is_active;
+  const isDeleted = !!k?.deleted_at;
+
+  return {
+    showDetail: true,
+    showEdit: canManageKurikulum && !isDeleted,
+    showActivate: canManageKurikulum && !isActive && !isDeleted,
+    showDeactivate: canManageKurikulum && isActive && !isDeleted,
+    showDelete: canManageKurikulum && !isDeleted,
+    showRestore: canManageKurikulum && isDeleted,
+  };
+}
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 export function useKurikulumList(params = {}) {

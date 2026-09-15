@@ -8,8 +8,12 @@ import {
   tahunAjaranKeys,
   useTahunAjaranList,
   useTahunAjaranDetail,
-  useSetTahunAjaranAktif,
+  useSubmitReviewTahunAjaran,
+  useApproveTahunAjaran,
+  useRejectTahunAjaran,
+  useAktifkanTahunAjaran,
   useSetSemesterAktif,
+  useSelesaikanTahunAjaran,
   useDeleteTahunAjaran,
   useArsipkanTahunAjaran,
 } from "../../../../hooks/api/useTahunAjaran";
@@ -25,6 +29,10 @@ import {
   getTglMulai,
   getTglSelesai,
   getStatusTahunAjaran,
+  getWorkflowStatus,
+  TA_STATUS,
+  TA_STATUS_CONFIG,
+  getTahunAjaranActions,
 } from "./utils/tahunAjaranHelpers";
 
 // ── Alias — komponen dipindah ke ./components/ModalTahunAjaran.jsx ─────────────
@@ -38,6 +46,18 @@ const SemesterCard = SemesterCardComp;
 export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
   const { hasPermission } = useAuth();
   const canManage = hasPermission("master_data.tahun_ajaran.manage");
+  const canReview = hasPermission("master_data.tahun_ajaran.review");
+  const canApprove = hasPermission("master_data.tahun_ajaran.approve");
+  const canActivate = hasPermission("master_data.tahun_ajaran.activate");
+
+  // Helper untuk generate allowed actions per TA + role saat ini
+  const getActions = (ta) =>
+    getTahunAjaranActions(ta, {
+      canManage,
+      canReview,
+      canApprove,
+      canActivate,
+    });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -169,13 +189,35 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
   const { data: selectedDetailData, isLoading: loadingDetail } =
     useTahunAjaranDetail(selectedTA?.ulid);
 
-  // Mutations — pakai hooks yang sudah ada (tidak duplikasi logic)
-  const setAktif = useSetTahunAjaranAktif();
+  // Mutations — workflow 3-layer
+  const submitReviewMut = useSubmitReviewTahunAjaran();
+  const approveMut = useApproveTahunAjaran();
+  const rejectMut = useRejectTahunAjaran();
+  const aktifkanMut = useAktifkanTahunAjaran();
   const setSemesterAktif = useSetSemesterAktif();
+  const selesaikanMut = useSelesaikanTahunAjaran();
   const hapusMut = useDeleteTahunAjaran();
   const arsipkanMut = useArsipkanTahunAjaran();
 
-  // Wrapper untuk hapus: set selectedId null setelah berhasil
+  // State modal reject — butuh input catatan dari kepsek
+  const [rejectModal, setRejectModal] = useState({
+    open: false,
+    item: null,
+    catatan: "",
+  });
+  const closeRejectModal = () =>
+    setRejectModal({ open: false, item: null, catatan: "" });
+
+  // State modal approve — catatan opsional dari kepsek
+  const [approveModal, setApproveModal] = useState({
+    open: false,
+    item: null,
+    catatan: "",
+  });
+  const closeApproveModal = () =>
+    setApproveModal({ open: false, item: null, catatan: "" });
+
+  // Wrapper untuk hapus: reset selectedId setelah berhasil
   const hapus = {
     mutate: (id) =>
       hapusMut.mutate(id, { onSuccess: () => setSelectedId(null) }),
@@ -600,22 +642,30 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                                   </div>
                                 </td>
 
-                                {/* Status Column */}
+                                {/* Status Column — workflow status dari backend */}
                                 <td className="py-6 px-3">
-                                  {status === "AKTIF" ? (
-                                    <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] font-label-badge text-[10px] font-bold tracking-widest border border-[#006e2a]/20 shadow-xs">
-                                      <span className="w-1.5 h-1.5 rounded-full bg-[#006e2a] animate-pulse" />
-                                      AKTIF
-                                    </span>
-                                  ) : status === "SELESAI" ? (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#eceeed] text-[#3f4945] font-label-badge text-[10px] font-bold tracking-widest">
-                                      SELESAI
-                                    </span>
-                                  ) : status === "AKAN DATANG" ? (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] font-label-badge text-[10px] font-bold tracking-widest border border-[#006e2a]/20">
-                                      AKAN DATANG
-                                    </span>
-                                  ) : null}
+                                  {(() => {
+                                    const ws = getWorkflowStatus(t);
+                                    const cfg =
+                                      TA_STATUS_CONFIG[ws] ??
+                                      TA_STATUS_CONFIG.draft;
+                                    return (
+                                      <span
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border font-label-badge text-[10px] font-bold tracking-widest ${cfg.bg} ${cfg.color} ${cfg.border}`}
+                                      >
+                                        {cfg.pulse ? (
+                                          <span
+                                            className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`}
+                                          />
+                                        ) : (
+                                          <span
+                                            className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}
+                                          />
+                                        )}
+                                        {cfg.label.toUpperCase()}
+                                      </span>
+                                    );
+                                  })()}
                                 </td>
 
                                 {/* Data Akademik Column */}
@@ -642,13 +692,16 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                                   })()}
                                 </td>
 
-                                {/* Aksi Column */}
+                                {/* Aksi Column — tampil untuk semua role yg punya akses */}
                                 <td className="py-6 px-3 text-right">
                                   <div
                                     className="inline-flex"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    {canManage && (
+                                    {(canManage ||
+                                      canReview ||
+                                      canApprove ||
+                                      canActivate) && (
                                       <button
                                         type="button"
                                         onClick={(e) =>
@@ -1122,9 +1175,13 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
             setOpenActionId(null);
             setActionMenuPosition(null);
           };
+          const actions = getActions(actionItem);
+          const ws = getWorkflowStatus(actionItem);
+          const cfg = TA_STATUS_CONFIG[ws] ?? TA_STATUS_CONFIG.draft;
+
           return createPortal(
             <div
-              className="fixed z-[9999] w-52"
+              className="fixed z-[9999] w-56"
               style={{
                 top: actionMenuPosition.top,
                 left: actionMenuPosition.left,
@@ -1132,19 +1189,20 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="bg-surface rounded-2xl border border-border-light shadow-xl shadow-black/8 p-1 animate-in fade-in zoom-in-95 slide-in-from-top-2 duration-150">
-                {/* HEADER — nama TA */}
+                {/* HEADER */}
                 <div className="px-3 pt-2.5 pb-2 border-b border-border-light mb-1">
                   <p className="text-[11px] font-bold text-text-primary truncate">
                     {actionItem.tahun}
                   </p>
-                  <p className="text-[10px] text-text-secondary mt-0.5">
-                    {actionItem.is_active
-                      ? "Tahun Ajaran Aktif"
-                      : "Periode Tidak Aktif"}
-                  </p>
+                  <span
+                    className={`inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold ${cfg.bg} ${cfg.color} ${cfg.border} border`}
+                  >
+                    <span className={`w-1 h-1 rounded-full ${cfg.dot}`} />
+                    {cfg.label}
+                  </span>
                 </div>
 
-                {/* DETAIL */}
+                {/* LIHAT DETAIL — selalu tampil */}
                 <button
                   type="button"
                   onClick={() => {
@@ -1159,102 +1217,219 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                   <span>Lihat Detail</span>
                 </button>
 
-                {/* EDIT */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    close();
-                    setEditData({ ...actionItem });
-                    setModalOpen(true);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-text-primary hover:bg-surface-container-low hover:text-primary transition-colors"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-text-secondary">
-                    edit
-                  </span>
-                  <span>Edit Periode</span>
-                </button>
-
-                {/* SET AKTIF */}
-                {!actionItem.is_active && (
+                {/* EDIT — operator, hanya saat DRAFT */}
+                {actions.showEdit && (
                   <button
                     type="button"
                     onClick={() => {
                       close();
-                      openConfirm({
-                        title: "Aktifkan Tahun Ajaran",
-                        message: `"${actionItem.tahun}" akan dijadikan tahun ajaran aktif. Tahun ajaran yang sedang aktif akan dinonaktifkan secara otomatis.`,
-                        onConfirm: () => setAktif.mutate(actionItem.ulid),
-                        isDanger: false,
-                      });
+                      setEditData({ ...actionItem });
+                      setModalOpen(true);
                     }}
-                    disabled={setAktif.isPending}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-success hover:bg-success/8 transition-colors disabled:opacity-50"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-text-primary hover:bg-surface-container-low hover:text-primary transition-colors"
                   >
-                    <span className="material-symbols-outlined text-[18px] text-success">
-                      check_circle
+                    <span className="material-symbols-outlined text-[18px] text-text-secondary">
+                      edit
                     </span>
-                    <span>Jadikan Aktif</span>
+                    <span>Edit Draft</span>
                   </button>
                 )}
 
-                {/* DIVIDER */}
-                <div className="h-px bg-border-light mx-1 my-1" />
-
-                {/* SELESAI & ARSIPKAN — hanya muncul kalau TA tidak aktif */}
-                {!actionItem.is_active && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      close();
-                      setArsipModal({
-                        open: true,
-                        item: actionItem,
-                        catatan: "",
-                        isPending: false,
-                      });
-                    }}
-                    disabled={arsipkanMut.isPending}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-[#006e2a] hover:bg-[#006e2a]/8 transition-colors disabled:opacity-50"
-                  >
-                    <span
-                      className="material-symbols-outlined text-[18px] text-[#006e2a]"
-                      style={{ fontVariationSettings: "'FILL' 1" }}
+                {/* SUBMIT REVIEW — wakasek, dari DRAFT */}
+                {actions.showSubmitReview && (
+                  <>
+                    <div className="h-px bg-border-light mx-1 my-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        close();
+                        openConfirm({
+                          title: "Submit untuk Review Kepsek",
+                          message: `"${actionItem.tahun}" akan dikirim ke kepala sekolah untuk ditinjau dan disetujui.`,
+                          onConfirm: () =>
+                            submitReviewMut.mutate(actionItem.ulid),
+                          isDanger: false,
+                        });
+                      }}
+                      disabled={submitReviewMut.isPending}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-[#7a4f00] hover:bg-[#ffdeac]/30 transition-colors disabled:opacity-50"
                     >
-                      inventory_2
-                    </span>
-                    <span>Selesai &amp; Arsipkan</span>
-                  </button>
+                      <span className="material-symbols-outlined text-[18px] text-[#f59e0b]">
+                        pending
+                      </span>
+                      <span>Submit ke Review</span>
+                    </button>
+                  </>
                 )}
 
-                {/* DELETE → recycle bin */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    close();
-                    openConfirm({
-                      title: "Pindahkan ke Recycle Bin",
-                      message: `Periode "${actionItem.tahun}" akan dipindahkan ke recycle bin. Data dapat dipulihkan kembali.`,
-                      onConfirm: () => hapus.mutate(actionItem.ulid),
-                    });
-                  }}
-                  disabled={hapus.isPending || actionItem.is_active}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-danger hover:bg-danger/8 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <span className="material-symbols-outlined text-[18px] text-danger">
-                    delete
-                  </span>
-                  <span>Pindah ke Recycle Bin</span>
-                </button>
-
-                {/* INFO UNTUK DATA AKTIF */}
-                {actionItem.is_active && (
-                  <div className="px-3 pb-2">
-                    <p className="text-[10px] text-text-secondary/70">
-                      Nonaktifkan dulu sebelum mengarsipkan atau menghapus.
-                    </p>
-                  </div>
+                {/* APPROVE & REJECT — kepsek, saat UNDER_REVIEW */}
+                {(actions.showApprove || actions.showReject) && (
+                  <>
+                    <div className="h-px bg-border-light mx-1 my-1" />
+                    {actions.showApprove && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          close();
+                          setApproveModal({
+                            open: true,
+                            item: actionItem,
+                            catatan: "",
+                          });
+                        }}
+                        disabled={approveMut.isPending}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-blue-500">
+                          verified
+                        </span>
+                        <span>Setujui</span>
+                      </button>
+                    )}
+                    {actions.showReject && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          close();
+                          setRejectModal({
+                            open: true,
+                            item: actionItem,
+                            catatan: "",
+                          });
+                        }}
+                        disabled={rejectMut.isPending}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-danger hover:bg-danger/8 transition-colors disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-danger">
+                          cancel
+                        </span>
+                        <span>Tolak (Kembalikan)</span>
+                      </button>
+                    )}
+                  </>
                 )}
+
+                {/* AKTIFKAN — kepsek, saat APPROVED */}
+                {actions.showAktifkan && (
+                  <>
+                    <div className="h-px bg-border-light mx-1 my-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        close();
+                        openConfirm({
+                          title: "Aktifkan Tahun Ajaran",
+                          message: `"${actionItem.tahun}" akan diaktifkan. Semester Ganjil otomatis aktif. TA lain yang sedang aktif akan diselesaikan.`,
+                          onConfirm: () => aktifkanMut.mutate(actionItem.ulid),
+                          isDanger: false,
+                        });
+                      }}
+                      disabled={aktifkanMut.isPending}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-[#006e2a] hover:bg-[#006e2a]/8 transition-colors disabled:opacity-50"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-[#006e2a]">
+                        check_circle
+                      </span>
+                      <span>Aktifkan Tahun Ajaran</span>
+                    </button>
+                  </>
+                )}
+
+                {/* SELESAIKAN — wakasek, saat ACTIVE */}
+                {actions.showSelesaikan && (
+                  <>
+                    <div className="h-px bg-border-light mx-1 my-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        close();
+                        openConfirm({
+                          title: "Selesaikan Tahun Ajaran",
+                          message: `Tutup buku "${actionItem.tahun}"? Semua semester akan dinonaktifkan. TA bisa diarsipkan oleh operator setelahnya.`,
+                          onConfirm: () =>
+                            selesaikanMut.mutate(actionItem.ulid),
+                          isDanger: false,
+                        });
+                      }}
+                      disabled={selesaikanMut.isPending}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-[#006e2a] hover:bg-[#006e2a]/8 transition-colors disabled:opacity-50"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-[#006e2a]">
+                        task_alt
+                      </span>
+                      <span>Tutup Buku (Selesaikan)</span>
+                    </button>
+                  </>
+                )}
+
+                {/* ARSIPKAN — operator, saat COMPLETED */}
+                {actions.showArsip && (
+                  <>
+                    <div className="h-px bg-border-light mx-1 my-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        close();
+                        setArsipModal({
+                          open: true,
+                          item: actionItem,
+                          catatan: "",
+                          isPending: false,
+                        });
+                      }}
+                      disabled={arsipkanMut.isPending}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-[#006e2a] hover:bg-[#006e2a]/8 transition-colors disabled:opacity-50"
+                    >
+                      <span
+                        className="material-symbols-outlined text-[18px] text-[#006e2a]"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        inventory_2
+                      </span>
+                      <span>Arsipkan</span>
+                    </button>
+                  </>
+                )}
+
+                {/* DELETE — operator, hanya DRAFT */}
+                {actions.showDelete && (
+                  <>
+                    <div className="h-px bg-border-light mx-1 my-1" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        close();
+                        openConfirm({
+                          title: "Pindahkan ke Recycle Bin",
+                          message: `Draft "${actionItem.tahun}" akan dipindahkan ke recycle bin. Bisa dipulihkan kembali.`,
+                          onConfirm: () => hapus.mutate(actionItem.ulid),
+                        });
+                      }}
+                      disabled={hapus.isPending}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-danger hover:bg-danger/8 transition-colors disabled:opacity-40"
+                    >
+                      <span className="material-symbols-outlined text-[18px] text-danger">
+                        delete
+                      </span>
+                      <span>Hapus Draft</span>
+                    </button>
+                  </>
+                )}
+
+                {/* INFO kalau tidak ada aksi yang tersedia */}
+                {!actions.showEdit &&
+                  !actions.showSubmitReview &&
+                  !actions.showApprove &&
+                  !actions.showAktifkan &&
+                  !actions.showSelesaikan &&
+                  !actions.showArsip &&
+                  !actions.showDelete && (
+                    <div className="px-3 pb-2 pt-1">
+                      <p className="text-[10px] text-text-secondary/70 italic">
+                        Tidak ada aksi yang tersedia untuk role dan status ini.
+                      </p>
+                    </div>
+                  )}
               </div>
             </div>,
             document.body,
@@ -1355,6 +1530,197 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                     {confirmModal.isDanger ? "delete" : "check_circle"}
                   </span>
                   {confirmModal.isDanger ? "Ya, Hapus" : "Ya, Aktifkan"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* ── Modal Approve (Kepsek) ───────────────────────────────────────── */}
+      {approveModal.open &&
+        approveModal.item &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={closeApproveModal}
+          >
+            <div
+              className="bg-white rounded-[20px] w-full max-w-md shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-center mx-auto mb-5">
+                <span
+                  className="material-symbols-outlined text-blue-600 text-[30px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  verified
+                </span>
+              </div>
+              <h3 className="text-lg font-extrabold text-[#00342b] text-center mb-1">
+                Setujui Tahun Ajaran?
+              </h3>
+              <p className="text-sm text-[#3f4945]/70 text-center mb-5 leading-relaxed">
+                Kamu akan menyetujui{" "}
+                <strong className="text-[#00342b]">
+                  {approveModal.item.tahun}
+                </strong>
+                . Setelah disetujui, data tidak bisa diedit lagi. Aktifkan TA
+                setelah ini.
+              </p>
+              <div className="mb-5">
+                <label className="block text-xs font-bold text-[#3f4945] uppercase tracking-wider mb-2">
+                  Catatan{" "}
+                  <span className="font-normal text-[#707975] normal-case tracking-normal">
+                    (opsional)
+                  </span>
+                </label>
+                <textarea
+                  value={approveModal.catatan}
+                  onChange={(e) =>
+                    setApproveModal((s) => ({ ...s, catatan: e.target.value }))
+                  }
+                  placeholder="Catatan untuk wakasek / operator..."
+                  rows={3}
+                  maxLength={500}
+                  className="w-full resize-none bg-[#f2f4f3]/60 border border-[#bfc9c4]/30 rounded-xl py-3 px-4 text-sm text-[#191c1c] placeholder:text-[#3f4945]/40 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 outline-none transition-all"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeApproveModal}
+                  disabled={approveMut.isPending}
+                  className="flex-1 py-3 rounded-xl border border-[#bfc9c4]/50 text-[#3f4945] font-bold text-xs uppercase tracking-wider hover:bg-[#f2f4f3] transition disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={approveMut.isPending}
+                  onClick={() =>
+                    approveMut.mutate(
+                      {
+                        ulid: approveModal.item.ulid,
+                        catatan: approveModal.catatan.trim() || undefined,
+                      },
+                      { onSuccess: closeApproveModal },
+                    )
+                  }
+                  className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {approveMut.isPending ? (
+                    <>
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Menyetujui...
+                    </>
+                  ) : (
+                    <>
+                      <span
+                        className="material-symbols-outlined text-[16px]"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        verified
+                      </span>
+                      Ya, Setujui
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* ── Modal Reject (Kepsek) ─────────────────────────────────────────── */}
+      {rejectModal.open &&
+        rejectModal.item &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={closeRejectModal}
+          >
+            <div
+              className="bg-white rounded-[20px] w-full max-w-md shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-14 h-14 rounded-2xl bg-danger/10 border border-danger/20 flex items-center justify-center mx-auto mb-5">
+                <span
+                  className="material-symbols-outlined text-danger text-[30px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  cancel
+                </span>
+              </div>
+              <h3 className="text-lg font-extrabold text-[#00342b] text-center mb-1">
+                Tolak & Kembalikan?
+              </h3>
+              <p className="text-sm text-[#3f4945]/70 text-center mb-5 leading-relaxed">
+                <strong className="text-[#00342b]">
+                  {rejectModal.item.tahun}
+                </strong>{" "}
+                akan dikembalikan ke Draft. Wakasek perlu memperbaiki dan submit
+                ulang.
+              </p>
+              <div className="mb-5">
+                <label className="block text-xs font-bold text-[#3f4945] uppercase tracking-wider mb-2">
+                  Alasan Penolakan <span className="text-danger">*</span>
+                </label>
+                <textarea
+                  value={rejectModal.catatan}
+                  onChange={(e) =>
+                    setRejectModal((s) => ({ ...s, catatan: e.target.value }))
+                  }
+                  placeholder="Jelaskan apa yang perlu diperbaiki..."
+                  rows={3}
+                  maxLength={500}
+                  className="w-full resize-none bg-[#f2f4f3]/60 border border-[#bfc9c4]/30 rounded-xl py-3 px-4 text-sm text-[#191c1c] placeholder:text-[#3f4945]/40 focus:ring-2 focus:ring-danger/20 focus:border-danger outline-none transition-all"
+                />
+                {!rejectModal.catatan.trim() && (
+                  <p className="text-[11px] text-danger mt-1">
+                    Alasan wajib diisi.
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeRejectModal}
+                  disabled={rejectMut.isPending}
+                  className="flex-1 py-3 rounded-xl border border-[#bfc9c4]/50 text-[#3f4945] font-bold text-xs uppercase tracking-wider hover:bg-[#f2f4f3] transition disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={rejectMut.isPending || !rejectModal.catatan.trim()}
+                  onClick={() =>
+                    rejectMut.mutate(
+                      {
+                        ulid: rejectModal.item.ulid,
+                        catatan: rejectModal.catatan.trim(),
+                      },
+                      { onSuccess: closeRejectModal },
+                    )
+                  }
+                  className="flex-1 py-3 rounded-xl bg-danger text-white font-bold text-xs uppercase tracking-wider hover:bg-red-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {rejectMut.isPending ? (
+                    <>
+                      <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      Menolak...
+                    </>
+                  ) : (
+                    <>
+                      <span
+                        className="material-symbols-outlined text-[16px]"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
+                        cancel
+                      </span>
+                      Ya, Tolak
+                    </>
+                  )}
                 </button>
               </div>
             </div>

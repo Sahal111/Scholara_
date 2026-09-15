@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\MasterData;
 
+use App\Enums\StatusTahunAjaran;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TahunAjaran\AktifkanSemesterRequest as SetSemesterAktifRequest;
 use App\Http\Requests\TahunAjaran\ArsipTahunAjaranRequest;
@@ -10,14 +11,15 @@ use App\Http\Requests\TahunAjaran\UpdateTahunAjaranRequest;
 use App\Models\Absensi;
 use App\Models\ActivityLog;
 use App\Models\Kelas;
+use App\Models\KalenderAkademik;
+use App\Models\PlotGuruMapel;
 use App\Models\RiwayatKelas;
 use App\Models\Semester;
-use App\Models\PlotGuruMapel;
-use App\Models\KalenderAkademik;
-use App\Models\UserWaliKelas;
 use App\Models\TahunAjaran;
+use App\Models\UserWaliKelas;
 use App\Services\TahunAjaranService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -27,14 +29,12 @@ class TahunAjaranController extends Controller
     {
     }
 
-    /**
-     * List semua tahun ajaran yang aktif (belum diarsipkan, belum dihapus).
-     * Dipaginate sesuai standar PROJECT_CONTEXT.
-     */
+    // ── READ ─────────────────────────────────────────────────────────────────
+
     public function index(): JsonResponse
     {
         $data = TahunAjaran::with('semesters')
-            ->where('is_archived', false)
+            ->whereNotIn('status', [StatusTahunAjaran::ARCHIVED->value])
             ->orderByDesc('tahun')
             ->paginate(request()->integer('per_page', 15));
 
@@ -48,6 +48,28 @@ class TahunAjaranController extends Controller
         return $this->success($this->service->buildDetail($tahunAjaran));
     }
 
+    public function arsipList(): JsonResponse
+    {
+        $data = TahunAjaran::with('semesters')
+            ->status(StatusTahunAjaran::ARCHIVED)
+            ->orderByDesc('archived_at')
+            ->paginate(request()->integer('per_page', 15));
+
+        return $this->success($data);
+    }
+
+    public function trash(): JsonResponse
+    {
+        $data = TahunAjaran::onlyTrashed()
+            ->with(['semesters' => fn($q) => $q->withTrashed()])
+            ->orderByDesc('deleted_at')
+            ->paginate(request()->integer('per_page', 15));
+
+        return $this->success($data);
+    }
+
+    // ── CREATE ───────────────────────────────────────────────────────────────
+
     public function store(StoreTahunAjaranRequest $request): JsonResponse
     {
         Gate::authorize('create', TahunAjaran::class);
@@ -56,28 +78,21 @@ class TahunAjaranController extends Controller
 
         DB::beginTransaction();
         try {
-            if ($request->is_active) {
-                TahunAjaran::where('school_id', $schoolId)->update(['is_active' => false]);
-            }
-
+            // Operator hanya bisa buat DRAFT — tidak langsung ACTIVE
             $tahunAjaran = TahunAjaran::create([
                 'school_id' => $schoolId,
                 'tahun' => $request->tahun,
-                'is_active' => $request->is_active ?? false,
+                'status' => StatusTahunAjaran::DRAFT,
             ]);
 
             if ($request->buat_semester) {
-                if ($request->semester_aktif) {
-                    Semester::where('school_id', $schoolId)->update(['is_active' => false]);
-                }
-
                 Semester::create([
                     'school_id' => $schoolId,
                     'tahun_ajaran_id' => $tahunAjaran->id,
                     'nama' => 'Ganjil',
                     'tgl_mulai' => $request->semester_ganjil_mulai,
                     'tgl_selesai' => $request->semester_ganjil_selesai,
-                    'is_active' => $request->is_active && $request->semester_aktif === 'Ganjil',
+                    'is_active' => false,
                 ]);
 
                 Semester::create([
@@ -86,7 +101,7 @@ class TahunAjaranController extends Controller
                     'nama' => 'Genap',
                     'tgl_mulai' => $request->semester_genap_mulai,
                     'tgl_selesai' => $request->semester_genap_selesai,
-                    'is_active' => $request->is_active && $request->semester_aktif === 'Genap',
+                    'is_active' => false,
                 ]);
             }
 
@@ -94,14 +109,14 @@ class TahunAjaranController extends Controller
                 'create',
                 'tahun_ajaran',
                 $tahunAjaran->id,
-                "Membuat tahun ajaran {$tahunAjaran->tahun}" . ($request->buat_semester ? ' beserta semester.' : '.'),
+                "Membuat draft tahun ajaran {$tahunAjaran->tahun}" . ($request->buat_semester ? ' beserta semester.' : '.'),
             );
 
             DB::commit();
 
             return $this->created(
                 $tahunAjaran->load('semesters'),
-                'Tahun ajaran berhasil ditambahkan.'
+                'Tahun ajaran berhasil dibuat sebagai draft.'
             );
         } catch (\Exception $e) {
             DB::rollBack();
@@ -109,89 +124,36 @@ class TahunAjaranController extends Controller
         }
     }
 
+    // ── UPDATE ───────────────────────────────────────────────────────────────
+
     public function update(UpdateTahunAjaranRequest $request, string $ulid): JsonResponse
     {
         $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
-        Gate::authorize('manage', $tahunAjaran);
+        Gate::authorize('update', $tahunAjaran);
 
-        $schoolId = $tahunAjaran->school_id;
+        // Lock rule: data tidak bisa diedit setelah APPROVED
+        if ($tahunAjaran->isLocked()) {
+            return $this->error(
+                "Tahun ajaran berstatus \"{$tahunAjaran->status->label()}\" tidak dapat diedit. " .
+                'Data terkunci setelah disetujui kepsek.',
+                'LOCKED',
+                422
+            );
+        }
 
         DB::beginTransaction();
         try {
-            if ($request->is_active && !$tahunAjaran->is_active) {
-                TahunAjaran::where('school_id', $schoolId)->update(['is_active' => false]);
-            }
-
-            $tahunAjaran->update([
-                'tahun' => $request->tahun,
-                'is_active' => $request->is_active ?? $tahunAjaran->is_active,
-            ]);
+            $tahunAjaran->update(['tahun' => $request->tahun]);
 
             if ($request->buat_semester) {
-                $semGanjilLama = Semester::where('school_id', $schoolId)
-                    ->where('tahun_ajaran_id', $tahunAjaran->id)
-                    ->where('nama', 'Ganjil')
-                    ->withTrashed()
-                    ->first();
-
-                $semGenapLama = Semester::where('school_id', $schoolId)
-                    ->where('tahun_ajaran_id', $tahunAjaran->id)
-                    ->where('nama', 'Genap')
-                    ->withTrashed()
-                    ->first();
-
-                if ($request->has('semester_aktif') && $request->semester_aktif && $request->is_active) {
-                    Semester::where('school_id', $schoolId)->update(['is_active' => false]);
-                }
-
-                $hasGanjilData = $request->has('semester_ganjil_mulai') || $request->has('semester_ganjil_selesai');
-                if ($hasGanjilData || $semGanjilLama) {
-                    $ganjilPayload = [
-                        'school_id' => $schoolId,
-                        'tgl_mulai' => $request->has('semester_ganjil_mulai') ? $request->semester_ganjil_mulai : $semGanjilLama?->tgl_mulai,
-                        'tgl_selesai' => $request->has('semester_ganjil_selesai') ? $request->semester_ganjil_selesai : $semGanjilLama?->tgl_selesai,
-                        'is_active' => $request->has('semester_aktif') && $request->is_active
-                            ? ($request->semester_aktif === 'Ganjil')
-                            : ($semGanjilLama?->is_active ?? false),
-                        'deleted_at' => null,
-                    ];
-                    if ($semGanjilLama) {
-                        $semGanjilLama->update($ganjilPayload);
-                    } elseif ($hasGanjilData) {
-                        Semester::create(array_merge($ganjilPayload, [
-                            'tahun_ajaran_id' => $tahunAjaran->id,
-                            'nama' => 'Ganjil',
-                        ]));
-                    }
-                }
-
-                $hasGenapData = $request->has('semester_genap_mulai') || $request->has('semester_genap_selesai');
-                if ($hasGenapData || $semGenapLama) {
-                    $genapPayload = [
-                        'school_id' => $schoolId,
-                        'tgl_mulai' => $request->has('semester_genap_mulai') ? $request->semester_genap_mulai : $semGenapLama?->tgl_mulai,
-                        'tgl_selesai' => $request->has('semester_genap_selesai') ? $request->semester_genap_selesai : $semGenapLama?->tgl_selesai,
-                        'is_active' => $request->has('semester_aktif') && $request->is_active
-                            ? ($request->semester_aktif === 'Genap')
-                            : ($semGenapLama?->is_active ?? false),
-                        'deleted_at' => null,
-                    ];
-                    if ($semGenapLama) {
-                        $semGenapLama->update($genapPayload);
-                    } elseif ($hasGenapData) {
-                        Semester::create(array_merge($genapPayload, [
-                            'tahun_ajaran_id' => $tahunAjaran->id,
-                            'nama' => 'Genap',
-                        ]));
-                    }
-                }
+                $this->syncSemesters($tahunAjaran, $request);
             }
 
             ActivityLog::log(
                 'update',
                 'tahun_ajaran',
                 $tahunAjaran->id,
-                "Memperbarui tahun ajaran {$tahunAjaran->tahun}" . ($request->buat_semester ? ' dan semester.' : '.'),
+                "Memperbarui draft tahun ajaran {$tahunAjaran->tahun}."
             );
 
             DB::commit();
@@ -206,40 +168,176 @@ class TahunAjaranController extends Controller
         }
     }
 
-    public function setAktif(string $ulid): JsonResponse
+    // ── WORKFLOW TRANSITIONS ─────────────────────────────────────────────────
+
+    /**
+     * WAKASEK: Submit TA dari DRAFT → UNDER_REVIEW.
+     * PATCH /tahun-ajaran/{ulid}/submit-review
+     */
+    public function submitReview(string $ulid): JsonResponse
     {
-        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
-        Gate::authorize('manage', $tahunAjaran);
+        $tahunAjaran = TahunAjaran::with('semesters')->where('ulid', $ulid)->firstOrFail();
+        Gate::authorize('submitReview', $tahunAjaran);
 
-        $schoolId = $tahunAjaran->school_id;
-        TahunAjaran::where('school_id', $schoolId)->update(['is_active' => false]);
-        Semester::where('school_id', $schoolId)->update(['is_active' => false]);
-        $tahunAjaran->update(['is_active' => true]);
-
-        Semester::where('tahun_ajaran_id', $tahunAjaran->id)
-            ->where('nama', 'Ganjil')
-            ->update(['is_active' => true]);
-
-        ActivityLog::log('set_aktif', 'tahun_ajaran', $tahunAjaran->id, "Mengaktifkan tahun ajaran {$tahunAjaran->tahun}.");
-
-        return $this->success(
-            $tahunAjaran->load('semesters'),
-            'Tahun ajaran aktif berhasil diubah.'
-        );
-    }
-
-    public function setSemesterAktif(SetSemesterAktifRequest $request, string $ulid): JsonResponse
-    {
-        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
-        Gate::authorize('manage', $tahunAjaran);
-
-        if (!$tahunAjaran->is_active) {
+        // Validasi: semester harus sudah ada sebelum bisa direview
+        if ($tahunAjaran->semesters->count() < 2) {
             return $this->error(
-                'Aktifkan tahun ajaran ini terlebih dahulu.',
+                'Semester Ganjil dan Genap harus sudah dibuat sebelum submit ke review.',
                 'VALIDATION_ERROR',
                 422
             );
         }
+
+        $tahunAjaran->update([
+            'status' => StatusTahunAjaran::UNDER_REVIEW,
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+        ]);
+
+        ActivityLog::log(
+            'submit_review',
+            'tahun_ajaran',
+            $tahunAjaran->id,
+            "Wakasek men-submit tahun ajaran {$tahunAjaran->tahun} untuk direview kepsek."
+        );
+
+        return $this->success(
+            $tahunAjaran->load('semesters'),
+            'Tahun ajaran berhasil disubmit untuk review kepala sekolah.'
+        );
+    }
+
+    /**
+     * KEPSEK: Approve TA dari UNDER_REVIEW → APPROVED.
+     * PATCH /tahun-ajaran/{ulid}/approve
+     */
+    public function approve(Request $request, string $ulid): JsonResponse
+    {
+        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
+        Gate::authorize('approve', $tahunAjaran);
+
+        $tahunAjaran->update([
+            'status' => StatusTahunAjaran::APPROVED,
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+            'catatan_review' => $request->catatan,
+        ]);
+
+        ActivityLog::log(
+            'approve',
+            'tahun_ajaran',
+            $tahunAjaran->id,
+            "Kepsek menyetujui tahun ajaran {$tahunAjaran->tahun}." .
+            ($request->catatan ? " Catatan: {$request->catatan}" : '')
+        );
+
+        return $this->success(
+            $tahunAjaran->load('semesters'),
+            'Tahun ajaran berhasil disetujui.'
+        );
+    }
+
+    /**
+     * KEPSEK: Reject TA dari UNDER_REVIEW → DRAFT.
+     * PATCH /tahun-ajaran/{ulid}/reject
+     */
+    public function reject(Request $request, string $ulid): JsonResponse
+    {
+        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
+        Gate::authorize('reject', $tahunAjaran);
+
+        if (!$request->filled('catatan')) {
+            return $this->error(
+                'Catatan alasan penolakan wajib diisi.',
+                'VALIDATION_ERROR',
+                422
+            );
+        }
+
+        $tahunAjaran->update([
+            'status' => StatusTahunAjaran::DRAFT,
+            'catatan_review' => $request->catatan,
+            // Reset reviewed fields agar wakasek bisa submit ulang
+            'reviewed_by' => null,
+            'reviewed_at' => null,
+        ]);
+
+        ActivityLog::log(
+            'reject',
+            'tahun_ajaran',
+            $tahunAjaran->id,
+            "Kepsek menolak tahun ajaran {$tahunAjaran->tahun}. Catatan: {$request->catatan}"
+        );
+
+        return $this->success(
+            $tahunAjaran->load('semesters'),
+            'Tahun ajaran dikembalikan ke draft. Wakasek dapat memperbaiki dan submit ulang.'
+        );
+    }
+
+    /**
+     * KEPSEK: Aktifkan TA dari APPROVED → ACTIVE.
+     * PATCH /tahun-ajaran/{ulid}/aktifkan
+     *
+     * Hanya satu TA yang boleh ACTIVE per sekolah.
+     * Otomatis set semester Ganjil sebagai aktif.
+     */
+    public function aktifkan(string $ulid): JsonResponse
+    {
+        $tahunAjaran = TahunAjaran::with('semesters')->where('ulid', $ulid)->firstOrFail();
+        Gate::authorize('activate', $tahunAjaran);
+
+        $schoolId = $tahunAjaran->school_id;
+
+        DB::beginTransaction();
+        try {
+            // Non-aktifkan TA lain yang masih ACTIVE
+            TahunAjaran::where('school_id', $schoolId)
+                ->where('status', StatusTahunAjaran::ACTIVE->value)
+                ->where('id', '!=', $tahunAjaran->id)
+                ->each(function (TahunAjaran $ta) {
+                    // TA yang digeser dari ACTIVE → COMPLETED (bukan langsung archived)
+                    $ta->update(['status' => StatusTahunAjaran::COMPLETED]);
+                    Semester::where('tahun_ajaran_id', $ta->id)->update(['is_active' => false]);
+                });
+
+            // Nonaktifkan semua semester sekolah ini
+            Semester::where('school_id', $schoolId)->update(['is_active' => false]);
+
+            // Aktifkan TA dan mulai dari semester Ganjil
+            $tahunAjaran->update(['status' => StatusTahunAjaran::ACTIVE]);
+
+            Semester::where('tahun_ajaran_id', $tahunAjaran->id)
+                ->where('nama', 'Ganjil')
+                ->update(['is_active' => true]);
+
+            ActivityLog::log(
+                'aktifkan',
+                'tahun_ajaran',
+                $tahunAjaran->id,
+                "Kepsek mengaktifkan tahun ajaran {$tahunAjaran->tahun}."
+            );
+
+            DB::commit();
+
+            return $this->success(
+                $tahunAjaran->load('semesters'),
+                'Tahun ajaran berhasil diaktifkan. Semester Ganjil otomatis aktif.'
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error('Terjadi kesalahan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
+        }
+    }
+
+    /**
+     * WAKASEK: Ganti semester aktif (Ganjil ↔ Genap).
+     * PATCH /tahun-ajaran/{ulid}/semester-aktif
+     */
+    public function setSemesterAktif(SetSemesterAktifRequest $request, string $ulid): JsonResponse
+    {
+        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
+        Gate::authorize('setSemesterAktif', $tahunAjaran);
 
         Semester::where('tahun_ajaran_id', $tahunAjaran->id)->update(['is_active' => false]);
         Semester::where('tahun_ajaran_id', $tahunAjaran->id)
@@ -250,7 +348,7 @@ class TahunAjaranController extends Controller
             'set_semester_aktif',
             'tahun_ajaran',
             $tahunAjaran->id,
-            "Mengaktifkan Semester {$request->semester_nama} pada tahun ajaran {$tahunAjaran->tahun}.",
+            "Wakasek mengaktifkan Semester {$request->semester_nama} pada tahun ajaran {$tahunAjaran->tahun}."
         );
 
         return $this->success(
@@ -260,41 +358,69 @@ class TahunAjaranController extends Controller
     }
 
     /**
-     * Arsipkan tahun ajaran (periode selesai → arsip historis).
+     * WAKASEK: Selesaikan / tutup buku TA dari ACTIVE → COMPLETED.
+     * PATCH /tahun-ajaran/{ulid}/selesaikan
      */
-    public function arsip(ArsipTahunAjaranRequest $request, string $ulid): JsonResponse
+    public function selesaikan(string $ulid): JsonResponse
     {
         $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
-        Gate::authorize('manage', $tahunAjaran);
-
-        if ($tahunAjaran->is_active) {
-            return $this->error(
-                'Tahun ajaran aktif tidak dapat diarsipkan. Nonaktifkan terlebih dahulu.',
-                'CONFLICT',
-                422
-            );
-        }
-
-        if ($tahunAjaran->is_archived) {
-            return $this->error('Tahun ajaran ini sudah diarsipkan.', 'CONFLICT', 422);
-        }
+        Gate::authorize('complete', $tahunAjaran);
 
         DB::beginTransaction();
         try {
             Semester::where('tahun_ajaran_id', $tahunAjaran->id)->update(['is_active' => false]);
 
             $tahunAjaran->update([
-                'is_archived' => true,
-                'archived_at' => now(),
+                'status' => StatusTahunAjaran::COMPLETED,
+                'completed_at' => now(),
             ]);
 
-            $catatan = $request->catatan ? " Catatan: {$request->catatan}" : '';
-
-            ActivityLog::log('arsip', 'tahun_ajaran', $tahunAjaran->id, "Mengarsipkan tahun ajaran {$tahunAjaran->tahun}.{$catatan}");
+            ActivityLog::log(
+                'selesaikan',
+                'tahun_ajaran',
+                $tahunAjaran->id,
+                "Wakasek menyelesaikan (tutup buku) tahun ajaran {$tahunAjaran->tahun}."
+            );
 
             DB::commit();
 
-            return $this->success($tahunAjaran->load('semesters'), 'Tahun ajaran berhasil diarsipkan.');
+            return $this->success(
+                $tahunAjaran->load('semesters'),
+                'Tahun ajaran berhasil diselesaikan.'
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error('Terjadi kesalahan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
+        }
+    }
+
+    /**
+     * OPERATOR: Arsipkan TA dari COMPLETED → ARCHIVED.
+     * PATCH /tahun-ajaran/{ulid}/arsip
+     */
+    public function arsip(ArsipTahunAjaranRequest $request, string $ulid): JsonResponse
+    {
+        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
+        Gate::authorize('arsip', $tahunAjaran);
+
+        DB::beginTransaction();
+        try {
+            $tahunAjaran->update(['status' => StatusTahunAjaran::ARCHIVED]);
+
+            $catatan = $request->catatan ? " Catatan: {$request->catatan}" : '';
+            ActivityLog::log(
+                'arsip',
+                'tahun_ajaran',
+                $tahunAjaran->id,
+                "Mengarsipkan tahun ajaran {$tahunAjaran->tahun}.{$catatan}"
+            );
+
+            DB::commit();
+
+            return $this->success(
+                $tahunAjaran->load('semesters'),
+                'Tahun ajaran berhasil diarsipkan.'
+            );
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->error('Gagal mengarsipkan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
@@ -302,61 +428,50 @@ class TahunAjaranController extends Controller
     }
 
     /**
-     * Keluarkan tahun ajaran dari arsip → kembali ke daftar aktif.
+     * OPERATOR: Keluarkan dari arsip (ARCHIVED → COMPLETED).
+     * PATCH /tahun-ajaran/{ulid}/unarsip
      */
     public function unarsip(string $ulid): JsonResponse
     {
         $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
-        Gate::authorize('manage', $tahunAjaran);
-
-        if (!$tahunAjaran->is_archived) {
-            return $this->error('Tahun ajaran ini tidak sedang diarsipkan.', 'CONFLICT', 422);
-        }
+        Gate::authorize('unarsip', $tahunAjaran);
 
         DB::beginTransaction();
         try {
-            $tahunAjaran->update(['is_archived' => false, 'archived_at' => null]);
+            $tahunAjaran->update(['status' => StatusTahunAjaran::COMPLETED]);
 
-            ActivityLog::log('unarsip', 'tahun_ajaran', $tahunAjaran->id, "Mengeluarkan tahun ajaran {$tahunAjaran->tahun} dari arsip.");
+            ActivityLog::log(
+                'unarsip',
+                'tahun_ajaran',
+                $tahunAjaran->id,
+                "Mengeluarkan tahun ajaran {$tahunAjaran->tahun} dari arsip."
+            );
 
             DB::commit();
 
-            return $this->success($tahunAjaran->load('semesters'), 'Tahun ajaran berhasil dikeluarkan dari arsip.');
+            return $this->success(
+                $tahunAjaran->load('semesters'),
+                'Tahun ajaran berhasil dikeluarkan dari arsip.'
+            );
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->error('Gagal mengeluarkan dari arsip: ' . $e->getMessage(), 'SERVER_ERROR', 500);
         }
     }
 
-    /**
-     * Daftar tahun ajaran yang diarsipkan (historis). Dipaginate.
-     */
-    public function arsipList(): JsonResponse
-    {
-        $data = TahunAjaran::with('semesters')
-            ->where('is_archived', true)
-            ->orderByDesc('archived_at')
-            ->paginate(request()->integer('per_page', 15));
-
-        return $this->success($data);
-    }
+    // ── DELETE ───────────────────────────────────────────────────────────────
 
     public function destroy(string $ulid): JsonResponse
     {
         $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
-        Gate::authorize('manage', $tahunAjaran);
+        Gate::authorize('delete', $tahunAjaran);
 
-        if ($tahunAjaran->is_active) {
+        // Policy sudah enforce hanya DRAFT yang bisa dihapus,
+        // tapi tambahkan pesan eksplisit untuk UX
+        if ($tahunAjaran->status !== StatusTahunAjaran::DRAFT) {
             return $this->error(
-                'Tahun ajaran aktif tidak dapat dihapus. Nonaktifkan terlebih dahulu.',
-                'CONFLICT',
-                422
-            );
-        }
-
-        if ($tahunAjaran->is_archived) {
-            return $this->error(
-                'Tahun ajaran yang diarsipkan tidak dapat dihapus langsung. Keluarkan dari arsip terlebih dahulu.',
+                "Hanya tahun ajaran berstatus Draft yang dapat dihapus. " .
+                "Status saat ini: {$tahunAjaran->status->label()}.",
                 'CONFLICT',
                 422
             );
@@ -367,7 +482,12 @@ class TahunAjaranController extends Controller
             $tahunAjaran->semesters()->delete();
             $tahunAjaran->delete();
 
-            ActivityLog::log('delete', 'tahun_ajaran', $tahunAjaran->id, "Memindahkan tahun ajaran {$tahunAjaran->tahun} ke recycle bin.");
+            ActivityLog::log(
+                'delete',
+                'tahun_ajaran',
+                $tahunAjaran->id,
+                "Memindahkan draft tahun ajaran {$tahunAjaran->tahun} ke recycle bin."
+            );
 
             DB::commit();
 
@@ -378,31 +498,29 @@ class TahunAjaranController extends Controller
         }
     }
 
-    public function trash(): JsonResponse
-    {
-        $data = TahunAjaran::onlyTrashed()
-            ->with(['semesters' => fn($q) => $q->withTrashed()])
-            ->orderByDesc('deleted_at')
-            ->paginate(request()->integer('per_page', 15));
-
-        return $this->success($data);
-    }
-
     public function restore(string $ulid): JsonResponse
     {
         $tahunAjaran = TahunAjaran::onlyTrashed()->where('ulid', $ulid)->firstOrFail();
-        Gate::authorize('manage', $tahunAjaran);
+        Gate::authorize('restore', $tahunAjaran);
 
         DB::beginTransaction();
         try {
             $tahunAjaran->restore();
             $tahunAjaran->semesters()->withTrashed()->restore();
 
-            ActivityLog::log('restore', 'tahun_ajaran', $tahunAjaran->id, "Memulihkan tahun ajaran {$tahunAjaran->tahun} dari recycle bin.");
+            ActivityLog::log(
+                'restore',
+                'tahun_ajaran',
+                $tahunAjaran->id,
+                "Memulihkan tahun ajaran {$tahunAjaran->tahun} dari recycle bin."
+            );
 
             DB::commit();
 
-            return $this->success($tahunAjaran->load('semesters'), 'Tahun ajaran berhasil dipulihkan.');
+            return $this->success(
+                $tahunAjaran->load('semesters'),
+                'Tahun ajaran berhasil dipulihkan.'
+            );
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->error('Gagal memulihkan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
@@ -436,7 +554,12 @@ class TahunAjaranController extends Controller
             $tahunAjaran->semesters()->withTrashed()->forceDelete();
             $tahunAjaran->forceDelete();
 
-            ActivityLog::log('force_delete', 'tahun_ajaran', $tahunAjaran->id, "Menghapus permanen tahun ajaran {$tahunAjaran->tahun}.");
+            ActivityLog::log(
+                'force_delete',
+                'tahun_ajaran',
+                $tahunAjaran->id,
+                "Menghapus permanen tahun ajaran {$tahunAjaran->tahun}."
+            );
 
             DB::commit();
 
@@ -444,6 +567,48 @@ class TahunAjaranController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->error('Gagal menghapus permanen: ' . $e->getMessage(), 'SERVER_ERROR', 500);
+        }
+    }
+
+    // ── Private helpers ──────────────────────────────────────────────────────
+
+    private function syncSemesters(TahunAjaran $tahunAjaran, Request $request): void
+    {
+        $schoolId = $tahunAjaran->school_id;
+
+        foreach (['Ganjil', 'Genap'] as $nama) {
+            $keyMulai = 'semester_' . strtolower($nama) . '_mulai';
+            $keySelesai = 'semester_' . strtolower($nama) . '_selesai';
+
+            $existing = Semester::where('school_id', $schoolId)
+                ->where('tahun_ajaran_id', $tahunAjaran->id)
+                ->where('nama', $nama)
+                ->withTrashed()
+                ->first();
+
+            $hasMulai = $request->has($keyMulai);
+            $hasSelesai = $request->has($keySelesai);
+
+            if (!$hasMulai && !$hasSelesai && !$existing) {
+                continue;
+            }
+
+            $payload = [
+                'school_id' => $schoolId,
+                'tgl_mulai' => $hasMulai ? $request->$keyMulai : $existing?->tgl_mulai,
+                'tgl_selesai' => $hasSelesai ? $request->$keySelesai : $existing?->tgl_selesai,
+                'deleted_at' => null,
+            ];
+
+            if ($existing) {
+                $existing->update($payload);
+            } elseif ($hasMulai || $hasSelesai) {
+                Semester::create(array_merge($payload, [
+                    'tahun_ajaran_id' => $tahunAjaran->id,
+                    'nama' => $nama,
+                    'is_active' => false,
+                ]));
+            }
         }
     }
 }

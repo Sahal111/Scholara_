@@ -241,6 +241,10 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
         });
 
         // ── TAHUN AJARAN ──────────────────────────────────────────────────────────
+        // Workflow: DRAFT → UNDER_REVIEW → APPROVED → ACTIVE → COMPLETED → ARCHIVED
+        // Operator: create, update (draft), delete (draft), arsip, unarsip
+        // Wakasek:  submit-review, semester-aktif, selesaikan
+        // Kepsek:   approve, reject, aktifkan
     
         Route::middleware('permission:master_data.tahun_ajaran.view')->group(function () {
             Route::get('/tahun-ajaran', [TahunAjaranController::class, 'index']);
@@ -250,18 +254,33 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
             Route::get('/tahun-ajaran/{ulid}', [TahunAjaranController::class, 'show']);
         });
 
+        // Operator: administrasi data (create/update/delete hanya saat DRAFT)
         Route::middleware('permission:master_data.tahun_ajaran.manage')->group(function () {
             Route::post('/tahun-ajaran', [TahunAjaranController::class, 'store']);
             Route::put('/tahun-ajaran/{ulid}', [TahunAjaranController::class, 'update']);
-            Route::patch('/tahun-ajaran/{ulid}/aktif', [TahunAjaranController::class, 'setAktif']);
-            Route::patch('/tahun-ajaran/{ulid}/semester-aktif', [TahunAjaranController::class, 'setSemesterAktif']);
-            // Arsip — data historis (periode selesai), berbeda dengan recycle bin
+            // Arsip (COMPLETED → ARCHIVED) dan unarsip
             Route::patch('/tahun-ajaran/{ulid}/arsip', [TahunAjaranController::class, 'arsip']);
             Route::patch('/tahun-ajaran/{ulid}/unarsip', [TahunAjaranController::class, 'unarsip']);
             // Recycle bin
             Route::delete('/tahun-ajaran/{ulid}', [TahunAjaranController::class, 'destroy']);
             Route::patch('/tahun-ajaran/{ulid}/restore', [TahunAjaranController::class, 'restore']);
             Route::delete('/tahun-ajaran/{ulid}/force-delete', [TahunAjaranController::class, 'forceDelete']);
+        });
+
+        // Wakasek: submit ke review, ganti semester aktif, tutup buku
+        Route::middleware('permission:master_data.tahun_ajaran.review')->group(function () {
+            Route::patch('/tahun-ajaran/{ulid}/submit-review', [TahunAjaranController::class, 'submitReview']);
+            Route::patch('/tahun-ajaran/{ulid}/semester-aktif', [TahunAjaranController::class, 'setSemesterAktif']);
+            Route::patch('/tahun-ajaran/{ulid}/selesaikan', [TahunAjaranController::class, 'selesaikan']);
+        });
+
+        // Kepsek: approve, reject, aktifkan
+        Route::middleware('permission:master_data.tahun_ajaran.approve')->group(function () {
+            Route::patch('/tahun-ajaran/{ulid}/approve', [TahunAjaranController::class, 'approve']);
+            Route::patch('/tahun-ajaran/{ulid}/reject', [TahunAjaranController::class, 'reject']);
+        });
+        Route::middleware('permission:master_data.tahun_ajaran.activate')->group(function () {
+            Route::patch('/tahun-ajaran/{ulid}/aktifkan', [TahunAjaranController::class, 'aktifkan']);
         });
 
         // Naik Kelas — butuh manage kelas + siswa

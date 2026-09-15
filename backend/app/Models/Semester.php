@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Traits\HasSchoolScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Semester extends Model
 {
@@ -14,6 +15,7 @@ class Semester extends Model
 
     protected $fillable = [
         'school_id',
+        'ulid',
         'tahun_ajaran_id',
         'nama',
         'tgl_mulai',
@@ -26,6 +28,7 @@ class Semester extends Model
     ];
 
     protected $hidden = [
+        'id',
         'created_by',
         'updated_by',
         'deleted_by',
@@ -37,11 +40,14 @@ class Semester extends Model
         'tgl_selesai' => 'date:Y-m-d',
     ];
 
-    // ── Boot: auto-set audit fields ─────────────────────────────────────────
+    // ── Boot ─────────────────────────────────────────────────────────────────
 
     protected static function booted(): void
     {
         static::creating(function (Semester $model) {
+            if (empty($model->ulid)) {
+                $model->ulid = (string) Str::ulid();
+            }
             if (empty($model->created_by) && auth()->check()) {
                 $model->created_by = auth()->id();
             }
@@ -59,6 +65,13 @@ class Semester extends Model
                 $model->saveQuietly();
             }
         });
+    }
+
+    // ── Route model binding ──────────────────────────────────────────────────
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
     }
 
     // ── Relasi ──────────────────────────────────────────────────────────────

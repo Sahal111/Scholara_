@@ -44,21 +44,20 @@ export function useTahunAjaranDetail(id) {
   });
 }
 
-// ── Mutations ─────────────────────────────────────────────────────────────────
+// ── Mutations — CRUD Dasar ────────────────────────────────────────────────────
 
-/** Buat tahun ajaran baru (sekaligus semester jika buat_semester = true) */
+/** Buat tahun ajaran baru sebagai DRAFT (hanya operator) */
 export function useCreateTahunAjaran() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload) => {
-      // Strip field UI-only sebelum dikirim ke API
       const { tgl_mulai_ta, tgl_selesai_ta, ...rest } = payload;
       return api.post(BASE, rest);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
-      toast.success("Tahun ajaran berhasil ditambahkan.");
+      toast.success("Draft tahun ajaran berhasil dibuat.");
     },
     onError: (err) => {
       const errors = err.response?.data?.errors;
@@ -66,14 +65,14 @@ export function useCreateTahunAjaran() {
         Object.values(errors).forEach((e) => toast.error(e[0]));
       } else {
         toast.error(
-          err.response?.data?.message ?? "Gagal menambahkan tahun ajaran.",
+          err.response?.data?.message ?? "Gagal membuat tahun ajaran.",
         );
       }
     },
   });
 }
 
-/** Update tahun ajaran & semester-nya */
+/** Update tahun ajaran & semester-nya (hanya saat status DRAFT) */
 export function useUpdateTahunAjaran(id) {
   const qc = useQueryClient();
   return useMutation({
@@ -88,28 +87,104 @@ export function useUpdateTahunAjaran(id) {
       toast.success("Tahun ajaran berhasil diperbarui.");
     },
     onError: (err) => {
-      const errors = err.response?.data?.errors;
-      if (errors) {
-        Object.values(errors).forEach((e) => toast.error(e[0]));
-      } else {
+      const msg = err.response?.data?.message ?? "";
+      // Pesan error khusus kalau data sudah terkunci
+      if (err.response?.status === 422 && msg.includes("terkunci")) {
         toast.error(
-          err.response?.data?.message ?? "Gagal memperbarui tahun ajaran.",
+          "Data tidak dapat diedit — tahun ajaran sudah disetujui kepsek.",
         );
+      } else {
+        const errors = err.response?.data?.errors;
+        if (errors) {
+          Object.values(errors).forEach((e) => toast.error(e[0]));
+        } else {
+          toast.error(msg || "Gagal memperbarui tahun ajaran.");
+        }
       }
     },
   });
 }
 
-/** Jadikan tahun ajaran aktif (otomatis nonaktifkan yang lain) */
-export function useSetTahunAjaranAktif() {
+// ── Mutations — Workflow Transitions ─────────────────────────────────────────
+
+/**
+ * WAKASEK: Submit TA dari DRAFT → UNDER_REVIEW
+ * PATCH /tahun-ajaran/{ulid}/submit-review
+ */
+export function useSubmitReviewTahunAjaran() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id) => api.patch(`${BASE}/${id}/aktif`),
-    onSuccess: (_, id) => {
+    mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/submit-review`),
+    onSuccess: (_, ulid) => {
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(ulid) });
+      toast.success(
+        "Tahun ajaran berhasil disubmit. Menunggu review kepala sekolah.",
+      );
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message ?? "Gagal submit untuk review.");
+    },
+  });
+}
+
+/**
+ * KEPSEK: Approve TA dari UNDER_REVIEW → APPROVED
+ * PATCH /tahun-ajaran/{ulid}/approve
+ */
+export function useApproveTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ulid, catatan }) =>
+      api.patch(`${BASE}/${ulid}/approve`, { catatan }),
+    onSuccess: (_, { ulid }) => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(ulid) });
+      toast.success("Tahun ajaran berhasil disetujui.");
+    },
+    onError: (err) => {
+      toast.error(
+        err.response?.data?.message ?? "Gagal menyetujui tahun ajaran.",
+      );
+    },
+  });
+}
+
+/**
+ * KEPSEK: Reject TA dari UNDER_REVIEW → DRAFT
+ * PATCH /tahun-ajaran/{ulid}/reject
+ */
+export function useRejectTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ulid, catatan }) =>
+      api.patch(`${BASE}/${ulid}/reject`, { catatan }),
+    onSuccess: (_, { ulid }) => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(ulid) });
+      toast.success("Tahun ajaran dikembalikan ke draft.");
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message ?? "Gagal menolak tahun ajaran.");
+    },
+  });
+}
+
+/**
+ * KEPSEK: Aktifkan TA dari APPROVED → ACTIVE
+ * PATCH /tahun-ajaran/{ulid}/aktifkan
+ */
+export function useAktifkanTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/aktifkan`),
+    onSuccess: (_, ulid) => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(ulid) });
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
-      toast.success("Tahun ajaran aktif berhasil diubah.");
+      toast.success(
+        "Tahun ajaran berhasil diaktifkan. Semester Ganjil otomatis aktif.",
+      );
     },
     onError: (err) => {
       toast.error(
@@ -119,7 +194,10 @@ export function useSetTahunAjaranAktif() {
   });
 }
 
-/** Aktifkan salah satu semester (Ganjil/Genap) dalam tahun ajaran tertentu */
+/**
+ * WAKASEK: Ganti semester aktif (Ganjil ↔ Genap) dalam TA yang ACTIVE
+ * PATCH /tahun-ajaran/{ulid}/semester-aktif
+ */
 export function useSetSemesterAktif() {
   const qc = useQueryClient();
   return useMutation({
@@ -141,144 +219,28 @@ export function useSetSemesterAktif() {
 }
 
 /**
- * Update tanggal semester tertentu melalui endpoint update TA.
- *
- * PENTING — caller WAJIB menyertakan tanggal KEDUA semester (bukan hanya yang
- * diedit), karena backend `update()` menggunakan `updateOrCreate` dengan
- * kondisi `|| !$semXxxLama`.  Jika payload hanya berisi satu pasang tanggal,
- * kondisi `!$semXxxLama` bisa `true` dan backend akan melakukan `updateOrCreate`
- * dengan tgl_mulai/tgl_selesai = null untuk semester yang tidak ada di payload,
- * sehingga **semester yang tidak diedit bisa ter-overwrite dengan null**.
- *
- * Solusi: selalu kirim keempat field tanggal sekaligus.  Gunakan data semester
- * existing dari React Query cache sebagai nilai fallback untuk semester yang
- * tidak diedit.
- *
- * @param {string|number} taId  — ID tahun ajaran
- *
- * @example
- * // Hanya edit Genap, tapi tetap sertakan tanggal Ganjil dari data existing:
- * updateSemester.mutate({
- *   tahunTA: ta.tahun,
- *   // Tanggal Ganjil — ambil dari existing agar tidak ter-overwrite
- *   ganjilMulai:   existingGanjil?.tgl_mulai,
- *   ganjilSelesai: existingGanjil?.tgl_selesai,
- *   // Tanggal Genap — yang benar-benar ingin diubah
- *   genapMulai:   newGenapMulai,
- *   genapSelesai: newGenapSelesai,
- * });
+ * WAKASEK: Selesaikan / tutup buku TA dari ACTIVE → COMPLETED
+ * PATCH /tahun-ajaran/{ulid}/selesaikan
  */
-export function useUpdateSemester(taId) {
+export function useSelesaikanTahunAjaran() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      tahunTA,
-      ganjilMulai,
-      ganjilSelesai,
-      genapMulai,
-      genapSelesai,
-    }) => {
-      if (!tahunTA) {
-        throw new Error("tahunTA diperlukan untuk update semester.");
-      }
-      // Selalu kirim keempat tanggal agar backend tidak overwrite semester
-      // yang tidak diedit dengan null ketika kondisi !$semXxxLama terpenuhi.
-      const payload = {
-        tahun: tahunTA,
-        buat_semester: true,
-        semester_ganjil_mulai: ganjilMulai ?? null,
-        semester_ganjil_selesai: ganjilSelesai ?? null,
-        semester_genap_mulai: genapMulai ?? null,
-        semester_genap_selesai: genapSelesai ?? null,
-      };
-      return api.put(`${BASE}/${taId}`, payload);
-    },
-    onSuccess: () => {
+    mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/selesaikan`),
+    onSuccess: (_, ulid) => {
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(taId) });
-      toast.success("Tanggal semester berhasil diperbarui.");
-    },
-    onError: (err) => {
-      const errors = err.response?.data?.errors;
-      if (errors) {
-        Object.values(errors).forEach((e) => toast.error(e[0]));
-      } else {
-        toast.error(
-          err.response?.data?.message ?? "Gagal memperbarui semester.",
-        );
-      }
-    },
-  });
-}
-
-/** Soft-delete tahun ajaran (pindah ke recycle bin) */
-export function useDeleteTahunAjaran() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id) => api.delete(`${BASE}/${id}`),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      qc.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(ulid) });
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
-      toast.success("Tahun ajaran dipindahkan ke recycle bin.");
+      toast.success("Tahun ajaran berhasil diselesaikan (tutup buku).");
     },
     onError: (err) => {
       toast.error(
-        err.response?.data?.message ?? "Gagal menghapus tahun ajaran.",
+        err.response?.data?.message ?? "Gagal menyelesaikan tahun ajaran.",
       );
     },
   });
 }
 
-/** Ambil daftar tahun ajaran yang sudah dihapus (recycle bin) */
-export function useTrashTahunAjaran() {
-  return useQuery({
-    queryKey: tahunAjaranKeys.trash(),
-    queryFn: async () => {
-      const { data } = await api.get(`${BASE}/trash`);
-      return data.data ?? [];
-    },
-    staleTime: 30_000,
-  });
-}
-
-/** Pulihkan tahun ajaran dari recycle bin */
-export function useRestoreTahunAjaran() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id) => api.patch(`${BASE}/${id}/restore`),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      qc.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
-      qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
-      toast.success("Tahun ajaran berhasil dipulihkan.");
-    },
-    onError: (err) => {
-      toast.error(
-        err.response?.data?.message ?? "Gagal memulihkan tahun ajaran.",
-      );
-    },
-  });
-}
-
-/** Hapus permanen dari recycle bin */
-export function useForceDeleteTahunAjaran() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id) => api.delete(`${BASE}/${id}/force-delete`),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
-      toast.success("Tahun ajaran dihapus secara permanen.");
-    },
-    onError: (err) => {
-      toast.error(err.response?.data?.message ?? "Gagal menghapus permanen.");
-    },
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ARSIP — Data historis (periode selesai), BUKAN recycle bin
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Mutations — Arsip ────────────────────────────────────────────────────────
 
 /** Ambil semua tahun ajaran yang diarsipkan */
 export function useArsipTahunAjaranList() {
@@ -293,8 +255,8 @@ export function useArsipTahunAjaranList() {
 }
 
 /**
- * Arsipkan tahun ajaran (periode selesai → historis).
- * @param {object} options.onSuccess - callback setelah berhasil
+ * OPERATOR: Arsipkan TA dari COMPLETED → ARCHIVED
+ * PATCH /tahun-ajaran/{ulid}/arsip
  */
 export function useArsipkanTahunAjaran() {
   const qc = useQueryClient();
@@ -316,7 +278,7 @@ export function useArsipkanTahunAjaran() {
   });
 }
 
-/** Keluarkan tahun ajaran dari arsip → kembali ke daftar aktif */
+/** OPERATOR: Keluarkan TA dari arsip → COMPLETED */
 export function useUnarsipTahunAjaran() {
   const qc = useQueryClient();
   return useMutation({
@@ -332,6 +294,121 @@ export function useUnarsipTahunAjaran() {
       toast.error(
         err.response?.data?.message ?? "Gagal mengeluarkan dari arsip.",
       );
+    },
+  });
+}
+
+// ── Mutations — Recycle Bin ──────────────────────────────────────────────────
+
+/** Ambil daftar tahun ajaran yang sudah dihapus (recycle bin) */
+export function useTrashTahunAjaran() {
+  return useQuery({
+    queryKey: tahunAjaranKeys.trash(),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/trash`);
+      return data.data ?? [];
+    },
+    staleTime: 30_000,
+  });
+}
+
+/** OPERATOR: Soft-delete TA (hanya DRAFT) — pindah ke recycle bin */
+export function useDeleteTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.delete(`${BASE}/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
+      toast.success("Tahun ajaran dipindahkan ke recycle bin.");
+    },
+    onError: (err) => {
+      toast.error(
+        err.response?.data?.message ?? "Gagal menghapus tahun ajaran.",
+      );
+    },
+  });
+}
+
+/** OPERATOR: Pulihkan TA dari recycle bin */
+export function useRestoreTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.patch(`${BASE}/${id}/restore`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
+      toast.success("Tahun ajaran berhasil dipulihkan.");
+    },
+    onError: (err) => {
+      toast.error(
+        err.response?.data?.message ?? "Gagal memulihkan tahun ajaran.",
+      );
+    },
+  });
+}
+
+/** OPERATOR: Hapus permanen dari recycle bin */
+export function useForceDeleteTahunAjaran() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.delete(`${BASE}/${id}/force-delete`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.trash() });
+      toast.success("Tahun ajaran dihapus secara permanen.");
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message ?? "Gagal menghapus permanen.");
+    },
+  });
+}
+
+// ── Deprecated aliases — tetap ada agar tidak breaking komponen lama ─────────
+
+/**
+ * @deprecated Pakai useAktifkanTahunAjaran() — sekarang butuh approval kepsek dulu
+ * Alias ini tetap ada untuk komponen lama yang belum dimigrasi.
+ */
+export const useSetTahunAjaranAktif = useAktifkanTahunAjaran;
+
+/** Update tanggal semester melalui endpoint update TA */
+export function useUpdateSemester(taId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      tahunTA,
+      ganjilMulai,
+      ganjilSelesai,
+      genapMulai,
+      genapSelesai,
+    }) => {
+      if (!tahunTA)
+        throw new Error("tahunTA diperlukan untuk update semester.");
+      return api.put(`${BASE}/${taId}`, {
+        tahun: tahunTA,
+        buat_semester: true,
+        semester_ganjil_mulai: ganjilMulai ?? null,
+        semester_ganjil_selesai: ganjilSelesai ?? null,
+        semester_genap_mulai: genapMulai ?? null,
+        semester_genap_selesai: genapSelesai ?? null,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
+      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(taId) });
+      toast.success("Tanggal semester berhasil diperbarui.");
+    },
+    onError: (err) => {
+      const errors = err.response?.data?.errors;
+      if (errors) {
+        Object.values(errors).forEach((e) => toast.error(e[0]));
+      } else {
+        toast.error(
+          err.response?.data?.message ?? "Gagal memperbarui semester.",
+        );
+      }
     },
   });
 }

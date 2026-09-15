@@ -2,93 +2,193 @@
 
 namespace App\Policies;
 
+use App\Enums\StatusTahunAjaran;
 use App\Models\TahunAjaran;
 use App\Models\User;
 
+/**
+ * Policy TahunAjaran — RBAC 3-layer Workflow.
+ *
+ * Siapa boleh apa:
+ *
+ *   OPERATOR  → create (buat draft), view, update (hanya saat draft), delete (hanya draft), restore
+ *   WAKASEK   → semua operator + submitReview, complete (tutup buku)
+ *   KEPSEK    → view + approve + reject + activate
+ *
+ * TIDAK ada before() bypass untuk operator lagi.
+ * Setiap aksi diperiksa eksplisit + school_id check.
+ *
+ * Lock rule: data terkunci (tidak bisa diedit/dihapus) setelah status >= APPROVED.
+ */
 class TahunAjaranPolicy
 {
-    /**
-     * before() hanya di-bypass untuk operator — tidak untuk role lain.
-     * Dengan begitu wakasek tetap masuk ke method individual dan
-     * mendapat permission yang tepat sesuai RBAC split.
-     */
-    public function before(User $user, string $ability): ?bool
-    {
-        if ($user->hasRole('operator')) {
-            return true;
-        }
+    // ── VIEW ─────────────────────────────────────────────────────────────────
 
-        return null;
+    public function viewAny(User $user): bool
+    {
+        return $user->hasAnyRole(['operator', 'wakasek', 'kepsek']);
     }
 
+    public function view(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasAnyRole(['operator', 'wakasek', 'kepsek']);
+    }
+
+    // ── CREATE ───────────────────────────────────────────────────────────────
+
     /**
-     * Hanya operator (sudah di-bypass via before()) dan wakasek yang boleh buat.
+     * Hanya operator yang boleh membuat draft TA.
+     * Wakasek tidak membuat — mereka mereview & mengelola kebijakan akademik.
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('wakasek');
+        return $user->hasRole('operator');
     }
 
+    // ── UPDATE ───────────────────────────────────────────────────────────────
+
     /**
-     * Mutasi (update, setAktif, arsip, dll) hanya boleh oleh:
-     * - operator (bypass via before())
-     * - wakasek dari sekolah yang sama
-     * Mencegah lintas-tenant (school_id check WAJIB).
+     * Edit data TA (tahun, semester dates).
+     * Hanya boleh saat status DRAFT — setelah itu data terkunci.
      */
-    public function manage(User $user, TahunAjaran $tahunAjaran): bool
+    public function update(User $user, TahunAjaran $tahunAjaran): bool
     {
-        $sameSchool = (int) $user->school_id === (int) $tahunAjaran->school_id;
+        if (!$this->sameSchool($user, $tahunAjaran)) {
+            return false;
+        }
 
-        return $sameSchool && (
-            $user->hasRole('operator') ||
-            $user->hasRole('wakasek')
-        );
+        // Data terkunci setelah APPROVED
+        if ($tahunAjaran->isLocked()) {
+            return false;
+        }
+
+        return $user->hasAnyRole(['operator', 'wakasek']);
     }
 
+    // ── WORKFLOW TRANSITIONS ─────────────────────────────────────────────────
+
     /**
-     * Lihat daftar — operator, kepsek, wakasek.
+     * Submit TA dari DRAFT ke UNDER_REVIEW.
+     * Hak: Wakasek — dialah yang memastikan data akademik siap direview kepsek.
      */
-    public function viewAny(User $user): bool
+    public function submitReview(User $user, TahunAjaran $tahunAjaran): bool
     {
-        return $user->hasRole('operator')
-            || $user->hasRole('kepsek')
-            || $user->hasRole('wakasek');
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('wakasek')
+            && $tahunAjaran->canTransitionTo(StatusTahunAjaran::UNDER_REVIEW);
     }
 
     /**
-     * Lihat detail satu record — harus sekolah yang sama + role yang berhak.
+     * Approve TA dari UNDER_REVIEW ke APPROVED.
+     * Hak: Kepsek — final approver.
      */
-    public function view(User $user, TahunAjaran $tahunAjaran): bool
+    public function approve(User $user, TahunAjaran $tahunAjaran): bool
     {
-        return (int) $user->school_id === (int) $tahunAjaran->school_id
-            && (
-                $user->hasRole('operator') ||
-                $user->hasRole('kepsek') ||
-                $user->hasRole('wakasek')
-            );
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('kepsek')
+            && $tahunAjaran->canTransitionTo(StatusTahunAjaran::APPROVED);
     }
 
     /**
-     * Restore dari recycle bin — operator (bypass) atau wakasek sekolah sama.
+     * Reject TA dari UNDER_REVIEW kembali ke DRAFT.
+     * Hak: Kepsek — memberikan catatan dan mengembalikan ke wakasek.
      */
+    public function reject(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('kepsek')
+            && $tahunAjaran->status === StatusTahunAjaran::UNDER_REVIEW;
+    }
+
+    /**
+     * Aktifkan TA dari APPROVED ke ACTIVE.
+     * Hak: Kepsek — keputusan final untuk menjadikan TA berlaku.
+     */
+    public function activate(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('kepsek')
+            && $tahunAjaran->canTransitionTo(StatusTahunAjaran::ACTIVE);
+    }
+
+    /**
+     * Ganti semester aktif (Ganjil ↔ Genap) dalam TA yang sedang ACTIVE.
+     * Hak: Wakasek — mengatur ritme akademik.
+     */
+    public function setSemesterAktif(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('wakasek')
+            && $tahunAjaran->status === StatusTahunAjaran::ACTIVE;
+    }
+
+    /**
+     * Selesaikan / tutup buku TA dari ACTIVE ke COMPLETED.
+     * Hak: Wakasek — menandai bahwa proses akademik sudah selesai.
+     */
+    public function complete(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('wakasek')
+            && $tahunAjaran->canTransitionTo(StatusTahunAjaran::COMPLETED);
+    }
+
+    /**
+     * Arsipkan TA dari COMPLETED ke ARCHIVED.
+     * Hak: Operator — administrasi historis.
+     */
+    public function arsip(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('operator')
+            && $tahunAjaran->canTransitionTo(StatusTahunAjaran::ARCHIVED);
+    }
+
+    /**
+     * Keluarkan dari arsip (ARCHIVED → COMPLETED).
+     * Hak: Operator — koreksi arsip yang salah.
+     */
+    public function unarsip(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('operator')
+            && $tahunAjaran->status === StatusTahunAjaran::ARCHIVED;
+    }
+
+    // ── DELETE & RESTORE ─────────────────────────────────────────────────────
+
+    /**
+     * Hapus ke recycle bin — hanya boleh saat masih DRAFT.
+     * Setelah DRAFT, TA tidak bisa dihapus biasa (harus lewat workflow).
+     */
+    public function delete(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('operator')
+            && $tahunAjaran->status === StatusTahunAjaran::DRAFT;
+    }
+
     public function restore(User $user, TahunAjaran $tahunAjaran): bool
     {
-        return (int) $user->school_id === (int) $tahunAjaran->school_id
-            && (
-                $user->hasRole('operator') ||
-                $user->hasRole('wakasek')
-            );
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('operator');
     }
 
     /**
-     * Hapus permanen — hanya operator (via bypass) atau wakasek sekolah sama.
+     * Hapus permanen — hanya untuk TA yang masih DRAFT di recycle bin.
+     * TA yang sudah pernah ACTIVE tidak boleh dihapus permanen.
      */
     public function forceDelete(User $user, TahunAjaran $tahunAjaran): bool
     {
-        return (int) $user->school_id === (int) $tahunAjaran->school_id
-            && (
-                $user->hasRole('operator') ||
-                $user->hasRole('wakasek')
-            );
+        return $this->sameSchool($user, $tahunAjaran)
+            && $user->hasRole('operator');
+    }
+
+    // ── Private helper ───────────────────────────────────────────────────────
+
+    private function sameSchool(User $user, TahunAjaran $tahunAjaran): bool
+    {
+        return (int) $user->school_id === (int) $tahunAjaran->school_id;
     }
 }
