@@ -20,13 +20,11 @@ export default function ModalTahunAjaran({
     tahun: "",
     tgl_mulai_ta: "",
     tgl_selesai_ta: "",
-    is_active: false,
     buat_semester: true,
     semester_ganjil_mulai: "",
     semester_ganjil_selesai: "",
     semester_genap_mulai: "",
     semester_genap_selesai: "",
-    semester_aktif: "Ganjil",
   });
 
   const calcSemesterDates = (startStr, endStr) => {
@@ -49,36 +47,27 @@ export default function ModalTahunAjaran({
     if (editData) {
       const ganjil = editData.semesters?.find((s) => s.nama === "Ganjil");
       const genap = editData.semesters?.find((s) => s.nama === "Genap");
-      const activeSem = editData.semesters?.find((s) => s.is_active);
       setForm({
         tahun: editData.tahun || "",
         tgl_mulai_ta: ganjil?.tgl_mulai || "",
         tgl_selesai_ta: genap?.tgl_selesai || ganjil?.tgl_selesai || "",
-        is_active: editData.is_active || false,
-        // BUG-05 fix: saat Edit, buat_semester SELALU true.
-        // Tanggal TA tidak disimpan sebagai kolom tersendiri — satu-satunya
-        // cara menyimpan perubahan tanggal adalah via semester. Jika toggle
-        // diizinkan mati, perubahan tanggal yang diketik user akan di-strip
-        // di mutationFn tanpa ada notifikasi apapun.
+        // BUG-05 fix: saat Edit, buat_semester SELALU true agar tanggal tersimpan
         buat_semester: true,
         semester_ganjil_mulai: ganjil?.tgl_mulai || "",
         semester_ganjil_selesai: ganjil?.tgl_selesai || "",
         semester_genap_mulai: genap?.tgl_mulai || "",
         semester_genap_selesai: genap?.tgl_selesai || "",
-        semester_aktif: activeSem?.nama || "Ganjil",
       });
     } else {
       setForm({
         tahun: "",
         tgl_mulai_ta: "",
         tgl_selesai_ta: "",
-        is_active: false,
         buat_semester: true,
         semester_ganjil_mulai: "",
         semester_ganjil_selesai: "",
         semester_genap_mulai: "",
         semester_genap_selesai: "",
-        semester_aktif: "Ganjil",
       });
     }
   }, [open, editData]);
@@ -448,31 +437,14 @@ export default function ModalTahunAjaran({
 
         {/* Footer */}
         <div className="bg-[#f2f4f3]/80 backdrop-blur-md px-6 md:px-8 py-5 border-t border-[#bfc9c4]/20 flex flex-col sm:flex-row items-center justify-between gap-4 sticky bottom-0 z-10 rounded-b-3xl">
-          <div
-            className="flex items-center gap-3 px-4 py-2 rounded-xl bg-white border border-[#bfc9c4]/30 shadow-sm cursor-pointer hover:border-[#00c853]/30 transition-all"
-            onClick={() => {
-              const active = !form.is_active;
-              setForm((f) => ({
-                ...f,
-                is_active: active,
-                semester_aktif: active ? f.semester_aktif || "Ganjil" : "",
-              }));
-            }}
-          >
-            <div
-              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${form.is_active ? "bg-[#004d40] border-[#004d40]" : "bg-white border-[#bfc9c4]"}`}
-            >
-              {form.is_active && (
-                <span
-                  className="material-symbols-outlined text-white text-[14px]"
-                  style={{ fontVariationSettings: "'FILL' 1, 'wght' 700" }}
-                >
-                  check
-                </span>
-              )}
-            </div>
-            <span className="text-[#00342b] font-bold text-xs uppercase tracking-wider">
-              Jadikan Aktif
+          {/* Info: aktivasi hanya bisa dilakukan kepsek via workflow */}
+          <div className="flex items-center gap-2 text-[11px] text-[#3f4945]/60">
+            <span className="material-symbols-outlined text-[14px] text-[#f59e0b]">
+              info
+            </span>
+            <span>
+              Draft — perlu review wakasek &amp; approval kepsek untuk
+              diaktifkan
             </span>
           </div>
 
@@ -487,8 +459,15 @@ export default function ModalTahunAjaran({
             <button
               type="button"
               onClick={() => {
-                if (!isEdit && !form.buat_semester && (form.tgl_mulai_ta || form.tgl_selesai_ta)) {
-                  toast("Tanggal periode tidak akan tersimpan karena semester tidak dibuat. Aktifkan toggle semester jika ingin menyimpan tanggal.", { icon: "\u26a0\ufe0f", duration: 5000 });
+                if (
+                  !isEdit &&
+                  !form.buat_semester &&
+                  (form.tgl_mulai_ta || form.tgl_selesai_ta)
+                ) {
+                  toast(
+                    "Tanggal periode tidak akan tersimpan karena semester tidak dibuat. Aktifkan toggle semester jika ingin menyimpan tanggal.",
+                    { icon: "\u26a0\ufe0f", duration: 5000 },
+                  );
                 }
                 mutation.mutate(form, { onSuccess: onClose });
               }}
