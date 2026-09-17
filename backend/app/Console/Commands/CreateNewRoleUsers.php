@@ -14,7 +14,7 @@ class CreateNewRoleUsers extends Command
 
     public function handle()
     {
-        $now      = Carbon::now();
+        $now = Carbon::now();
         $schoolId = DB::table('schools')->value('id');
 
         if (!$schoolId) {
@@ -30,17 +30,17 @@ class CreateNewRoleUsers extends Command
         $this->info('Role di DB: ' . implode(', ', $existingRoles));
 
         $targets = [
-            ['slug' => 'wakasek',        'name' => 'Wakil Kepala Sekolah Test', 'username' => 'wakasek'],
-            ['slug' => 'guru_bk',        'name' => 'Guru BK Test',              'username' => 'guru-bk'],
-            ['slug' => 'pustakawan',     'name' => 'Pustakawan Test',           'username' => 'pustakawan'],
-            ['slug' => 'tata_usaha',     'name' => 'Tata Usaha Test',           'username' => 'tata-usaha'],
-            ['slug' => 'admin_keuangan', 'name' => 'Admin Keuangan Test',       'username' => 'admin-keuangan'],
+            ['slug' => 'wakasek', 'name' => 'Wakil Kepala Sekolah Test', 'username' => 'wakasek'],
+            ['slug' => 'guru_bk', 'name' => 'Guru BK Test', 'username' => 'guru-bk'],
+            ['slug' => 'pustakawan', 'name' => 'Pustakawan Test', 'username' => 'pustakawan'],
+            ['slug' => 'tata_usaha', 'name' => 'Tata Usaha Test', 'username' => 'tata-usaha'],
+            ['slug' => 'admin_keuangan', 'name' => 'Admin Keuangan Test', 'username' => 'admin-keuangan'],
         ];
 
         foreach ($targets as $t) {
-            $slug     = $t['slug'];
+            $slug = $t['slug'];
             $username = $t['username'];
-            $name     = $t['name'];
+            $name = $t['name'];
             $password = $username . '123';
 
             $roleId = DB::table('roles')
@@ -50,11 +50,11 @@ class CreateNewRoleUsers extends Command
 
             if (!$roleId) {
                 $roleId = DB::table('roles')->insertGetId([
-                    'school_id'  => $schoolId,
-                    'slug'       => $slug,
-                    'nama'       => ucwords(str_replace('_', ' ', $slug)),
-                    'is_system'  => 1,
-                    'is_active'  => 1,
+                    'school_id' => $schoolId,
+                    'slug' => $slug,
+                    'nama' => ucwords(str_replace('_', ' ', $slug)),
+                    'is_system' => 1,
+                    'is_active' => 1,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ]);
@@ -67,19 +67,20 @@ class CreateNewRoleUsers extends Command
                 ->delete();
 
             $userId = DB::table('users')->insertGetId([
-                'school_id'  => $schoolId,
-                'name'       => $name,
-                'username'   => $username,
-                'email'      => $username . '@test.id',
-                'password'   => Hash::make($password),
-                'is_active'  => 1,
+                'school_id' => $schoolId,
+                'name' => $name,
+                'username' => $username,
+                'email' => $username . '@test.id',
+                'password' => Hash::make($password),
+                'is_active' => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
 
             DB::table('user_roles')->insertOrIgnore([
-                'user_id'    => $userId,
-                'role_id'    => $roleId,
+                'user_id' => $userId,
+                'role_id' => $roleId,
+                'school_id' => $schoolId,
                 'created_at' => $now,
             ]);
 
@@ -90,10 +91,10 @@ class CreateNewRoleUsers extends Command
         $this->table(
             ['Username', 'Password', 'URL'],
             [
-                ['wakasek',        'wakasek123',        '/wakasek'],
-                ['guru-bk',        'guru-bk123',        '/guru-bk'],
-                ['pustakawan',     'pustakawan123',     '/pustakawan'],
-                ['tata-usaha',     'tata-usaha123',     '/tata-usaha'],
+                ['wakasek', 'wakasek123', '/wakasek'],
+                ['guru-bk', 'guru-bk123', '/guru-bk'],
+                ['pustakawan', 'pustakawan123', '/pustakawan'],
+                ['tata-usaha', 'tata-usaha123', '/tata-usaha'],
                 ['admin-keuangan', 'admin-keuangan123', '/admin-keuangan'],
             ]
         );

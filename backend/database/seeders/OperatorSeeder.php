@@ -9,29 +9,44 @@ class OperatorSeeder extends Seeder
 {
     public function run(): void
     {
-        $sudahAda = DB::table('users')->where('username', 'operator')->exists();
+        $now = Carbon::now();
+        $schoolId = DB::table('schools')->value('id');
+
+        if (!$schoolId) {
+            $this->command->warn('OperatorSeeder: tidak ada school — jalankan SchoolSeeder dulu.');
+            return;
+        }
+
+        $sudahAda = DB::table('users')
+            ->where('school_id', $schoolId)
+            ->where('username', 'operator')
+            ->exists();
+
         if ($sudahAda) {
             $this->command->info('Operator sudah ada, skip.');
             return;
         }
 
-        $now = Carbon::now();
-
         // Buat user operator
         $userId = DB::table('users')->insertGetId([
-            'name'       => 'Operator Admin',
-            'username'   => 'operator',
-            'email'      => 'operator@minurulhuda3.sch.id',
-            'password'   => Hash::make('operator123'),
-            'is_active'  => 1,
+            'school_id' => $schoolId,
+            'name' => 'Operator Admin',
+            'username' => 'operator',
+            'email' => 'operator@minurulhuda3.sch.id',
+            'password' => Hash::make('operator123'),
+            'is_active' => 1,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
 
         // Assign role operator (slug = 'operator')
-        $roleId = DB::table('roles')->where('slug', 'operator')->value('id');
+        $roleId = DB::table('roles')
+            ->where('school_id', $schoolId)
+            ->where('slug', 'operator')
+            ->value('id');
+
         DB::table('user_roles')->insertOrIgnore([
-            ['user_id' => $userId, 'role_id' => $roleId, 'created_at' => $now],
+            ['user_id' => $userId, 'role_id' => $roleId, 'school_id' => $schoolId, 'created_at' => $now],
         ]);
 
         // Buat profil operator

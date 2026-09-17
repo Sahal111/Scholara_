@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import api from "../../lib/axios";
 import {
   BarChart,
@@ -58,7 +59,7 @@ export default function DashboardKepsek() {
     staleTime: 5 * 60 * 1000,
   });
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-500">
         Memuat dashboard...
@@ -66,15 +67,15 @@ export default function DashboardKepsek() {
     );
   }
 
-  if (error) {
+  if (isError || !data) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">
-        {error}
+        Gagal memuat data dashboard.
       </div>
     );
   }
 
-  const hariIni = data.hari_ini;
+  const hariIni = data.hari_ini ?? {};
 
   return (
     <div className="min-h-screen bg-gray-50 p-6 space-y-6">
@@ -222,25 +223,25 @@ export default function DashboardKepsek() {
             <Calendar className="w-5 h-5 text-gray-400" /> Kalender Akademik
           </h2>
 
-          {data.kalender_akademik.tahun_ajaran_aktif && (
+          {data.kalender_akademiks.tahun_ajaran_aktif && (
             <div className="mb-4 p-3 bg-blue-50 rounded-lg">
               <p className="text-sm font-medium text-blue-800">
-                {data.kalender_akademik.tahun_ajaran_aktif.nama}
+                {data.kalender_akademiks.tahun_ajaran_aktif.nama}
               </p>
               <p className="text-xs text-blue-600 mt-1">
-                {data.kalender_akademik.tahun_ajaran_aktif.mulai} s/d{" "}
-                {data.kalender_akademik.tahun_ajaran_aktif.selesai}
+                {data.kalender_akademiks.tahun_ajaran_aktif.mulai} s/d{" "}
+                {data.kalender_akademiks.tahun_ajaran_aktif.selesai}
               </p>
             </div>
           )}
 
           <div className="space-y-3">
-            {data.kalender_akademik.agenda.length === 0 && (
+            {data.kalender_akademiks.agenda.length === 0 && (
               <p className="text-sm text-gray-400">
                 Belum ada agenda tercatat.
               </p>
             )}
-            {data.kalender_akademik.agenda.map((a) => (
+            {data.kalender_akademiks.agenda.map((a) => (
               <div key={a.id} className="flex items-start gap-2 text-sm">
                 <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full shrink-0">
                   {a.kategori}

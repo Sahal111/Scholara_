@@ -80,6 +80,7 @@ class TestingUserSeeder extends Seeder
                 DB::table('user_roles')->insertOrIgnore([
                     'user_id' => $userId,
                     'role_id' => $roleId,
+                    'school_id' => $schoolId,
                     'created_at' => $now,
                 ]);
             }

@@ -22,12 +22,18 @@ use Illuminate\Support\Facades\Hash;
 
 class OperatorController extends Controller
 {
-    // Helper: assign role ke user via Eloquent relationship
+    // Helper: assign role ke user — insert ke pivot user_roles dengan school_id
     private function assignRole(int $userId, string $slug): void
     {
         $user = User::findOrFail($userId);
-        $role = Role::where('slug', $slug)->firstOrFail();
-        $user->roles()->syncWithoutDetaching([$role->id]);
+        $role = Role::where('school_id', $user->school_id)->where('slug', $slug)->firstOrFail();
+
+        DB::table('user_roles')->insertOrIgnore([
+            'user_id' => $userId,
+            'role_id' => $role->id,
+            'school_id' => $user->school_id,
+            'created_at' => now(),
+        ]);
     }
 
     // -------------------------------------------------------
