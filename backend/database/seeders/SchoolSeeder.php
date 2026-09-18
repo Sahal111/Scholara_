@@ -389,6 +389,8 @@ class SchoolSeeder extends Seeder
                 'master_data.kelas.view',
                 'master_data.mapel.view',
                 'master_data.tahun_ajaran.view',
+                'master_data.tahun_ajaran.approve',  // kepsek approve/reject TA dari wakasek
+                'master_data.tahun_ajaran.activate', // kepsek aktifkan TA yang sudah approved
                 'master_data.orang_tua.view',
                 'master_data.program.view',
                 'master_data.kurikulum.view',
@@ -515,6 +517,8 @@ class SchoolSeeder extends Seeder
                 'master_data.mapel.manage',
                 'master_data.tahun_ajaran.view',
                 'master_data.tahun_ajaran.manage',   // ← fix: sebelumnya tidak ada!
+                'master_data.tahun_ajaran.review',   // wakasek submit TA ke kepsek
+                'master_data.tahun_ajaran.complete', // wakasek tutup buku TA yang aktif
                 'master_data.program.view',
                 'master_data.program.manage',
                 'master_data.kurikulum.view',

@@ -15,6 +15,7 @@ import { Outlet } from "react-router-dom";
 
 const menus = [
   { path: "/kepsek", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { path: "/kepsek/tahun-ajaran", label: "Tahun Ajaran", icon: CalendarDays },
   {
     path: "/kepsek/monitoring-absensi",
     label: "Monitoring Absensi",

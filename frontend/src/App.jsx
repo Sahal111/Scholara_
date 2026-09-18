@@ -73,6 +73,7 @@ import MonitoringAbsensi from "./pages/kepsek/MonitoringAbsensi";
 import PengumumanKepsek from "./pages/kepsek/PengumumanKepsek";
 import KalenderAkademik from "./pages/kepsek/KalenderAkademik";
 import ProfilKepsek from "./pages/kepsek/ProfilKepsek";
+import TahunAjaranKepsek from "./pages/kepsek/TahunAjaranKepsek";
 
 // Ortu
 import OrtuLayout from "./pages/ortu/OrtuLayout";
@@ -288,6 +289,7 @@ export default function App() {
       >
         <Route index element={<DashboardKepsek />} />
         <Route path="monitoring-absensi" element={<MonitoringAbsensi />} />
+        <Route path="tahun-ajaran" element={<TahunAjaranKepsek />} />
         <Route path="guru" element={<DataGuruKepsek />} />
         <Route path="guru/:nuptk" element={<DetailGuruKepsek />} />
         <Route path="siswa" element={<DataSiswaKepsek />} />

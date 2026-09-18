@@ -43,6 +43,10 @@ class SyncPermissions extends Command
         ['slug' => 'master_data.mapel.manage', 'nama' => 'Kelola Mata Pelajaran', 'modul' => 'master_data'],
         ['slug' => 'master_data.tahun_ajaran.view', 'nama' => 'Lihat Tahun Ajaran', 'modul' => 'master_data'],
         ['slug' => 'master_data.tahun_ajaran.manage', 'nama' => 'Kelola Tahun Ajaran', 'modul' => 'master_data'],
+        ['slug' => 'master_data.tahun_ajaran.review', 'nama' => 'Submit Tahun Ajaran ke Review', 'modul' => 'master_data'],
+        ['slug' => 'master_data.tahun_ajaran.approve', 'nama' => 'Approve / Reject Tahun Ajaran', 'modul' => 'master_data'],
+        ['slug' => 'master_data.tahun_ajaran.activate', 'nama' => 'Aktifkan Tahun Ajaran', 'modul' => 'master_data'],
+        ['slug' => 'master_data.tahun_ajaran.complete', 'nama' => 'Selesaikan Tahun Ajaran', 'modul' => 'master_data'],
         ['slug' => 'master_data.orang_tua.view', 'nama' => 'Lihat Data Orang Tua', 'modul' => 'master_data'],
         ['slug' => 'master_data.orang_tua.manage', 'nama' => 'Kelola Data Orang Tua', 'modul' => 'master_data'],
 
@@ -103,7 +107,7 @@ class SyncPermissions extends Command
 
         $schools = $schoolId
             ? DB::table('schools')->where('id', $schoolId)->get()
-            : DB::table('schools')->where('is_active', true)->get();
+            : DB::table('schools')->whereNull('deleted_at')->get();
 
         if ($schools->isEmpty()) {
             $this->warn('Tidak ada sekolah ditemukan.');
