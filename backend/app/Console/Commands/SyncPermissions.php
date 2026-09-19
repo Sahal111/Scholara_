@@ -48,6 +48,13 @@ class SyncPermissions extends Command
         ['slug' => 'master_data.tahun_ajaran.activate', 'nama' => 'Aktifkan Tahun Ajaran', 'modul' => 'master_data'],
         ['slug' => 'master_data.tahun_ajaran.complete', 'nama' => 'Selesaikan Tahun Ajaran', 'modul' => 'master_data'],
         ['slug' => 'master_data.tahun_ajaran.archive', 'nama' => 'Arsipkan Tahun Ajaran', 'modul' => 'master_data'],
+
+        // master_data — semester (entitas mandiri P1)
+        ['slug' => 'master_data.semester.view', 'nama' => 'Lihat Semester', 'modul' => 'master_data'],
+        ['slug' => 'master_data.semester.manage', 'nama' => 'Kelola Semester', 'modul' => 'master_data'],
+        ['slug' => 'master_data.semester.activate', 'nama' => 'Set Semester Aktif', 'modul' => 'master_data'],
+        ['slug' => 'master_data.semester.archive', 'nama' => 'Arsipkan Semester', 'modul' => 'master_data'],
+
         ['slug' => 'master_data.orang_tua.view', 'nama' => 'Lihat Data Orang Tua', 'modul' => 'master_data'],
         ['slug' => 'master_data.orang_tua.manage', 'nama' => 'Kelola Data Orang Tua', 'modul' => 'master_data'],
 

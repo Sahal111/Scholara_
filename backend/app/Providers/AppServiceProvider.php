@@ -8,6 +8,7 @@ use App\Models\Kurikulum;
 use App\Models\MataPelajaran;
 use App\Models\ProgramPendidikan;
 use App\Models\Siswa;
+use App\Models\Semester;
 use App\Models\TahunAjaran;
 use App\Models\Scopes\SchoolScope;
 use App\Observers\GuruObserver;
@@ -18,6 +19,7 @@ use App\Policies\GuruPolicy;
 use App\Policies\KelasPolicy;
 use App\Policies\MataPelajaranPolicy;
 use App\Policies\ProgramPendidikanPolicy;
+use App\Policies\SemesterPolicy;
 use App\Policies\SiswaPolicy;
 use App\Policies\TahunAjaranPolicy;
 use Illuminate\Support\Facades\Gate;
@@ -29,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
         Guru::class => GuruPolicy::class,
         Siswa::class => SiswaPolicy::class,
         Kelas::class => KelasPolicy::class,
+        Semester::class => SemesterPolicy::class,
         TahunAjaran::class => TahunAjaranPolicy::class,
         MataPelajaran::class => MataPelajaranPolicy::class,
         ProgramPendidikan::class => ProgramPendidikanPolicy::class,

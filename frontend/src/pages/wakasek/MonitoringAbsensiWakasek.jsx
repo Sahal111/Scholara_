@@ -1,7 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import api from "../../lib/axios";
+import { useSemesterAktif } from "../../hooks/api/useTahunAjaran";
 import {
   BarChart,
   Bar,
@@ -51,7 +52,7 @@ const BULAN = [
   "Desember",
 ];
 
-const getDateRange = (mode, bulan, tahun, semester) => {
+const getDateRange = (mode, bulan, tahun, semester, semAktifData = null) => {
   const now = new Date();
   if (mode === "harian") {
     const t = now.toISOString().split("T")[0];
@@ -64,6 +65,11 @@ const getDateRange = (mode, bulan, tahun, semester) => {
     return { dari: `${y}-${pad(m)}-01`, sampai: `${y}-${pad(m)}-${pad(last)}` };
   }
   if (mode === "semester") {
+    // Prioritaskan tanggal riil dari semester aktif di DB
+    if (semAktifData?.tgl_mulai && semAktifData?.tgl_selesai) {
+      return { dari: semAktifData.tgl_mulai, sampai: semAktifData.tgl_selesai };
+    }
+    // Fallback ke estimasi kalender (jika tidak ada data semester aktif)
     const y = tahun ?? now.getFullYear();
     return semester === 1
       ? { dari: `${y}-01-01`, sampai: `${y}-06-30` }
@@ -149,9 +155,19 @@ export default function MonitoringAbsensiWakasek() {
   const [chartType, setChartType] = useState("bar"); // bar | line
   const [activeTab, setActiveTab] = useState("rekap"); // rekap | alpa
 
+  // Ambil semester aktif dari backend — set default filter semester & tahun
+  const { data: semesterAktif } = useSemesterAktif();
+  useEffect(() => {
+    if (!semesterAktif) return;
+    setSemester(semesterAktif.nama === "Genap" ? 2 : 1);
+    if (semesterAktif.tgl_mulai) {
+      setTahun(new Date(semesterAktif.tgl_mulai).getFullYear());
+    }
+  }, [semesterAktif]);
+
   const { dari, sampai } = useMemo(
-    () => getDateRange(mode, bulan, tahun, semester),
-    [mode, bulan, tahun, semester],
+    () => getDateRange(mode, bulan, tahun, semester, semesterAktif),
+    [mode, bulan, tahun, semester, semesterAktif],
   );
 
   const labelPeriode = useMemo(() => {

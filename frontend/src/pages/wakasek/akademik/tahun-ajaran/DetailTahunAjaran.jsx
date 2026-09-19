@@ -167,13 +167,19 @@ export default function DetailTahunAjaran({
   const semesters = ta.semesters ?? [];
   const ganjil = semesters.find((s) => s.nama === "Ganjil");
   const genap = semesters.find((s) => s.nama === "Genap");
-  const semAktif = semesters.find((s) => s.is_active);
+  const isSemAktif = (s) => s.status === "active" || s.is_active;
+  const isTaAktif = ta.status === "active" || ta.is_active;
 
-  // Label badge semester berdasarkan lifecycle TA + is_active per semester (BUG 6 fix)
+  const semAktif = semesters.find(isSemAktif);
+
+  // Label badge semester berdasarkan lifecycle TA + status semester
   const semBadgeFor = (sem) => {
-    if (sem?.is_active) return "AKTIF";
-    if (ta.is_active) return "STANDBY";
-    return "SELESAI";
+    if (!sem) return "BELUM DIBUAT";
+    const sts = sem.status ?? (sem.is_active ? "active" : "upcoming");
+    if (sts === "active") return "AKTIF";
+    if (sts === "closed") return "SELESAI";
+    if (sts === "archived") return "DIARSIPKAN";
+    return isTaAktif ? "STANDBY" : "SELESAI";
   };
 
   // Kurikulum mayoritas dari kelasList (BUG 5 fix)
@@ -197,7 +203,7 @@ export default function DetailTahunAjaran({
   const tglSelesaiTA =
     genap?.tgl_selesai || ganjil?.tgl_selesai || ta.tanggal_selesai;
   const progressTA =
-    calcProgress(tglMulaiTA, tglSelesaiTA) || (ta.is_active ? 42 : 0);
+    calcProgress(tglMulaiTA, tglSelesaiTA) || (isTaAktif ? 42 : 0);
   const hariTotal = daysBetween(tglMulaiTA, tglSelesaiTA) || 335;
   const totalBulan = Math.max(1, Math.round(hariTotal / 30));
 
@@ -306,7 +312,7 @@ export default function DetailTahunAjaran({
                 <span className="px-4 py-1.5 rounded-full bg-[#00342b]/5 text-[#00342b] text-[10px] font-bold uppercase tracking-[0.25em] border border-[#00342b]/10">
                   Manajemen Akademik
                 </span>
-                {ta.is_active ? (
+                {isTaAktif ? (
                   <div className="flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#69ff87]/15 border border-[#69ff87]/30 shadow-sm">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#006e2a] opacity-75"></span>
@@ -411,7 +417,7 @@ export default function DetailTahunAjaran({
                     onClick={(e) => e.stopPropagation()}
                     className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-[#bfc9c4]/30 py-2 z-30 animate-fade-in-up"
                   >
-                    {!ta.is_active && (
+                    {!isTaAktif && (
                       <button
                         onClick={() => {
                           setMoreMenuOpen(false);
@@ -466,7 +472,7 @@ export default function DetailTahunAjaran({
                     <button
                       onClick={() => {
                         setMoreMenuOpen(false);
-                        if (ta.is_active) {
+                        if (isTaAktif) {
                           toast.error(
                             "Nonaktifkan tahun ajaran ini sebelum mengarsipkan.",
                           );
@@ -593,9 +599,9 @@ export default function DetailTahunAjaran({
               </p>
               <div className="flex items-center gap-2">
                 <span className="text-lg sm:text-xl font-headline-card font-extrabold text-[#00342b]">
-                  {ta.is_active ? "Aktif" : "Nonaktif"}
+                  {isTaAktif ? "Aktif" : "Nonaktif"}
                 </span>
-                {ta.is_active && (
+                {isTaAktif && (
                   <span className="relative flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#006e2a] opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#006e2a]"></span>
@@ -1507,7 +1513,7 @@ export default function DetailTahunAjaran({
           {/* PANEL 1: SEMESTER GANJIL */}
           <div
             className={`rounded-[2.5rem] border shadow-[0_20px_50px_rgba(0,52,43,0.05)] p-6 sm:p-10 relative overflow-hidden group transition-all duration-500 ease-in-out hover:-translate-y-1 hover:shadow-2xl ${
-              ganjil?.is_active
+              isSemAktif(ganjil)
                 ? "bg-white border-[#006e2a]/20 hover:shadow-[#00342b]/20"
                 : "bg-white/60 backdrop-blur-sm border-[#bfc9c4]/30"
             }`}
@@ -1523,7 +1529,7 @@ export default function DetailTahunAjaran({
                 <h4 className="text-2xl sm:text-3xl font-headline-card text-[#00342b] font-extrabold">
                   Semester Ganjil
                 </h4>
-                {ganjil?.is_active ? (
+                {isSemAktif(ganjil) ? (
                   <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#006e2a] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#006e2a]/20">
                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
                     AKTIF
@@ -1562,7 +1568,7 @@ export default function DetailTahunAjaran({
                       Siswa
                     </span>
                     <span className="text-lg sm:text-xl font-black text-[#00342b]">
-                      {ganjil?.is_active ? disp(totalSiswa) : "—"}
+                      {isSemAktif(ganjil) ? disp(totalSiswa) : "—"}
                     </span>
                   </div>
                 </div>
@@ -1577,7 +1583,7 @@ export default function DetailTahunAjaran({
                       Kelas
                     </span>
                     <span className="text-lg sm:text-xl font-black text-[#00342b]">
-                      {ganjil?.is_active ? disp(totalKelas) : "—"}
+                      {isSemAktif(ganjil) ? disp(totalKelas) : "—"}
                     </span>
                   </div>
                 </div>
@@ -1592,7 +1598,7 @@ export default function DetailTahunAjaran({
                       Guru
                     </span>
                     <span className="text-lg sm:text-xl font-black text-[#00342b]">
-                      {ganjil?.is_active ? disp(totalGuru) : "—"}
+                      {isSemAktif(ganjil) ? disp(totalGuru) : "—"}
                     </span>
                   </div>
                 </div>
@@ -1607,7 +1613,7 @@ export default function DetailTahunAjaran({
                       Jadwal
                     </span>
                     <span className="text-lg sm:text-xl font-black text-[#00342b]">
-                      {ganjil?.is_active ? disp(totalJadwal) : "—"}
+                      {isSemAktif(ganjil) ? disp(totalJadwal) : "—"}
                     </span>
                   </div>
                 </div>
@@ -1654,7 +1660,7 @@ export default function DetailTahunAjaran({
           {/* PANEL 2: SEMESTER GENAP */}
           <div
             className={`rounded-[2.5rem] border shadow-[0_20px_50px_rgba(0,52,43,0.05)] p-6 sm:p-10 relative overflow-hidden group transition-all duration-500 ease-in-out hover:-translate-y-1 hover:shadow-2xl ${
-              genap?.is_active
+              isSemAktif(genap)
                 ? "bg-white border-[#006e2a]/20 hover:shadow-[#00342b]/20"
                 : "bg-white/60 backdrop-blur-sm border-[#bfc9c4]/30"
             }`}
@@ -1667,7 +1673,7 @@ export default function DetailTahunAjaran({
                 <h4 className="text-2xl sm:text-3xl font-headline-card text-[#3f4945]/80 font-extrabold">
                   Semester Genap
                 </h4>
-                {genap?.is_active ? (
+                {isSemAktif(genap) ? (
                   <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#006e2a] text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[#006e2a]/20">
                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
                     AKTIF
@@ -1706,7 +1712,7 @@ export default function DetailTahunAjaran({
                       Siswa
                     </span>
                     <span className="text-lg sm:text-xl font-black text-[#3f4945]">
-                      {genap?.is_active ? totalSiswa : "—"}
+                      {isSemAktif(genap) ? totalSiswa : "—"}
                     </span>
                   </div>
                 </div>
@@ -1721,7 +1727,7 @@ export default function DetailTahunAjaran({
                       Kelas
                     </span>
                     <span className="text-lg sm:text-xl font-black text-[#3f4945]">
-                      {genap?.is_active ? totalKelas : "—"}
+                      {isSemAktif(genap) ? totalKelas : "—"}
                     </span>
                   </div>
                 </div>
@@ -1736,7 +1742,7 @@ export default function DetailTahunAjaran({
                       Guru
                     </span>
                     <span className="text-lg sm:text-xl font-black text-[#3f4945]">
-                      {genap?.is_active ? totalGuru : "—"}
+                      {isSemAktif(genap) ? totalGuru : "—"}
                     </span>
                   </div>
                 </div>
@@ -1751,7 +1757,7 @@ export default function DetailTahunAjaran({
                       Jadwal
                     </span>
                     <span className="text-lg sm:text-xl font-black text-[#3f4945]">
-                      {genap?.is_active ? totalJadwal : "—"}
+                      {isSemAktif(genap) ? totalJadwal : "—"}
                     </span>
                   </div>
                 </div>
@@ -1762,7 +1768,7 @@ export default function DetailTahunAjaran({
                   <span className="material-symbols-outlined text-lg">
                     hourglass_empty
                   </span>
-                  {genap?.is_active ? "Sedang Berjalan" : "Belum dimulai"}
+                  {isSemAktif(genap) ? "Sedang Berjalan" : "Belum dimulai"}
                 </p>
               </div>
 
@@ -1770,7 +1776,7 @@ export default function DetailTahunAjaran({
                 onClick={() => navigate(`${basePath}/${id}/semester/Genap`)}
                 className="w-full py-3.5 sm:py-4 bg-white border-2 border-[#bfc9c4]/50 group-hover:border-[#00342b]/50 group-hover:text-[#00342b] hover:border-[#00342b] hover:text-[#00342b] hover:shadow-[0_0_15px_rgba(0,110,42,0.2)] text-[#3f4945]/70 font-bold rounded-full transition-all duration-300 flex items-center justify-center gap-3 group/btn text-sm"
               >
-                {genap?.is_active
+                {isSemAktif(genap)
                   ? "Lihat Detail Semester"
                   : "Siapkan Semester"}
                 <span className="material-symbols-outlined text-xl group-hover/btn:rotate-90 transition-transform">
@@ -1810,7 +1816,7 @@ export default function DetailTahunAjaran({
               <h3 className="text-xl sm:text-2xl font-headline-card font-extrabold text-[#00342b]">
                 Semester Ganjil
               </h3>
-              {ganjil?.is_active ? (
+              {isSemAktif(ganjil) ? (
                 <span className="px-4 py-1.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] text-[10px] font-black uppercase tracking-widest border border-[#006e2a]/20">
                   Aktif
                 </span>
@@ -1891,7 +1897,7 @@ export default function DetailTahunAjaran({
               <h3 className="text-xl sm:text-2xl font-headline-card font-extrabold text-[#3f4945]/70">
                 Semester Genap
               </h3>
-              {genap?.is_active ? (
+              {isSemAktif(genap) ? (
                 <span className="px-4 py-1.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] text-[10px] font-black uppercase tracking-widest border border-[#006e2a]/20">
                   Aktif
                 </span>
@@ -1902,7 +1908,7 @@ export default function DetailTahunAjaran({
               )}
             </div>
             <div
-              className={`space-y-4 sm:space-y-6 relative z-10 ${genap?.is_active ? "" : "opacity-70"}`}
+              className={`space-y-4 sm:space-y-6 relative z-10 ${isSemAktif(genap) ? "" : "opacity-70"}`}
             >
               <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white/50">
                 <div className="flex items-center gap-3 sm:gap-4">
@@ -1916,7 +1922,7 @@ export default function DetailTahunAjaran({
                   </span>
                 </div>
                 <span className="text-xl sm:text-2xl font-black text-[#3f4945]/50">
-                  {genap?.is_active ? disp(totalSiswa) : "—"}
+                  {isSemAktif(genap) ? disp(totalSiswa) : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white/50">
@@ -1931,7 +1937,7 @@ export default function DetailTahunAjaran({
                   </span>
                 </div>
                 <span className="text-xl sm:text-2xl font-black text-[#3f4945]/50">
-                  {genap?.is_active ? disp(totalKelas) : "—"}
+                  {isSemAktif(genap) ? disp(totalKelas) : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white/50">
@@ -1946,7 +1952,7 @@ export default function DetailTahunAjaran({
                   </span>
                 </div>
                 <span className="text-xl sm:text-2xl font-black text-[#3f4945]/50">
-                  {genap?.is_active ? disp(totalGuru) : "—"}
+                  {isSemAktif(genap) ? disp(totalGuru) : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-white/50">
@@ -1961,7 +1967,7 @@ export default function DetailTahunAjaran({
                   </span>
                 </div>
                 <span className="text-xl sm:text-2xl font-black text-[#3f4945]/50">
-                  {genap?.is_active ? disp(totalMapel) : "—"}
+                  {isSemAktif(genap) ? disp(totalMapel) : "—"}
                 </span>
               </div>
             </div>
@@ -2733,7 +2739,7 @@ export default function DetailTahunAjaran({
             <div className="flex flex-col gap-4 mt-2">
               <button
                 onClick={() => {
-                  if (ta.is_active) {
+                  if (isTaAktif) {
                     toast.error(
                       "Nonaktifkan tahun ajaran ini sebelum mengarsipkan.",
                     );

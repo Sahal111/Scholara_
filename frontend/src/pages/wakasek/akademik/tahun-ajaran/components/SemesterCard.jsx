@@ -1,25 +1,48 @@
 import { fmt } from "../utils/tahunAjaranHelpers";
 
+/**
+ * SemesterCard — kartu semester di daftar Tahun Ajaran.
+ *
+ * Perubahan P2:
+ * - Badge sekarang berdasarkan semester.status (enum dari backend: upcoming/active/closed/archived)
+ *   bukan is_active boolean. is_active tetap sebagai fallback backward-compat.
+ * - Tombol "Aktifkan" hanya muncul kalau canSemesterActivate=true (permission terpisah dari canManage).
+ * - onAktifkan sekarang dikirim semester.ulid, bukan {taId, semesterNama}.
+ */
 export default function SemesterCard({
   semester,
   nama,
   nomor,
   taId,
-  taIsActive,
-  taStatus, // "AKTIF" | "SELESAI" | "AKAN DATANG"
-  onAktifkan,
+  taStatus, // status TA: "AKTIF" | "SELESAI" | "AKAN DATANG" | "MENUNGGU REVIEW" | "DISETUJUI"
+  canSemesterActivate, // boolean — permission master_data.semester.activate
+  onAktifkan, // () => void — dipanggil dengan semester.ulid
   onDetail,
   onBuat,
 }) {
-  const isAktif = semester?.is_active;
   const belumDibuat = !semester;
 
-  // Tentukan label & style badge berdasarkan lifecycle TA, bukan hanya is_active
-  const getSemesterBadge = () => {
-    if (isAktif) {
+  // Gunakan status enum dari backend; fallback ke is_active untuk backward-compat
+  const semesterStatus =
+    semester?.status ?? (semester?.is_active ? "active" : "upcoming");
+  const isAktif = semesterStatus === "active";
+  const isClosed = semesterStatus === "closed";
+  const isArchived = semesterStatus === "archived";
+
+  const getBadge = () => {
+    if (isAktif)
       return { label: "AKTIF", className: "bg-success/15 text-success" };
-    }
-    if (taStatus === "SELESAI") {
+    if (isClosed)
+      return {
+        label: "SELESAI",
+        className: "bg-surface-container text-text-secondary",
+      };
+    if (isArchived)
+      return {
+        label: "DIARSIPKAN",
+        className: "bg-surface-container text-text-tertiary",
+      };
+    if (taStatus === "SELESAI" || taStatus === "DIARSIPKAN") {
       return {
         label: "SELESAI",
         className: "bg-surface-container text-text-secondary",
@@ -38,14 +61,24 @@ export default function SemesterCard({
     };
   };
 
-  const badge = getSemesterBadge();
+  const badge = getBadge();
+
+  // Tombol aktifkan: hanya saat TA aktif, semester belum aktif/closed, dan punya permission
+  const showAktifkan =
+    taStatus === "AKTIF" &&
+    !isAktif &&
+    !isArchived &&
+    canSemesterActivate &&
+    !belumDibuat;
 
   return (
     <div
       className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
         isAktif
           ? "bg-success/5 border-success/20"
-          : "bg-surface-container-lowest border-border-light"
+          : isArchived
+            ? "bg-surface-container-lowest border-border-light opacity-60"
+            : "bg-surface-container-lowest border-border-light"
       }`}
     >
       {/* Kiri */}
@@ -100,9 +133,9 @@ export default function SemesterCard({
           </button>
         ) : (
           <>
-            {taIsActive && !isAktif && (
+            {showAktifkan && (
               <button
-                onClick={onAktifkan}
+                onClick={() => onAktifkan(semester.ulid)}
                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-success/10 text-success text-[11px] font-bold hover:bg-success/20 transition-colors"
               >
                 <span className="material-symbols-outlined text-[13px]">

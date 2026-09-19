@@ -209,10 +209,13 @@ export function getStatusTahunAjaran(t, activeTahun = null) {
  *
  * Contoh:
  *   const actions = getTahunAjaranActions(ta, {
- *     canManage:      hasPermission("master_data.tahun_ajaran.manage"),
- *     canReview:      hasPermission("master_data.tahun_ajaran.review"),
- *     canApprove:     hasPermission("master_data.tahun_ajaran.approve"),
- *     canActivate:    hasPermission("master_data.tahun_ajaran.activate"),
+ *     canManage:          hasPermission("master_data.tahun_ajaran.manage"),
+ *     canReview:          hasPermission("master_data.tahun_ajaran.review"),
+ *     canApprove:         hasPermission("master_data.tahun_ajaran.approve"),
+ *     canActivate:        hasPermission("master_data.tahun_ajaran.activate"),
+ *     canArchive:         hasPermission("master_data.tahun_ajaran.archive"),
+ *     canComplete:        hasPermission("master_data.tahun_ajaran.complete"),
+ *     canSemesterActivate: hasPermission("master_data.semester.activate"),
  *   });
  *   if (actions.showSubmitReview) { ... }
  */
@@ -222,6 +225,9 @@ export function getTahunAjaranActions(t, perms = {}) {
     canReview = false,
     canApprove = false,
     canActivate = false,
+    canArchive = false,
+    canComplete = false,
+    canSemesterActivate = false,
   } = perms;
   const status = getWorkflowStatus(t);
 
@@ -244,16 +250,19 @@ export function getTahunAjaranActions(t, perms = {}) {
     showAktifkan: canActivate && status === TA_STATUS.APPROVED,
 
     // ── Wakasek: ganti semester aktif — hanya saat ACTIVE
-    showSetSemesterAktif: canReview && status === TA_STATUS.ACTIVE,
+    // Dulu pakai canReview, sekarang pakai canSemesterActivate (permission terpisah)
+    showSetSemesterAktif: canSemesterActivate && status === TA_STATUS.ACTIVE,
 
     // ── Wakasek: selesaikan / tutup buku — hanya saat ACTIVE
-    showSelesaikan: canReview && status === TA_STATUS.ACTIVE,
+    // Dulu canReview — sekarang canComplete (permission terpisah: tahun_ajaran.complete)
+    showSelesaikan: canComplete && status === TA_STATUS.ACTIVE,
 
     // ── Operator: arsipkan — hanya saat COMPLETED
-    showArsip: canManage && status === TA_STATUS.COMPLETED,
+    // Dulu canManage — sekarang canArchive (permission terpisah: tahun_ajaran.archive)
+    showArsip: canArchive && status === TA_STATUS.COMPLETED,
 
     // ── Operator: unarsip — hanya saat ARCHIVED
-    showUnarsip: canManage && status === TA_STATUS.ARCHIVED,
+    showUnarsip: canArchive && status === TA_STATUS.ARCHIVED,
 
     // ── Kepsek bisa lihat catatan review
     showCatatanReview: canApprove || canActivate,

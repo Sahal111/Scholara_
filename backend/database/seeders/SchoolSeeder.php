@@ -247,6 +247,13 @@ class SchoolSeeder extends Seeder
             ['slug' => 'master_data.tahun_ajaran.activate', 'nama' => 'Aktifkan Tahun Ajaran', 'modul' => 'master_data'],
             ['slug' => 'master_data.tahun_ajaran.complete', 'nama' => 'Selesaikan Tahun Ajaran', 'modul' => 'master_data'],
             ['slug' => 'master_data.tahun_ajaran.archive', 'nama' => 'Arsipkan Tahun Ajaran', 'modul' => 'master_data'],
+
+            // Semester (entitas mandiri)
+            ['slug' => 'master_data.semester.view', 'nama' => 'Lihat Semester', 'modul' => 'master_data'],
+            ['slug' => 'master_data.semester.manage', 'nama' => 'Kelola Semester', 'modul' => 'master_data'],
+            ['slug' => 'master_data.semester.activate', 'nama' => 'Set Semester Aktif', 'modul' => 'master_data'],
+            ['slug' => 'master_data.semester.archive', 'nama' => 'Arsipkan Semester', 'modul' => 'master_data'],
+
             ['slug' => 'master_data.orang_tua.view', 'nama' => 'Lihat Data Orang Tua', 'modul' => 'master_data'],
             ['slug' => 'master_data.orang_tua.manage', 'nama' => 'Kelola Data Orang Tua', 'modul' => 'master_data'],
             // kurikulum — fleksibel per sekolah, bisa custom atau pakai platform default
@@ -390,6 +397,8 @@ class SchoolSeeder extends Seeder
                     'master_data.tahun_ajaran.approve',
                     'master_data.tahun_ajaran.activate',
                     'master_data.tahun_ajaran.complete',
+                    // Activate semester — domain Wakasek
+                    'master_data.semester.activate',
                     // Kepsek-only
                     'master_data.guru.verify',
                 ])
@@ -412,6 +421,9 @@ class SchoolSeeder extends Seeder
                 'master_data.tahun_ajaran.approve',  // kepsek approve/reject TA dari wakasek
                 'master_data.tahun_ajaran.activate', // kepsek aktifkan TA yang sudah approved
                 'master_data.orang_tua.view',
+
+                // Semester — view only
+                'master_data.semester.view',
                 'master_data.program.view',
                 'master_data.kurikulum.view',
 
@@ -446,6 +458,8 @@ class SchoolSeeder extends Seeder
             'guru' => [
                 'master_data.siswa.view',
                 'master_data.kurikulum.view',
+                'master_data.tahun_ajaran.view',  // referensi periode aktif
+                'master_data.semester.view',      // referensi semester aktif
                 'absensi.input',
                 'absensi.edit',
                 'absensi.view_kelas_sendiri',
@@ -461,6 +475,8 @@ class SchoolSeeder extends Seeder
             'wali_kelas' => [
                 'master_data.siswa.view',
                 'master_data.kurikulum.view',
+                'master_data.tahun_ajaran.view',  // referensi periode aktif
+                'master_data.semester.view',      // referensi semester aktif
                 'absensi.input',
                 'absensi.edit',
                 'absensi.view_kelas_sendiri',
@@ -539,6 +555,11 @@ class SchoolSeeder extends Seeder
                 'master_data.tahun_ajaran.manage',   // ← fix: sebelumnya tidak ada!
                 'master_data.tahun_ajaran.review',   // wakasek submit TA ke kepsek
                 'master_data.tahun_ajaran.complete', // wakasek tutup buku TA yang aktif
+
+                // ── Semester — wakasek kelola & atur pergantian semester ──
+                'master_data.semester.view',
+                'master_data.semester.manage',   // edit tanggal/nama semester
+                'master_data.semester.activate', // ganti semester aktif (Ganjil↔Genap)
                 'master_data.program.view',
                 'master_data.program.manage',
                 'master_data.kurikulum.view',

@@ -17,6 +17,7 @@ import {
   useDeleteTahunAjaran,
   useArsipkanTahunAjaran,
 } from "../../../../hooks/api/useTahunAjaran";
+import { useActivateSemester } from "../../../../hooks/api/useSemester";
 import ModalTahunAjaranComp from "./components/ModalTahunAjaran";
 import ModalBuatSemesterComp from "./components/ModalBuatSemester";
 import SemesterCardComp from "./components/SemesterCard";
@@ -49,6 +50,9 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
   const canReview = hasPermission("master_data.tahun_ajaran.review");
   const canApprove = hasPermission("master_data.tahun_ajaran.approve");
   const canActivate = hasPermission("master_data.tahun_ajaran.activate");
+  const canComplete = hasPermission("master_data.tahun_ajaran.complete");
+  const canArchive = hasPermission("master_data.tahun_ajaran.archive");
+  const canSemesterActivate = hasPermission("master_data.semester.activate");
 
   // Helper untuk generate allowed actions per TA + role saat ini
   const getActions = (ta) =>
@@ -57,6 +61,9 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
       canReview,
       canApprove,
       canActivate,
+      canComplete,
+      canArchive,
+      canSemesterActivate,
     });
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -128,8 +135,9 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
   const { data: listData = [], isLoading } = useTahunAjaranList();
 
   const list = listData?.data ?? listData ?? [];
-  const aktif = list.find((t) => t.is_active);
-  // Source of truth untuk lifecycle status — diturunkan dari TA yang is_active=true
+  // Cari TA aktif — gunakan status enum jika ada, fallback is_active untuk backward-compat
+  const aktif = list.find((t) => t.status === "active" || t.is_active);
+  // Source of truth untuk lifecycle status — diturunkan dari TA yang sedang aktif
   const activeTahun = aktif?.tahun ?? null;
 
   // Set default selected ID when data is loaded
@@ -194,7 +202,8 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
   const approveMut = useApproveTahunAjaran();
   const rejectMut = useRejectTahunAjaran();
   const aktifkanMut = useAktifkanTahunAjaran();
-  const setSemesterAktif = useSetSemesterAktif();
+  const setSemesterAktif = useSetSemesterAktif(); // legacy — via TA ulid + nama
+  const activateSemesterMut = useActivateSemester(); // baru — via semester ulid langsung
   const selesaikanMut = useSelesaikanTahunAjaran();
   const hapusMut = useDeleteTahunAjaran();
   const arsipkanMut = useArsipkanTahunAjaran();
@@ -262,8 +271,9 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
   const metricWaliKelas = selectedDetailData?.total_wali_kelas ?? null;
 
   // Active semester name for selected TA
+  const isSemesterAktif = (s) => s.status === "active" || s.is_active;
   const selectedActiveSemester =
-    selectedTA?.semesters?.find((s) => s.is_active)?.nama ||
+    selectedTA?.semesters?.find(isSemesterAktif)?.nama ||
     (selectedTA?.semesters?.[0]?.nama ?? "Ganjil");
 
   // Hitung progress dari checklist jika ada, fallback dari status
@@ -384,7 +394,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                 </h4>
                 <p className="text-xs font-medium text-[#94d3c1] mt-1 italic font-serif-accent">
                   {aktif
-                    ? `Semester ${aktif.semesters?.find((s) => s.is_active)?.nama || "Ganjil"}`
+                    ? `Semester ${aktif.semesters?.find(isSemesterAktif)?.nama || "Ganjil"}`
                     : "Belum Ada Periode Aktif"}
                 </p>
               </div>
@@ -445,7 +455,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                 {totalMendatang > 0
                   ? `${totalMendatang} TA Mendatang`
                   : aktif
-                    ? `Semester ${aktif.semesters?.find((s) => !s.is_active)?.nama ?? "Genap"} Berikutnya`
+                    ? `Semester ${aktif.semesters?.find((s) => !isSemesterAktif(s))?.nama ?? "Genap"} Berikutnya`
                     : "Belum ada periode"}
               </p>
             </div>
@@ -625,11 +635,11 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                                 {/* Semester Column */}
                                 <td className="py-6 px-3">
                                   <div className="font-body-md text-sm text-[#191c1c] font-semibold">
-                                    {t.semesters?.find((s) => s.is_active)
-                                      ?.nama || "Ganjil & Genap"}
+                                    {t.semesters?.find(isSemesterAktif)?.nama ||
+                                      "Ganjil & Genap"}
                                   </div>
                                   <div className="text-[11px] text-[#3f4945]/60">
-                                    {t.is_active
+                                    {t.status === "active" || t.is_active
                                       ? "Semester Aktif Berjalan"
                                       : "Periode Reguler"}
                                   </div>
@@ -752,12 +762,13 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                                           nama="Ganjil"
                                           nomor="1"
                                           taId={t.ulid}
-                                          taIsActive={t.is_active}
                                           taStatus={status}
-                                          onAktifkan={() =>
-                                            setSemesterAktif.mutate({
-                                              taId: t.ulid,
-                                              semesterNama: "Ganjil",
+                                          canSemesterActivate={
+                                            canSemesterActivate
+                                          }
+                                          onAktifkan={(semesterUlid) =>
+                                            activateSemesterMut.mutate({
+                                              ulid: semesterUlid,
                                             })
                                           }
                                           onDetail={() =>
@@ -777,12 +788,13 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                                           nama="Genap"
                                           nomor="2"
                                           taId={t.ulid}
-                                          taIsActive={t.is_active}
                                           taStatus={status}
-                                          onAktifkan={() =>
-                                            setSemesterAktif.mutate({
-                                              taId: t.ulid,
-                                              semesterNama: "Genap",
+                                          canSemesterActivate={
+                                            canSemesterActivate
+                                          }
+                                          onAktifkan={(semesterUlid) =>
+                                            activateSemesterMut.mutate({
+                                              ulid: semesterUlid,
                                             })
                                           }
                                           onDetail={() =>
@@ -1025,7 +1037,8 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                         onClick={() => {
                           const target = selectedTA;
                           if (!target) return;
-                          if (target.is_active) return;
+                          if (target.status === "active" || target.is_active)
+                            return;
                           setArsipModal({
                             open: true,
                             item: target,
@@ -1035,6 +1048,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                         }}
                         disabled={
                           !selectedTA ||
+                          selectedTA.status === "active" ||
                           selectedTA.is_active ||
                           arsipkanMut.isPending
                         }
@@ -1043,7 +1057,8 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                         <span className="material-symbols-outlined text-[16px]">
                           inventory_2
                         </span>
-                        {selectedTA?.is_active
+                        {selectedTA?.status === "active" ||
+                        selectedTA?.is_active
                           ? "TA Aktif Tidak Bisa Diarsip"
                           : `Arsipkan ${selectedTA?.tahun ?? "TA"}`}
                       </button>
@@ -1105,7 +1120,8 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                       <h4 className="text-sm font-bold text-text-primary mb-1.5">
                         Hapus Periode
                       </h4>
-                      {selectedTA?.is_active ? (
+                      {selectedTA?.status === "active" ||
+                      selectedTA?.is_active ? (
                         <>
                           <p className="font-body-md text-xs text-[#3f4945]/80 leading-relaxed mb-4">
                             Periode tidak dapat dihapus karena masih berstatus{" "}

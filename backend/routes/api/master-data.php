@@ -286,6 +286,27 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
             Route::patch('/tahun-ajaran/{ulid}/aktifkan', [TahunAjaranController::class, 'aktifkan']);
         });
 
+        // ── SEMESTER (entitas mandiri) ────────────────────────────────────────
+        // Semester tidak punya create/delete sendiri — dibuat otomatis via TA.
+        // Update tanggal tetap bisa dilakukan Wakasek meski TA sudah ACTIVE
+        // (solusi over-locking — lock hanya di level status semester, bukan status TA).
+    
+        Route::middleware('permission:master_data.semester.view')->group(function () {
+            Route::get('/semesters', [\App\Http\Controllers\MasterData\SemesterController::class, 'index']);
+            Route::get('/semesters/{ulid}', [\App\Http\Controllers\MasterData\SemesterController::class, 'show']);
+        });
+        Route::middleware('permission:master_data.semester.manage')->group(function () {
+            Route::put('/semesters/{ulid}', [\App\Http\Controllers\MasterData\SemesterController::class, 'update']);
+        });
+        Route::middleware('permission:master_data.semester.activate')->group(function () {
+            Route::patch('/semesters/{ulid}/activate', [\App\Http\Controllers\MasterData\SemesterController::class, 'activate']);
+            Route::patch('/semesters/{ulid}/close', [\App\Http\Controllers\MasterData\SemesterController::class, 'close']);
+        });
+        Route::middleware('permission:master_data.semester.archive')->group(function () {
+            Route::patch('/semesters/{ulid}/archive', [\App\Http\Controllers\MasterData\SemesterController::class, 'archive']);
+            Route::patch('/semesters/{ulid}/unarchive', [\App\Http\Controllers\MasterData\SemesterController::class, 'unarchive']);
+        });
+
         // Naik Kelas — butuh manage kelas + siswa
         Route::middleware('permission:master_data.kelas.manage')->group(function () {
             Route::get('/naik-kelas/preview', [NaikKelasController::class, 'preview']);

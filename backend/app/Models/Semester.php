@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\StatusSemester;
 use App\Traits\HasSchoolScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -21,6 +22,8 @@ class Semester extends Model
         'tgl_mulai',
         'tgl_selesai',
         'is_active',
+        'status',
+        'archived_at',
         // audit fields
         'created_by',
         'updated_by',
@@ -38,6 +41,8 @@ class Semester extends Model
         'is_active' => 'boolean',
         'tgl_mulai' => 'date:Y-m-d',
         'tgl_selesai' => 'date:Y-m-d',
+        'archived_at' => 'datetime',
+        'status' => StatusSemester::class,
     ];
 
     // ── Boot ─────────────────────────────────────────────────────────────────
@@ -51,11 +56,19 @@ class Semester extends Model
             if (empty($model->created_by) && auth()->check()) {
                 $model->created_by = auth()->id();
             }
+            // Default status
+            if (empty($model->status)) {
+                $model->status = StatusSemester::UPCOMING;
+            }
         });
 
         static::updating(function (Semester $model) {
             if (auth()->check()) {
                 $model->updated_by = auth()->id();
+            }
+            // Sync is_active dari status agar backward-compat
+            if ($model->isDirty('status')) {
+                $model->is_active = $model->status === StatusSemester::ACTIVE;
             }
         });
 
@@ -74,7 +87,7 @@ class Semester extends Model
         return 'ulid';
     }
 
-    // ── Relasi ──────────────────────────────────────────────────────────────
+    // ── Relasi ───────────────────────────────────────────────────────────────
 
     public function tahunAjaran()
     {
@@ -91,10 +104,27 @@ class Semester extends Model
         return $this->hasMany(Absensi::class, 'semester_id');
     }
 
-    // ── Scopes ──────────────────────────────────────────────────────────────
+    // ── Scopes ───────────────────────────────────────────────────────────────
 
     public function scopeAktif($query)
     {
-        return $query->where('is_active', true);
+        return $query->where('status', StatusSemester::ACTIVE->value);
+    }
+
+    public function scopeStatus($query, StatusSemester $status)
+    {
+        return $query->where('status', $status->value);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    public function isLocked(): bool
+    {
+        return $this->status->isLocked();
+    }
+
+    public function canTransitionTo(StatusSemester $target): bool
+    {
+        return $this->status->canTransitionTo($target);
     }
 }
