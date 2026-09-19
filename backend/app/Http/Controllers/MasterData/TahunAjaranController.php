@@ -48,6 +48,44 @@ class TahunAjaranController extends Controller
         return $this->success($this->service->buildDetail($tahunAjaran));
     }
 
+    /**
+     * Tahun ajaran yang sedang ACTIVE — endpoint publik untuk semua role sekolah.
+     * Dipakai Guru & Wali Kelas sebagai referensi periode aktif di absensi/nilai/LMS.
+     */
+    public function aktif(): JsonResponse
+    {
+        $tahunAjaran = TahunAjaran::with('semesters')
+            ->where('status', StatusTahunAjaran::ACTIVE->value)
+            ->first();
+
+        if (!$tahunAjaran) {
+            return $this->error('Tidak ada tahun ajaran aktif saat ini.', 'NOT_FOUND', 404);
+        }
+
+        return $this->success($tahunAjaran);
+    }
+
+    /**
+     * Semester aktif dari tahun ajaran yang sedang ACTIVE.
+     * Dipakai modul absensi, penilaian, dan LMS sebagai referensi periode.
+     */
+    public function semesterAktif(): JsonResponse
+    {
+        $semester = Semester::whereHas(
+            'tahunAjaran',
+            fn($q) =>
+                $q->where('status', StatusTahunAjaran::ACTIVE->value)
+        )
+            ->where('is_active', true)
+            ->first();
+
+        if (!$semester) {
+            return $this->error('Tidak ada semester aktif saat ini.', 'NOT_FOUND', 404);
+        }
+
+        return $this->success($semester);
+    }
+
     public function arsipList(): JsonResponse
     {
         $data = TahunAjaran::with('semesters')

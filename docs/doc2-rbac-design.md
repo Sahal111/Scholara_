@@ -1,6 +1,33 @@
 # Dokumen Arsitektur 2 — RBAC Design (Per-Tenant)
 # SIAKAD Enterprise Platform
 # Status: FINAL — Acuan untuk middleware, policy, dan seeder
+# Terakhir diperbarui: September 2026
+
+---
+
+## Prinsip Utama
+
+> **"Operator mengelola data, Wakasek mengelola kebijakan akademik,
+> Kepsek mengesahkan dan mengawasi, Guru menjalankan pembelajaran,
+> role spesialis mengelola domain masing-masing,
+> dan Super Admin mengelola platform SaaS."**
+
+RBAC ini menggunakan pola empat lapis:
+
+```
+ROLE
+  ↓
+PERMISSION   — apa yang boleh dilakukan? (curriculum.update)
+  ↓
+SCOPE        — terhadap data mana? (school_id = 123, atau assigned_class)
+  ↓
+WORKFLOW     — kapan boleh dilakukan? (DRAFT → REVIEW → APPROVED → ACTIVE)
+  ↓
+AUDIT LOG    — siapa yang melakukan?
+```
+
+Hindari hardcode berdasarkan role (`if role === 'operator' { ... }`).
+Selalu lewat permission, lalu enforce scope via Policy.
 
 ---
 
@@ -9,12 +36,18 @@
 Sistem menggunakan otorisasi **2 Tingkat (Multi-Tier)**:
 
 ### 1. Platform Level Authorization (`platform_admins`)
-Untuk pengelola platform SaaS (Global Super Admin), terpisah dari data tenant:
-- **`super_admin`**: Akses penuh ke seluruh konfigurasi SaaS, tenant management, billing, dan database migration.
-- **`admin`**: Manajemen sekolah, pengawasan langganan, dan manajemen promo/coupon.
-- **`support`**: Mode baca & impersonasi tenant (`last_tenant_id`) untuk bantuan teknis.
-- **`billing`**: Kelola tagihan, invoice PPN/tax, refund, dan paket langganan.
-- **`readonly`**: Auditing & reporting platform secara umum.
+Untuk pengelola platform SaaS (Global Super Admin), terpisah dari data tenant.
+Super Admin **tidak** ikut mengedit operasional sekolah (kurikulum, nilai, jadwal).
+Super Admin mengelola: tenant/sekolah, subscription, billing, feature flags,
+konfigurasi platform, global reference data, audit platform, support.
+
+| Role Platform | Akses |
+|---|---|
+| `super_admin` | Akses penuh ke seluruh konfigurasi SaaS, tenant management, billing, migration |
+| `admin` | Manajemen sekolah, pengawasan langganan, manajemen promo/coupon |
+| `support` | Mode baca & impersonasi tenant (`last_tenant_id`) untuk bantuan teknis |
+| `billing` | Kelola tagihan, invoice PPN/tax, refund, dan paket langganan |
+| `readonly` | Auditing & reporting platform secara umum |
 
 ### 2. Tenant Level Authorization (Per-Sekolah)
 ```
@@ -25,9 +58,29 @@ School (tenant)
 ```
 
 Setiap sekolah punya **role dan permission sendiri**.
-Saat sekolah baru didaftarkan, sistem otomatis seed role dan permission default
-dari template.
-Setelah itu, operator sekolah bisa tambah/hapus/edit sesuai kebutuhan.
+Saat sekolah baru didaftarkan, `SchoolProvisioningService` otomatis seed role default
++ permission default dari template. Operator sekolah bisa tambah role custom sesuai
+kebutuhan spesifik sekolah via fitur RBAC (`pengaturan.rbac.manage`).
+
+RBAC bersifat **universal** — isi kurikulumnya yang berbeda per jenjang/sekolah,
+bukan RBAC-nya. Jangan hardcode struktur kurikulum SD/SMP/SMA/SMK di permission.
+
+---
+
+## Domain Ownership
+
+Ini konsep terpenting. **Jangan anggap Operator sebagai pemilik semua data.**
+
+| Domain | Pemilik | Pelaksana | Approver/Oversight |
+|---|---|---|---|
+| Data administrasi (guru, siswa, ortu) | Operator | Operator | Kepsek (read + verify) |
+| Kebijakan akademik (kurikulum, TA, mapel, kelas, jadwal) | **Wakasek** | Wakasek | Kepsek (approve + aktivasi) |
+| Keuangan | Bendahara | Admin Keuangan | Bendahara (verify + approve) |
+| Konseling | Guru BK | Guru BK | — |
+| Perpustakaan | Pustakawan | Pustakawan | — |
+| Surat & arsip | Tata Usaha | Tata Usaha | — |
+| Penerimaan siswa | Admin PPDB | Admin PPDB | Kepsek |
+| Platform SaaS | Super Admin | Super Admin | — |
 
 ---
 
@@ -36,32 +89,36 @@ Setelah itu, operator sekolah bisa tambah/hapus/edit sesuai kebutuhan.
 Ini adalah role yang otomatis dibuat saat sekolah baru terdaftar.
 `is_system = 1` artinya tidak bisa dihapus, hanya bisa dinonaktifkan.
 
-| slug            | nama                      | is_system | Deskripsi                                              |
-|-----------------|---------------------------|-----------|--------------------------------------------------------|
-| super_operator  | Operator Utama            | 1         | Akses penuh ke semua fitur sekolah                     |
-| operator        | Operator                  | 1         | Kelola master data, akun, pengumuman                   |
-| kepsek          | Kepala Sekolah            | 1         | Read-only semua data + approve dokumen                 |
-| wakasek         | Wakil Kepala Sekolah      | 1         | Hampir setara kepsek — manage kurikulum & kesiswaan    |
-| guru            | Guru                      | 1         | Data siswa kelas sendiri + absensi + profil            |
-| guru_bk         | Guru BK                   | 1         | Konseling siswa + catatan BK — tidak bisa lihat nilai  |
-| wali_kelas      | Wali Kelas                | 1         | Sama seperti guru + rapor siswa kelasnya               |
-| bendahara       | Bendahara                 | 1         | Modul keuangan + tagihan + laporan keuangan            |
-| admin_keuangan  | Admin Keuangan            | 1         | Input tagihan & pembayaran — tidak bisa approve        |
-| tata_usaha      | Tata Usaha                | 1         | Surat, arsip, legalisir — tidak akses data nilai       |
-| pustakawan      | Pustakawan                | 1         | Kelola buku & peminjaman perpustakaan                  |
-| ortu            | Orang Tua                 | 1         | Portal orang tua — data anak + absensi                 |
-| siswa           | Siswa                     | 1         | Portal siswa — profil, nilai, jadwal, tagihan          |
-| admin_ppdb      | Admin PPDB                | 1         | Modul PPDB — pendaftaran + seleksi                     |
+> **Catatan September 2026:** `super_operator` telah di-MERGE ke `operator`
+> via migration `2026_08_17_000001_merge_super_operator_into_operator.php`.
+> `super_operator` tidak lagi ada sebagai role terpisah.
+> Tabel di bawah sudah tidak mencantumkan `super_operator`.
 
-Operator sekolah bisa tambah role custom sesuai kebutuhan spesifik sekolah.
+| slug | nama | is_system | Deskripsi |
+|---|---|---|---|
+| `operator` | Operator | 1 | Pelaksana administrasi — CRUD guru, siswa, ortu, import/export. VIEW-ONLY kebijakan akademik |
+| `kepsek` | Kepala Sekolah | 1 | Approval & oversight — read semua data, approve dokumen & kebijakan |
+| `wakasek` | Waka Kurikulum | 1 | **Pemilik kebijakan akademik** — kurikulum, TA, program, mapel, kelas, jadwal, rapor |
+| `guru` | Guru | 1 | Data kelas sendiri + absensi + nilai + profil + LMS |
+| `guru_bk` | Guru BK | 1 | Konseling siswa — TANPA akses nilai akademik |
+| `wali_kelas` | Wali Kelas | 1 | Guru + rapor siswa kelasnya (guru dengan assignment wali kelas) |
+| `bendahara` | Bendahara | 1 | Modul keuangan — verify, approve, laporan |
+| `admin_keuangan` | Admin Keuangan | 1 | Input tagihan & pembayaran — TANPA approval |
+| `tata_usaha` | Tata Usaha | 1 | Surat, arsip, legalisir — TANPA akses nilai |
+| `pustakawan` | Pustakawan | 1 | Kelola buku & peminjaman perpustakaan |
+| `ortu` | Orang Tua | 1 | Portal orang tua — data anak sendiri + absensi |
+| `siswa` | Siswa | 1 | Portal siswa — profil, nilai, jadwal, tagihan |
+| `admin_ppdb` | Admin PPDB | 1 | Modul PPDB — pendaftaran + seleksi |
 
 ---
 
 ## Permission Slugs (Template)
 
-Format: `{modul}.{aksi}` atau `{modul}.{resource}.{aksi}`
+Format: `{modul}.{resource}.{aksi}` atau `{modul}.{aksi}`
 
 ### Modul: master_data
+
+#### Data Administrasi (domain Operator)
 ```
 master_data.guru.view
 master_data.guru.create
@@ -79,21 +136,36 @@ master_data.siswa.delete
 master_data.siswa.import
 master_data.siswa.export
 
-master_data.kelas.view
-master_data.kelas.create
-master_data.kelas.update
-master_data.kelas.delete
-
-master_data.mapel.view
-master_data.mapel.create
-master_data.mapel.update
-master_data.mapel.delete
-
-master_data.tahun_ajaran.view
-master_data.tahun_ajaran.manage   -- create + update + set aktif
-
 master_data.orang_tua.view
 master_data.orang_tua.manage
+```
+
+#### Kebijakan Akademik (domain Wakasek, Operator VIEW-ONLY)
+```
+-- Kelas
+master_data.kelas.view
+master_data.kelas.manage       -- create, update, delete (WAKASEK ONLY)
+
+-- Mata Pelajaran
+master_data.mapel.view
+master_data.mapel.manage       -- create, update, delete, import/export (WAKASEK ONLY)
+
+-- Tahun Ajaran
+master_data.tahun_ajaran.view
+master_data.tahun_ajaran.manage   -- create + update (Operator untuk DRAFT, Wakasek untuk review)
+master_data.tahun_ajaran.review   -- submit TA ke kepsek untuk review (WAKASEK)
+master_data.tahun_ajaran.approve  -- approve/reject TA dari wakasek (KEPSEK)
+master_data.tahun_ajaran.activate -- aktifkan TA yang sudah approved (KEPSEK)
+master_data.tahun_ajaran.complete -- tutup buku / selesaikan TA aktif (WAKASEK)
+master_data.tahun_ajaran.archive  -- arsipkan TA completed ke historis (OPERATOR)
+
+-- Program Pendidikan
+master_data.program.view
+master_data.program.manage     -- create, update, delete (WAKASEK ONLY)
+
+-- Kurikulum
+master_data.kurikulum.view
+master_data.kurikulum.manage   -- create, update, delete (WAKASEK ONLY)
 ```
 
 ### Modul: akun
@@ -113,8 +185,28 @@ akun.manage_roles          -- assign/cabut role dari user
 absensi.input              -- input absensi siswa
 absensi.edit               -- edit absensi yang sudah diinput
 absensi.view_kelas_sendiri -- lihat absensi kelas sendiri (guru)
-absensi.view_all           -- lihat absensi semua kelas (kepsek, operator)
+absensi.view_all           -- lihat absensi semua kelas (kepsek, operator, wakasek)
 absensi.rekap              -- akses rekap dan export absensi
+```
+
+### Modul: akademik
+```
+-- Nilai
+akademik.nilai.input       -- input nilai (guru kelas sendiri)
+akademik.nilai.view        -- lihat nilai (guru kelas sendiri)
+akademik.nilai.view_all    -- lihat nilai semua kelas (wakasek, kepsek)
+
+-- Rapor
+akademik.rapor.view        -- lihat rapor
+akademik.rapor.manage      -- kelola template & finalisasi rapor (wakasek)
+akademik.rapor.generate    -- generate rapor per siswa (wali kelas)
+
+-- Jadwal
+akademik.jadwal.view       -- lihat jadwal
+akademik.jadwal.manage     -- kelola jadwal pelajaran (wakasek)
+
+-- Kalender
+akademik.kalender.manage   -- kelola kalender akademik (kepsek, wakasek)
 ```
 
 ### Modul: dms (Document Management)
@@ -130,14 +222,16 @@ dms.bulk_download          -- bulk download per guru
 
 ### Modul: keuangan
 ```
+-- Separation of duties: admin_keuangan input, bendahara approve
 keuangan.tagihan.view
 keuangan.tagihan.create
 keuangan.tagihan.update
 keuangan.tagihan.delete
 keuangan.pembayaran.view
-keuangan.pembayaran.input
+keuangan.pembayaran.input  -- admin_keuangan
+keuangan.pembayaran.verify -- bendahara
 keuangan.pembayaran.export
-keuangan.laporan.view
+keuangan.laporan.view      -- bendahara only
 ```
 
 ### Modul: ppdb
@@ -147,16 +241,6 @@ ppdb.pendaftar.update
 ppdb.pendaftar.approve
 ppdb.pendaftar.reject
 ppdb.pengaturan.manage
-```
-
-### Modul: akademik
-```
-akademik.nilai.input
-akademik.nilai.view
-akademik.rapor.generate
-akademik.rapor.view
-akademik.jadwal.manage
-akademik.kalender.manage
 ```
 
 ### Modul: pengumuman
@@ -173,7 +257,7 @@ pengaturan.view
 pengaturan.update
 pengaturan.smtp.manage
 pengaturan.storage.manage
-pengaturan.rbac.manage     -- kelola role & permission (hanya super_operator)
+pengaturan.rbac.manage     -- kelola role & permission custom (operator)
 ```
 
 ### Modul: laporan
@@ -187,38 +271,125 @@ laporan.export
 
 ### Modul: bk (Bimbingan Konseling)
 ```
-bk.konseling.view       -- lihat sesi konseling
-bk.konseling.create     -- buat sesi konseling baru
-bk.konseling.update     -- edit sesi konseling
-bk.konseling.delete     -- hapus sesi konseling
-bk.catatan.view         -- lihat catatan BK siswa
-bk.catatan.create       -- buat catatan BK
-bk.catatan.update       -- edit catatan BK
-bk.laporan.view         -- laporan BK
-bk.laporan.export       -- export laporan BK
+bk.konseling.view
+bk.konseling.create
+bk.konseling.update
+bk.konseling.delete
+bk.catatan.view
+bk.catatan.create
+bk.catatan.update
+bk.laporan.view
+bk.laporan.export
 ```
 
 ### Modul: perpustakaan
 ```
-perpustakaan.buku.view          -- lihat katalog buku
-perpustakaan.buku.create        -- tambah buku
-perpustakaan.buku.update        -- edit data buku
-perpustakaan.buku.delete        -- hapus buku
-perpustakaan.peminjaman.view    -- lihat data peminjaman
-perpustakaan.peminjaman.manage  -- proses pinjam & kembali
-perpustakaan.laporan.view       -- laporan perpustakaan
-perpustakaan.laporan.export     -- export laporan perpustakaan
+perpustakaan.buku.view
+perpustakaan.buku.create
+perpustakaan.buku.update
+perpustakaan.buku.delete
+perpustakaan.peminjaman.view
+perpustakaan.peminjaman.manage
+perpustakaan.laporan.view
+perpustakaan.laporan.export
 ```
 
 ### Modul: surat (Tata Usaha)
 ```
-surat.view      -- lihat daftar surat
-surat.create    -- buat surat baru
-surat.update    -- edit surat
-surat.delete    -- hapus surat
-surat.arsip     -- arsipkan surat
-surat.legalisir -- proses permohonan legalisir dokumen
+surat.view
+surat.create
+surat.update
+surat.delete
+surat.arsip
+surat.legalisir
 ```
+
+---
+
+## Workflow Per Fitur Utama
+
+### Tahun Ajaran
+
+```
+OPERATOR
+  │
+  │ Create (selalu DRAFT)
+  ▼
+DRAFT
+  │
+  ▼
+WAKASEK
+  │
+  │ Review + Submit (master_data.tahun_ajaran.review)
+  ▼
+UNDER_REVIEW
+  │
+  ▼
+KEPSEK
+  │
+  ├─ Approve (master_data.tahun_ajaran.approve) → APPROVED
+  └─ Reject → kembali ke DRAFT (wakasek perbaiki & submit ulang)
+                │
+                ▼
+             APPROVED
+                │
+                ▼
+             KEPSEK
+                │
+                │ Aktifkan (master_data.tahun_ajaran.activate)
+                ▼
+             ACTIVE
+                │
+                ▼
+             WAKASEK
+                │
+                │ Selesaikan / tutup buku (master_data.tahun_ajaran.complete)
+                ▼
+            COMPLETED
+                │
+                ▼
+             OPERATOR
+                │
+                │ Arsipkan (master_data.tahun_ajaran.archive)
+                ▼
+            ARCHIVED
+```
+
+Data **terkunci** (tidak bisa diedit) setelah status >= APPROVED.
+Hanya DRAFT yang bisa dihapus.
+
+### Semester
+
+Semester adalah bagian dari Tahun Ajaran.
+Kewenangannya:
+
+| Aksi | Operator | Wakasek | Kepsek | Guru | Wali Kelas |
+|---|:---:|:---:|:---:|:---:|:---:|
+| View | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Create / Update | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Delete | ⚠️ | ⚠️ | ❌ | ❌ | ❌ |
+| Set Aktif | ❌ | ✅ | ❌ | ❌ | ❌ |
+
+⚠️ Bukan hard delete — gunakan archive/soft delete.
+Semester yang sudah punya transaksi akademik tidak bisa dihapus.
+
+### Kurikulum
+
+```
+WAKASEK
+  │
+  │ Create → Update → (submit — roadmap)
+  ▼
+KEPSEK
+  │
+  │ Approve → Activate (roadmap)
+  ▼
+BERLAKU / LOCK
+```
+
+Saat ini kurikulum belum memiliki lifecycle status (roadmap Phase 3).
+Operator: **VIEW ONLY**.
+Kurikulum platform (school_id NULL) hanya dikelola Super Admin.
 
 ---
 
@@ -226,139 +397,166 @@ surat.legalisir -- proses permohonan legalisir dokumen
 
 Ini yang di-seed otomatis saat sekolah baru dibuat.
 
-### super_operator
-Semua permission tanpa terkecuali.
-
 ### operator
-> **DIPERBARUI September 2026** — Operator bukan lagi super-admin de facto.
-> Operator adalah **pelaksana administrasi & pengelola data teknis**.
-> Kebijakan akademik (kurikulum, tahun ajaran, program, mapel, kelas, jadwal) adalah domain Wakasek.
+> Pelaksana administrasi & pengelola data teknis.
+> Kebijakan akademik adalah domain Wakasek — Operator hanya VIEW.
 ```
--- Master data TEKNIS (full CRUD)
-master_data.guru.* (semua: view, create, update, delete, import, export, verify)
-master_data.siswa.* (semua: view, create, update, delete, import, export)
+-- Data administrasi (FULL CRUD)
+master_data.guru.*          (view, create, update, delete, import, export, verify, restore)
+master_data.siswa.*         (view, create, update, delete, import, export)
 master_data.orang_tua.view, master_data.orang_tua.manage
 
--- Kebijakan akademik — VIEW ONLY (manage ada di wakasek)
-master_data.kelas.view             ← BUKAN .manage
-master_data.mapel.view             ← BUKAN .manage
-master_data.tahun_ajaran.view      ← BUKAN .manage
-master_data.program.view           ← BUKAN .manage
-master_data.kurikulum.view         ← BUKAN .manage
+-- Tahun Ajaran — Operator hanya buat DRAFT dan arsipkan
+master_data.tahun_ajaran.view
+master_data.tahun_ajaran.manage   -- untuk create DRAFT saja
+master_data.tahun_ajaran.archive  -- arsipkan setelah COMPLETED
 
--- Akademik operasional — view
-akademik.jadwal.view               ← BUKAN .manage
+-- Kebijakan akademik — VIEW ONLY
+master_data.kelas.view
+master_data.mapel.view
+master_data.program.view
+master_data.kurikulum.view
+akademik.jadwal.view
 
 -- Administrasi
-akun.* (semua, kecuali akun.manage_roles)
+akun.*                      (view, create, update, delete, toggle_active, reset_password, approve_ortu)
+                            -- KECUALI akun.manage_roles
 absensi.view_all, absensi.rekap
 dms.view_all, dms.approve, dms.download, dms.bulk_download
-pengumuman.* (semua)
-laporan.* (semua)
-pengaturan.rbac.manage             -- bisa buat role custom (misal: waka_kurikulum)
+pengumuman.*
+laporan.*
+pengaturan.rbac.manage      -- bisa buat role custom
 ```
 
 ### kepsek
+> Approval & Oversight. Bukan "operator tertinggi" — tidak perlu Full CRUD.
+> Kepsek melihat, mengawasi, dan mengesahkan.
 ```
+-- Data (read-only)
 master_data.guru.view, master_data.guru.export, master_data.guru.verify
 master_data.siswa.view, master_data.siswa.export
 master_data.kelas.view
 master_data.mapel.view
+master_data.kurikulum.view
+master_data.program.view
+
+-- Tahun Ajaran — approve & aktifkan
+master_data.tahun_ajaran.view
+master_data.tahun_ajaran.approve
+master_data.tahun_ajaran.activate
+
+-- Akademik
 absensi.view_all, absensi.rekap
+akademik.nilai.view_all
+akademik.rapor.view
+akademik.kalender.manage
+
+-- Administrasi
 dms.view_all, dms.approve, dms.download, dms.bulk_download
-pengumuman.* (semua)
-laporan.* (semua)
-akademik.rapor.view, akademik.kalender.manage
+pengumuman.*
+laporan.*
 pengaturan.view
 ```
 
-### guru
-```
-master_data.siswa.view        -- hanya siswa kelasnya (enforce via Policy)
-absensi.input, absensi.edit, absensi.view_kelas_sendiri
-dms.upload, dms.view_own
-pengumuman.view
-akademik.nilai.input, akademik.nilai.view, akademik.jadwal.view
-```
-
-### wali_kelas
-```
-Semua permission guru +
-akademik.rapor.view           -- rapor siswa kelasnya
-```
-
-### bendahara
-```
-keuangan.* (semua)
-master_data.siswa.view        -- untuk cek data siswa saat input pembayaran
-laporan.keuangan.view, laporan.export
-```
-
-### ortu
-```
--- Semua dibatasi hanya untuk data anak sendiri (enforce via Policy)
-master_data.siswa.view        -- hanya anak sendiri
-absensi.view_kelas_sendiri    -- hanya absensi anak sendiri
-pengumuman.view
-```
-
-### admin_ppdb
-```
-ppdb.* (semua)
-master_data.siswa.view        -- read only untuk referensi
-```
-
 ### wakasek
-> **DIPERBARUI September 2026** — Wakasek adalah **Pemilik & Penanggung Jawab Kebijakan Akademik**.
-> Sesuai Permendiknas dan realita sekolah Indonesia, Waka Kurikulum bertanggung jawab atas
-> seluruh struktur akademik. Operator hanya bisa VIEW data akademik, bukan MANAGE.
-> Sekolah yang perlu memisahkan "Wakasek Kurikulum" dan "Wakasek Kesiswaan" bisa membuat
-> role custom via fitur RBAC (pengaturan.rbac.manage ada di operator).
+> **Pemilik & Penanggung Jawab Kebijakan Akademik.**
+> Sesuai Permendiknas, Waka Kurikulum bertanggung jawab atas seluruh struktur akademik.
+> Sekolah yang perlu memisahkan "Wakasek Kurikulum" dan "Wakasek Kesiswaan"
+> bisa membuat role custom via RBAC (operator punya `pengaturan.rbac.manage`).
 ```
 -- Data guru & siswa — VIEW ONLY (CRUD ada di operator)
 master_data.guru.view, master_data.guru.export, master_data.guru.verify
 master_data.siswa.view, master_data.siswa.export
 master_data.orang_tua.view
 
--- Kebijakan akademik — FULL MANAGE (domain utama wakasek)
+-- Tahun Ajaran — manage + review
+master_data.tahun_ajaran.view
+master_data.tahun_ajaran.manage
+master_data.tahun_ajaran.review
+master_data.tahun_ajaran.complete
+
+-- Kebijakan akademik — FULL MANAGE (domain utama)
 master_data.kelas.view, master_data.kelas.manage
 master_data.mapel.view, master_data.mapel.manage
-master_data.tahun_ajaran.view, master_data.tahun_ajaran.manage   ← ditambahkan Sept 2026
 master_data.program.view, master_data.program.manage
 master_data.kurikulum.view, master_data.kurikulum.manage
 
 -- Akademik operasional
 akademik.jadwal.view, akademik.jadwal.manage
 akademik.kalender.manage
-akademik.nilai.view, akademik.nilai.view_all                     ← baru Sept 2026
-akademik.rapor.view, akademik.rapor.manage                       ← baru Sept 2026
+akademik.nilai.view, akademik.nilai.view_all
+akademik.rapor.view, akademik.rapor.manage
 
 -- Pengawasan
 absensi.view_all, absensi.rekap
 dms.view_all, dms.approve, dms.download, dms.bulk_download
-pengumuman.* (semua)
+pengumuman.*
 laporan.guru.view, laporan.siswa.view, laporan.absensi.view, laporan.export
 pengaturan.view
 ```
 
+### guru
+> Menjalankan pembelajaran. Write access hanya di domain dan scope sendiri.
+```
+master_data.siswa.view        -- hanya siswa kelas sendiri (enforce via Policy)
+absensi.input, absensi.edit, absensi.view_kelas_sendiri
+dms.upload, dms.view_own
+pengumuman.view
+akademik.nilai.input, akademik.nilai.view
+akademik.jadwal.view
+
+-- TIDAK punya: kurikulum.*, tahun_ajaran.*, program.*, kelas.manage
+-- Guru hanya READ konfigurasi akademik, tidak bisa mengubahnya
+```
+
+### wali_kelas
+> Guru + assignment sebagai wali kelas. Wali Kelas adalah Guru dengan akses tambahan.
+```
+Semua permission guru +
+akademik.rapor.view           -- rapor siswa kelasnya (scope via Policy)
+akademik.rapor.generate       -- generate rapor per siswa kelasnya
+```
+
 ### guru_bk
+> Domain khusus konseling. Sengaja diblokir dari data nilai akademik.
 ```
 master_data.siswa.view        -- untuk cari siswa yang dikonseling
 absensi.view_all, absensi.rekap
 dms.upload, dms.view_own, dms.download
 pengumuman.view
-bk.* (semua)                  -- akses penuh modul BK
--- TIDAK punya akademik.nilai.* -- sengaja diblokir
+bk.*                          -- akses penuh modul BK
+
+-- TIDAK punya: akademik.nilai.* — sengaja diblokir
+```
+
+### bendahara
+> Pemilik domain keuangan. Verify + approve input dari admin_keuangan.
+```
+keuangan.*
+master_data.siswa.view        -- cek data siswa saat rekonsiliasi
+laporan.keuangan.view, laporan.export
+```
+
+### admin_keuangan
+> Input keuangan saja — tidak bisa approve atau lihat laporan.
+```
+master_data.siswa.view
+keuangan.tagihan.view, keuangan.tagihan.create, keuangan.tagihan.update
+keuangan.pembayaran.view, keuangan.pembayaran.input
+keuangan.pembayaran.export
+
+-- TIDAK punya: keuangan.laporan.view, keuangan.pembayaran.verify
 ```
 
 ### tata_usaha
+> Surat, arsip, administrasi umum. Tanpa akses nilai.
 ```
 master_data.siswa.view
 master_data.guru.view
 master_data.orang_tua.view
 dms.upload, dms.view_all, dms.download, dms.bulk_download
 pengumuman.view, pengumuman.create
-surat.* (semua)
+surat.*
 laporan.siswa.view, laporan.guru.view, laporan.export
 ```
 
@@ -366,120 +564,143 @@ laporan.siswa.view, laporan.guru.view, laporan.export
 ```
 master_data.siswa.view        -- untuk cari peminjam
 pengumuman.view
-perpustakaan.* (semua)
+perpustakaan.*
 ```
 
-### admin_keuangan
+### admin_ppdb
 ```
-master_data.siswa.view
-keuangan.tagihan.view, keuangan.tagihan.manage
-keuangan.pembayaran.view, keuangan.pembayaran.input
-keuangan.export
--- TIDAK punya keuangan.laporan.view -- itu hak bendahara
+ppdb.*
+master_data.siswa.view        -- read only untuk referensi
+```
+
+### ortu
+> Semua scope dibatasi hanya untuk data anak sendiri (enforce via Policy).
+```
+master_data.siswa.view        -- hanya anak sendiri
+absensi.view_kelas_sendiri    -- hanya absensi anak sendiri
+pengumuman.view
+```
+
+### siswa
+```
+master_data.siswa.view        -- hanya profil sendiri
+akademik.nilai.view           -- hanya nilai sendiri
+akademik.jadwal.view          -- jadwal kelasnya
+pengumuman.view
 ```
 
 ---
 
-## Implementation Plan
+## Matriks Ringkas Per Fitur Utama
 
-### 1. SchoolScope (Global Scope)
+| Fitur | Operator | Wakasek | Kepsek | Guru | Wali Kelas |
+|---|---|---|---|---|---|
+| **Tahun Ajaran** | CRUD (draft) + arsip | Manage + Review | Approve + Activate | Read | Read |
+| **Semester** | CRUD | Manage + Set Aktif | Read | Read | Read |
+| **Kurikulum** | Read | Full Manage | Read + Approve | Read | Read |
+| **Program Pendidikan** | Read | Full Manage | Read + Approve | Read | Read |
+| **Mata Pelajaran** | Read | Full Manage | Read | Read | Read |
+| **Kelas** | CRUD administrasi | Manage akademik | Read | Assigned only | Assigned class |
+| **Jadwal** | Read | Manage | Read | Assigned schedule | Class schedule |
+| **Absensi** | View All + Rekap | View All + Rekap | View All + Rekap | Input (kelas sendiri) | Input (kelas sendiri) |
+| **Nilai** | — | View All | View All | Input (kelas sendiri) | View (kelas sendiri) |
+| **Rapor** | — | Manage policy | Read + Approve | Input nilai | Manage class report |
+| **Keuangan** | — | — | — | — | — |
+
+---
+
+## Implementation Notes
+
+### Double-Layer Authorization (WAJIB)
+
 ```php
-// Otomatis filter school_id di semua query model yang pakai trait HasSchoolScope
+// Layer 1 — Route middleware: cek permission
+Route::patch('/tahun-ajaran/{ulid}/approve', ...)
+    ->middleware('permission:master_data.tahun_ajaran.approve');
+
+// Layer 2 — Policy: cek ownership/tenant
+public function approve(Request $request, string $ulid): JsonResponse
+{
+    $ta = TahunAjaran::where('ulid', $ulid)->firstOrFail();
+    Gate::authorize('approve', $ta);  // TahunAjaranPolicy::approve()
+    // ...
+}
 ```
 
-### 2. TenantMiddleware
+Middleware saja **tidak cukup**. User sekolah A tidak boleh approve TA sekolah B
+meskipun punya permission yang sama.
+
+### SchoolScope
+
 ```php
-// Identifikasi tenant dari:
-// - Subdomain: sdn1.siakad.id → cari di school_domains
-// - Header: X-School-ID (untuk API mobile atau integrasi)
-// - Fallback: user->school_id dari token
-// Set app('current_school_id') untuk dipakai SchoolScope
+// Otomatis inject WHERE school_id = ? di semua query model
+// withoutGlobalScope(SchoolScope::class) HANYA boleh di PlatformAdminController
 ```
 
-### 3. PermissionMiddleware
+### Permission Cache
+
 ```php
-// Gantikan RoleMiddleware yang ada
-// ->middleware('permission:guru.view')
-// ->middleware('permission:dms.approve,dms.view_all')  // salah satu
-// ->middleware('permission:dms.approve|dms.view_all')  // keduanya
+// Cache per user per request — jangan query DB berkali-kali
+Cache::remember("user_{$userId}_permissions", 60, fn() => ...);
 ```
 
-### 4. Policy
-```php
-// Untuk cek ownership di level resource
-// GuruPolicy::update($user, $guru) → cek school_id match + punya permission
-// SiswaPolicy::view($user, $siswa) → ortu hanya bisa lihat anak sendiri
-// DokumenPolicy::approve($user, $dokumen) → harus punya dms.approve
+### Frontend Permission Guard
+
+```jsx
+const { hasPermission } = useAuth();
+
+{hasPermission('master_data.tahun_ajaran.review') && (
+  <button onClick={handleSubmitReview}>Submit ke Kepsek</button>
+)}
+
+{hasPermission('master_data.tahun_ajaran.approve') && (
+  <button onClick={handleApprove}>Setujui</button>
+)}
 ```
 
-### 5. SchoolSeeder
-```php
-// Dijalankan otomatis saat sekolah baru didaftarkan:
-// 1. Insert ke schools
-// 2. Insert ke school_domains
-// 3. Copy permission templates → permissions (dengan school_id)
-// 4. Copy role templates → roles (dengan school_id)
-// 5. Assign default permissions ke setiap role
-// 6. Buat user super_operator pertama
-// 7. Insert school_settings default
+### SchoolSeeder Flow
+
+```
+1. Insert ke schools
+2. Insert ke school_domains
+3. Copy permission templates → permissions (dengan school_id)
+4. Copy role templates → roles (dengan school_id)
+5. Assign default permissions ke setiap role
+6. Buat user operator pertama
+7. Insert school_settings default
 ```
 
 ---
 
 ## Catatan Keamanan
 
-1. Permission check HARUS di dua level:
-   - Route level: `->middleware('permission:...')` — cek user punya permission
-   - Policy level: `Gate::authorize('update', $guru)` — cek resource milik tenant yang sama
-
-2. Jangan pernah hanya cek permission tanpa cek school_id.
-   User dari sekolah A tidak boleh bisa akses resource sekolah B
-   meskipun punya permission yang sama.
-
-3. Cache permission per user per request (jangan query DB berkali-kali):
-   ```php
-   // Di PermissionMiddleware atau Gate, cache hasil per request
-   Cache::remember("user_{$userId}_permissions", 60, fn() => ...);
-   ```
-
-4. Super Admin platform (platform_admins) punya akses lintas tenant
-   hanya untuk keperluan support dan administrasi platform.
-   Aksi mereka harus selalu tercatat di activity_logs dengan flag `is_platform_admin`.
+1. **Selalu dua lapis**: middleware (permission) + policy (ownership/tenant)
+2. Jangan pernah cek permission saja tanpa cek `school_id`
+3. `withoutGlobalScope(SchoolScope)` hanya di `PlatformAdminController`
+4. Super Admin platform punya akses lintas tenant hanya untuk support & administrasi —
+   setiap aksi mereka wajib dicatat di `activity_logs` dengan flag `is_platform_admin`
 
 ---
 
-## Changelog RBAC
+## Changelog
 
-### September 2026 — Wakasek-Operator Academic Split
+### September 2026 — Konsolidasi RBAC & Cleanup
 
-**Latar belakang:**
-Berdasarkan riset lapangan (Permendiknas, tugas pokok Waka Kurikulum) dan analisis
-kompetitor SaaS sekolah Indonesia (Skoola, Kamadeva, APPSO), ditemukan bahwa:
-1. Di sekolah nyata, Waka Kurikulum adalah penanggung jawab kebijakan akademik
-2. Semua kompetitor menempatkan kebijakan akademik di role "admin/operator" — ini gap
-3. Scholara bisa diferensiasi dengan pemisahan yang akurat sesuai struktur organisasi sekolah
+**Perubahan konseptual:**
+- `super_operator` di-MERGE ke `operator` via migration `2026_08_17_000001_merge_super_operator_into_operator.php`
+- Pola RBAC diperbarui: Role → Permission → Scope → Workflow → Audit Log
+- Domain ownership ditetapkan secara tegas (lihat tabel Domain Ownership di atas)
+- Workflow Tahun Ajaran DRAFT→UNDER_REVIEW→APPROVED→ACTIVE→COMPLETED→ARCHIVED diimplementasikan
 
-**Perubahan yang diterapkan:**
+**Wakasek-Operator Academic Split (Sept 4, 2026):**
+- Operator: dicabut permission `*.manage` untuk semua kebijakan akademik
+- Wakasek: ditambahkan `tahun_ajaran.manage`, `tahun_ajaran.review`, `tahun_ajaran.complete`,
+  `nilai.view_all`, `rapor.manage`
+- Kepsek: ditambahkan `tahun_ajaran.approve`, `tahun_ajaran.activate`
+- Operator: ditambahkan `tahun_ajaran.archive`
+- Route baru `/wakasek/*` dengan portal Wakasek terpisah (tema indigo)
 
-#### Backend
-- Migration baru: `2026_09_04_000001_fix_rbac_wakasek_operator_academic_split.php`
-  - Tambah permission baru: `akademik.jadwal.view`, `akademik.nilai.view_all`, `akademik.rapor.manage`
-  - Cabut dari operator: `kelas.manage`, `mapel.manage`, `tahun_ajaran.manage`, `program.manage`, `kurikulum.manage`, `jadwal.manage`, `kalender.manage`, `rapor.manage`
-  - Tambah ke wakasek: `tahun_ajaran.manage` (bug fix — sebelumnya tidak ada!), `nilai.view_all`, `rapor.manage`
-- `SchoolSeeder.php`: operator berubah dari `$all` → `array_filter` (exclude manage akademik)
-- Route baru: `routes/api/wakasek.php` — portal API dedicated `/wakasek/*`
-- Update `routes/api/master-data.php`: tambah `wakasek` ke middleware role
-
-#### Frontend
-- `WakasekSidebar.jsx` baru — tema indigo, 5 grup menu
-- `WakasekLayout.jsx` diupdate
-- `DashboardWakasek.jsx` diupdate total (dari ComingSoonDashboard)
-- 11 halaman wakasek baru/diupdate (Tahun Ajaran, Kurikulum, Program Pendidikan, Mapel, Kelas, Guru, Siswa, Absensi, Pengumuman, Laporan, Profil)
-- `OperatorSidebar.jsx`: menu akademik dipindah ke grup "Referensi Akademik" (readonly, badge "Waka")
-- 20+ file operator: ditambahkan `canManage`/`canCreate`/`canDelete`/`canImport`/`canExport` guards
-
-**Catatan penting untuk developer:**
-- Operator yang login tidak akan melihat tombol Tambah/Edit/Hapus untuk data akademik
-- Wakasek punya portal sendiri `/wakasek/*` dengan tema visual berbeda (indigo vs hijau operator)
-- Sekolah yang butuh role "waka_kurikulum" terpisah dari "wakasek" bisa buat via RBAC custom (operator punya `pengaturan.rbac.manage`)
-- Permission `master_data.tahun_ajaran.manage` sebelumnya ada di definisi tapi tidak di-assign ke wakasek — ini bug yang sudah difix
+**Keunggulan vs kompetitor (Skoola, Kamadeva, APPSO):**
+Semua kompetitor menggabungkan kebijakan akademik dan administrasi data di satu role "admin".
+Scholara memisahkannya sesuai struktur organisasi sekolah nyata (Permendiknas) —
+ini differentiator utama untuk pasar madrasah dan sekolah formal Indonesia.

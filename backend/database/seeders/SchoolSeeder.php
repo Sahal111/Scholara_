@@ -241,7 +241,12 @@ class SchoolSeeder extends Seeder
             ['slug' => 'master_data.mapel.view', 'nama' => 'Lihat Mata Pelajaran', 'modul' => 'master_data'],
             ['slug' => 'master_data.mapel.manage', 'nama' => 'Kelola Mata Pelajaran', 'modul' => 'master_data'],
             ['slug' => 'master_data.tahun_ajaran.view', 'nama' => 'Lihat Tahun Ajaran', 'modul' => 'master_data'],
-            ['slug' => 'master_data.tahun_ajaran.manage', 'nama' => 'Kelola Tahun Ajaran', 'modul' => 'master_data'],
+            ['slug' => 'master_data.tahun_ajaran.manage', 'nama' => 'Kelola Tahun Ajaran (Draft)', 'modul' => 'master_data'],
+            ['slug' => 'master_data.tahun_ajaran.review', 'nama' => 'Submit Tahun Ajaran ke Review', 'modul' => 'master_data'],
+            ['slug' => 'master_data.tahun_ajaran.approve', 'nama' => 'Approve / Reject Tahun Ajaran', 'modul' => 'master_data'],
+            ['slug' => 'master_data.tahun_ajaran.activate', 'nama' => 'Aktifkan Tahun Ajaran', 'modul' => 'master_data'],
+            ['slug' => 'master_data.tahun_ajaran.complete', 'nama' => 'Selesaikan Tahun Ajaran', 'modul' => 'master_data'],
+            ['slug' => 'master_data.tahun_ajaran.archive', 'nama' => 'Arsipkan Tahun Ajaran', 'modul' => 'master_data'],
             ['slug' => 'master_data.orang_tua.view', 'nama' => 'Lihat Data Orang Tua', 'modul' => 'master_data'],
             ['slug' => 'master_data.orang_tua.manage', 'nama' => 'Kelola Data Orang Tua', 'modul' => 'master_data'],
             // kurikulum — fleksibel per sekolah, bisa custom atau pakai platform default
@@ -355,23 +360,38 @@ class SchoolSeeder extends Seeder
         return [
             // ─────────────────────────────────────────────────────────────────
             // OPERATOR — pelaksana administrasi & pengelola data teknis.
-            // Operator dapat semua permission KECUALI permission kebijakan
-            // akademik (manage kurikulum, tahun ajaran, program, mapel, jadwal,
-            // kalender) — itu domain Wakasek Kurikulum.
-            // Operator tetap bisa VIEW semua data akademik agar bisa membantu
-            // dan mengerjakan tugas administratif sehari-hari.
+            //
+            // Operator BOLEH:
+            //   - tahun_ajaran.manage  → buat draft & edit saat masih DRAFT
+            //   - tahun_ajaran.archive → arsipkan TA yang sudah COMPLETED
+            //   - VIEW semua data akademik (kelas, mapel, kurikulum, program)
+            //
+            // Operator TIDAK BOLEH:
+            //   - tahun_ajaran.review   → domain Wakasek (submit ke kepsek)
+            //   - tahun_ajaran.approve  → domain Kepsek
+            //   - tahun_ajaran.activate → domain Kepsek
+            //   - tahun_ajaran.complete → domain Wakasek (tutup buku)
+            //   - manage kebijakan akademik (kurikulum, mapel, program, kelas,
+            //     jadwal, kalender, rapor) — itu domain Wakasek
             // ─────────────────────────────────────────────────────────────────
             'operator' => array_values(array_filter(
                 $all,
                 fn($slug) => !in_array($slug, [
+                    // Kebijakan akademik — domain Wakasek
                     'master_data.kelas.manage',
                     'master_data.mapel.manage',
-                    'master_data.tahun_ajaran.manage',
                     'master_data.program.manage',
                     'master_data.kurikulum.manage',
                     'akademik.jadwal.manage',
                     'akademik.kalender.manage',
                     'akademik.rapor.manage',
+                    // Workflow TA — domain Wakasek & Kepsek
+                    'master_data.tahun_ajaran.review',
+                    'master_data.tahun_ajaran.approve',
+                    'master_data.tahun_ajaran.activate',
+                    'master_data.tahun_ajaran.complete',
+                    // Kepsek-only
+                    'master_data.guru.verify',
                 ])
             )),
 

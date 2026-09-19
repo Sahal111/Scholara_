@@ -7,18 +7,24 @@ use App\Models\TahunAjaran;
 use App\Models\User;
 
 /**
- * Policy TahunAjaran — RBAC 3-layer Workflow.
+ * Policy TahunAjaran — evaluasi via permission, bukan hardcode role.
  *
- * Siapa boleh apa:
+ * Prinsip: Role → Permission → Scope → Workflow
+ * Jangan pernah cek $user->hasRole(...) di sini — gunakan hasPermission().
+ * Sekolah bisa membuat role custom (mis. "Plt. Kepsek") dan sistem tetap bekerja
+ * selama permission yang tepat sudah di-assign ke role tersebut.
  *
- *   OPERATOR  → create (buat draft), view, update (hanya saat draft), delete (hanya draft), restore
- *   WAKASEK   → semua operator + submitReview, complete (tutup buku)
- *   KEPSEK    → view + approve + reject + activate
+ * Siapa boleh apa (via permission):
  *
- * TIDAK ada before() bypass untuk operator lagi.
- * Setiap aksi diperiksa eksplisit + school_id check.
+ *   master_data.tahun_ajaran.view     → viewAny, view
+ *   master_data.tahun_ajaran.manage   → create, update (hanya saat DRAFT), delete, restore
+ *   master_data.tahun_ajaran.review   → submitReview, setSemesterAktif, complete
+ *   master_data.tahun_ajaran.approve  → approve, reject
+ *   master_data.tahun_ajaran.activate → activate
+ *   master_data.tahun_ajaran.archive  → arsip, unarsip
  *
  * Lock rule: data terkunci (tidak bisa diedit/dihapus) setelah status >= APPROVED.
+ * Workflow transitions dicek via canTransitionTo() di model.
  */
 class TahunAjaranPolicy
 {
@@ -26,30 +32,31 @@ class TahunAjaranPolicy
 
     public function viewAny(User $user): bool
     {
-        return $user->hasAnyRole(['operator', 'wakasek', 'kepsek']);
+        return $user->hasPermission('master_data.tahun_ajaran.view');
     }
 
     public function view(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasAnyRole(['operator', 'wakasek', 'kepsek']);
+            && $user->hasPermission('master_data.tahun_ajaran.view');
     }
 
     // ── CREATE ───────────────────────────────────────────────────────────────
 
     /**
-     * Hanya operator yang boleh membuat draft TA.
-     * Wakasek tidak membuat — mereka mereview & mengelola kebijakan akademik.
+     * Buat draft TA baru.
+     * Default: Operator (master_data.tahun_ajaran.manage).
+     * Wakasek juga punya manage — lihat SchoolSeeder.
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('operator');
+        return $user->hasPermission('master_data.tahun_ajaran.manage');
     }
 
     // ── UPDATE ───────────────────────────────────────────────────────────────
 
     /**
-     * Edit data TA (tahun, semester dates).
+     * Edit data TA (nama, rentang tanggal, semester dates).
      * Hanya boleh saat status DRAFT — setelah itu data terkunci.
      */
     public function update(User $user, TahunAjaran $tahunAjaran): bool
@@ -58,101 +65,101 @@ class TahunAjaranPolicy
             return false;
         }
 
-        // Data terkunci setelah APPROVED
         if ($tahunAjaran->isLocked()) {
             return false;
         }
 
-        return $user->hasAnyRole(['operator', 'wakasek']);
+        return $user->hasPermission('master_data.tahun_ajaran.manage');
     }
 
     // ── WORKFLOW TRANSITIONS ─────────────────────────────────────────────────
 
     /**
      * Submit TA dari DRAFT ke UNDER_REVIEW.
-     * Hak: Wakasek — dialah yang memastikan data akademik siap direview kepsek.
+     * Permission: master_data.tahun_ajaran.review (default: Wakasek).
      */
     public function submitReview(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('wakasek')
+            && $user->hasPermission('master_data.tahun_ajaran.review')
             && $tahunAjaran->canTransitionTo(StatusTahunAjaran::UNDER_REVIEW);
     }
 
     /**
      * Approve TA dari UNDER_REVIEW ke APPROVED.
-     * Hak: Kepsek — final approver.
+     * Permission: master_data.tahun_ajaran.approve (default: Kepsek).
      */
     public function approve(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('kepsek')
+            && $user->hasPermission('master_data.tahun_ajaran.approve')
             && $tahunAjaran->canTransitionTo(StatusTahunAjaran::APPROVED);
     }
 
     /**
      * Reject TA dari UNDER_REVIEW kembali ke DRAFT.
-     * Hak: Kepsek — memberikan catatan dan mengembalikan ke wakasek.
+     * Permission: master_data.tahun_ajaran.approve (default: Kepsek).
      */
     public function reject(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('kepsek')
+            && $user->hasPermission('master_data.tahun_ajaran.approve')
             && $tahunAjaran->status === StatusTahunAjaran::UNDER_REVIEW;
     }
 
     /**
      * Aktifkan TA dari APPROVED ke ACTIVE.
-     * Hak: Kepsek — keputusan final untuk menjadikan TA berlaku.
+     * Permission: master_data.tahun_ajaran.activate (default: Kepsek).
      */
     public function activate(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('kepsek')
+            && $user->hasPermission('master_data.tahun_ajaran.activate')
             && $tahunAjaran->canTransitionTo(StatusTahunAjaran::ACTIVE);
     }
 
     /**
      * Ganti semester aktif (Ganjil ↔ Genap) dalam TA yang sedang ACTIVE.
-     * Hak: Wakasek — mengatur ritme akademik.
+     * Permission: master_data.tahun_ajaran.review (default: Wakasek).
+     * Mengatur ritme akademik adalah tanggung jawab Wakasek.
      */
     public function setSemesterAktif(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('wakasek')
+            && $user->hasPermission('master_data.tahun_ajaran.review')
             && $tahunAjaran->status === StatusTahunAjaran::ACTIVE;
     }
 
     /**
      * Selesaikan / tutup buku TA dari ACTIVE ke COMPLETED.
-     * Hak: Wakasek — menandai bahwa proses akademik sudah selesai.
+     * Permission: master_data.tahun_ajaran.complete (default: Wakasek).
      */
     public function complete(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('wakasek')
+            && $user->hasPermission('master_data.tahun_ajaran.complete')
             && $tahunAjaran->canTransitionTo(StatusTahunAjaran::COMPLETED);
     }
 
     /**
      * Arsipkan TA dari COMPLETED ke ARCHIVED.
-     * Hak: Operator — administrasi historis.
+     * Permission: master_data.tahun_ajaran.archive (default: Operator).
      */
     public function arsip(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('operator')
+            && $user->hasPermission('master_data.tahun_ajaran.archive')
             && $tahunAjaran->canTransitionTo(StatusTahunAjaran::ARCHIVED);
     }
 
     /**
      * Keluarkan dari arsip (ARCHIVED → COMPLETED).
-     * Hak: Operator — koreksi arsip yang salah.
+     * Permission: master_data.tahun_ajaran.archive (default: Operator).
      */
     public function unarsip(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('operator')
+            && $user->hasPermission('master_data.tahun_ajaran.archive')
             && $tahunAjaran->status === StatusTahunAjaran::ARCHIVED;
     }
 
@@ -160,32 +167,32 @@ class TahunAjaranPolicy
 
     /**
      * Hapus ke recycle bin — hanya boleh saat masih DRAFT.
-     * Setelah DRAFT, TA tidak bisa dihapus biasa (harus lewat workflow).
+     * Permission: master_data.tahun_ajaran.manage (default: Operator & Wakasek).
      */
     public function delete(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('operator')
+            && $user->hasPermission('master_data.tahun_ajaran.manage')
             && $tahunAjaran->status === StatusTahunAjaran::DRAFT;
     }
 
     public function restore(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('operator');
+            && $user->hasPermission('master_data.tahun_ajaran.manage');
     }
 
     /**
      * Hapus permanen — hanya untuk TA yang masih DRAFT di recycle bin.
-     * TA yang sudah pernah ACTIVE tidak boleh dihapus permanen.
+     * TA yang sudah pernah melewati DRAFT tidak boleh dihapus permanen.
      */
     public function forceDelete(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasRole('operator');
+            && $user->hasPermission('master_data.tahun_ajaran.manage');
     }
 
-    // ── Private helper ───────────────────────────────────────────────────────
+    // ── Private helper ────────────────────────────────────────────────────────
 
     private function sameSchool(User $user, TahunAjaran $tahunAjaran): bool
     {

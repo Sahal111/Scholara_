@@ -54,6 +54,7 @@ function SkeletonPage() {
 // ── DEAD: inline ModalEditSemester, MetricCard, KalenderItem — replaced by imports
 export default function DetailSemester({
   apiBase = "/operator/master-data/tahun-ajaran",
+  basePath = "/wakasek/tahun-ajaran",
 }) {
   const { hasPermission } = useAuth();
   const canManage = hasPermission("master_data.tahun_ajaran.manage");
@@ -100,7 +101,7 @@ export default function DetailSemester({
         </span>
         <p className="font-semibold text-[#00342b]">Data tidak ditemukan.</p>
         <button
-          onClick={() => navigate("/wakasek/tahun-ajaran")}
+          onClick={() => navigate(basePath)}
           className="text-[#006e2a] text-sm hover:underline flex items-center gap-1"
         >
           <span className="material-symbols-outlined text-[16px]">
@@ -128,7 +129,7 @@ export default function DetailSemester({
           Semester "{semesterNama}" tidak ditemukan.
         </p>
         <button
-          onClick={() => navigate(`/wakasek/tahun-ajaran/${taId}`)}
+          onClick={() => navigate(`${basePath}/${taId}`)}
           className="text-[#006e2a] text-sm hover:underline flex items-center gap-1"
         >
           <span className="material-symbols-outlined text-[16px]">
@@ -341,7 +342,7 @@ export default function DetailSemester({
                 Edit Semester
               </button>
               <button
-                onClick={() => navigate("/wakasek/tahun-ajaran")}
+                onClick={() => navigate(basePath)}
                 className="w-12 h-12 bg-white/80 backdrop-blur-md border border-[#bfc9c4]/30 hover:bg-[#eceeed] rounded-full flex items-center justify-center text-[#00342b] transition-all shadow-sm hover:shadow-md"
               >
                 <span className="material-symbols-outlined text-[22px]">

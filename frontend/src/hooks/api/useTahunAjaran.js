@@ -14,6 +14,8 @@ export const tahunAjaranKeys = {
   dropdown: () => [...tahunAjaranKeys.all, "dropdown"],
   trash: () => [...tahunAjaranKeys.all, "trash"],
   arsip: () => [...tahunAjaranKeys.all, "arsip"],
+  aktif: () => [...tahunAjaranKeys.all, "aktif"],
+  semesterAktif: () => [...tahunAjaranKeys.all, "semester-aktif"],
 };
 
 // ── Queries ──────────────────────────────────────────────────────────────────
@@ -410,5 +412,43 @@ export function useUpdateSemester(taId) {
         );
       }
     },
+  });
+}
+
+// ── Read-only hooks untuk semua role (Guru, Wali Kelas, dst.) ────────────────
+
+/**
+ * Tahun ajaran yang sedang ACTIVE.
+ * Dipakai di modul absensi, nilai, LMS sebagai referensi periode aktif.
+ * Endpoint: GET /operator/master-data/tahun-ajaran/aktif
+ * Akses: semua role sekolah (termasuk guru & wali kelas).
+ */
+export function useTahunAjaranAktif() {
+  return useQuery({
+    queryKey: tahunAjaranKeys.aktif(),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/aktif`);
+      return data.data ?? null;
+    },
+    staleTime: 5 * 60_000, // 5 menit — jarang berubah
+    retry: false, // jangan retry kalau 404 (belum ada TA aktif)
+  });
+}
+
+/**
+ * Semester aktif dari tahun ajaran yang sedang ACTIVE.
+ * Dipakai di modul absensi, penilaian, dan LMS.
+ * Endpoint: GET /operator/master-data/tahun-ajaran/aktif/semester
+ * Akses: semua role sekolah (termasuk guru & wali kelas).
+ */
+export function useSemesterAktif() {
+  return useQuery({
+    queryKey: tahunAjaranKeys.semesterAktif(),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/aktif/semester`);
+      return data.data ?? null;
+    },
+    staleTime: 5 * 60_000,
+    retry: false,
   });
 }
