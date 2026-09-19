@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\MasterData;
 
 use App\Enums\StatusSemester;
+use App\Enums\StatusTahunAjaran;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Semester\ActivateSemesterRequest;
 use App\Http\Requests\Semester\ArchiveSemesterRequest;
@@ -118,11 +119,22 @@ class SemesterController extends Controller
      * Tutup semester (ACTIVE → CLOSED) secara manual.
      * Biasanya ini otomatis saat activate() semester berikutnya,
      * tapi bisa juga dilakukan manual oleh Wakasek.
+     *
+     * Validasi: TA induk harus berstatus ACTIVE — tidak boleh close semester
+     * saat TA sudah COMPLETED/ARCHIVED (TA lifecycle sudah di luar kendali Wakasek).
      */
     public function close(string $ulid): JsonResponse
     {
-        $semester = Semester::where('ulid', $ulid)->firstOrFail();
+        $semester = Semester::with('tahunAjaran')->where('ulid', $ulid)->firstOrFail();
         Gate::authorize('close', $semester);
+
+        if ($semester->tahunAjaran->status !== StatusTahunAjaran::ACTIVE) {
+            return $this->error(
+                'Semester hanya bisa ditutup saat tahun ajaran sedang AKTIF.',
+                'TA_NOT_ACTIVE',
+                422
+            );
+        }
 
         $semester->update(['status' => StatusSemester::CLOSED]);
 

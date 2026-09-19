@@ -270,9 +270,12 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
             Route::patch('/tahun-ajaran/{ulid}/unarsip', [TahunAjaranController::class, 'unarsip']);
         });
 
-        // Wakasek: submit ke review, ganti semester aktif, tutup buku
+        // Wakasek: submit ke review, tutup buku
+        // CATATAN: semester-aktif (cara lama) sudah DEPRECATED — gunakan PATCH /semesters/{ulid}/activate
         Route::middleware('permission:master_data.tahun_ajaran.review')->group(function () {
             Route::patch('/tahun-ajaran/{ulid}/submit-review', [TahunAjaranController::class, 'submitReview']);
+            // @deprecated — endpoint ini diganti oleh PATCH /semesters/{ulid}/activate
+            // Masih aktif untuk backward-compatibility tapi TIDAK boleh dipakai di UI baru.
             Route::patch('/tahun-ajaran/{ulid}/semester-aktif', [TahunAjaranController::class, 'setSemesterAktif']);
             Route::patch('/tahun-ajaran/{ulid}/selesaikan', [TahunAjaranController::class, 'selesaikan']);
         });
@@ -290,16 +293,16 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
         // Semester tidak punya create/delete sendiri — dibuat otomatis via TA.
         // Update tanggal tetap bisa dilakukan Wakasek meski TA sudah ACTIVE
         // (solusi over-locking — lock hanya di level status semester, bukan status TA).
-    
-        Route::middleware('permission:master_data.semester.view')->group(function () {
-            Route::get('/semesters', [\App\Http\Controllers\MasterData\SemesterController::class, 'index']);
-            Route::get('/semesters/{ulid}', [\App\Http\Controllers\MasterData\SemesterController::class, 'show']);
-        });
+        // GET /semesters dipindah ke LUAR outer middleware — Guru & Wali Kelas perlu akses.
         Route::middleware('permission:master_data.semester.manage')->group(function () {
             Route::put('/semesters/{ulid}', [\App\Http\Controllers\MasterData\SemesterController::class, 'update']);
         });
         Route::middleware('permission:master_data.semester.activate')->group(function () {
             Route::patch('/semesters/{ulid}/activate', [\App\Http\Controllers\MasterData\SemesterController::class, 'activate']);
+        });
+        // close pakai permission activate (Wakasek yang atur ritme semester)
+        // tapi dipisah group-nya agar mudah diubah permission-nya nanti
+        Route::middleware('permission:master_data.semester.activate')->group(function () {
             Route::patch('/semesters/{ulid}/close', [\App\Http\Controllers\MasterData\SemesterController::class, 'close']);
         });
         Route::middleware('permission:master_data.semester.archive')->group(function () {
@@ -437,15 +440,24 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
     });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TAHUN AJARAN — read-only untuk semua role sekolah (termasuk Guru & Wali Kelas).
+// TAHUN AJARAN & SEMESTER — read-only untuk semua role sekolah (termasuk Guru & Wali Kelas).
 // Guru & Wali Kelas butuh referensi TA/Semester aktif untuk absensi, nilai, LMS.
 // Route ini di LUAR outer middleware 'role:operator,kepsek,wakasek' di atas.
-// Proteksi tetap via: auth:sanctum + permission:master_data.tahun_ajaran.view
-// (semua role sekolah punya permission ini — lihat SchoolSeeder).
+// Proteksi tetap via: auth:sanctum + permission — semua role sekolah punya permission ini.
 // ─────────────────────────────────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'permission:master_data.tahun_ajaran.view'])
     ->prefix('operator/master-data')
     ->group(function () {
         Route::get('/tahun-ajaran/aktif', [TahunAjaranController::class, 'aktif']);
         Route::get('/tahun-ajaran/aktif/semester', [TahunAjaranController::class, 'semesterAktif']);
+    });
+
+// GET /semesters & /semesters/{ulid} — akses semua role termasuk Guru & Wali Kelas
+// Dipindah keluar outer middleware karena role:operator,kepsek,wakasek,super_admin
+// memblokir guru/wali_kelas meski mereka punya permission semester.view.
+Route::middleware(['auth:sanctum', 'permission:master_data.semester.view'])
+    ->prefix('operator/master-data')
+    ->group(function () {
+        Route::get('/semesters', [\App\Http\Controllers\MasterData\SemesterController::class, 'index']);
+        Route::get('/semesters/{ulid}', [\App\Http\Controllers\MasterData\SemesterController::class, 'show']);
     });

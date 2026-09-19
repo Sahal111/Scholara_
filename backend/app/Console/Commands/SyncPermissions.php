@@ -131,6 +131,26 @@ class SyncPermissions extends Command
         return 0;
     }
 
+    /**
+     * Permission yang TIDAK boleh di-auto-assign ke operator.
+     * Ini domain Wakasek & Kepsek — bukan administrasi harian operator.
+     */
+    private array $operatorBlacklist = [
+        'master_data.tahun_ajaran.review',
+        'master_data.tahun_ajaran.approve',
+        'master_data.tahun_ajaran.activate',
+        'master_data.tahun_ajaran.complete',
+        'master_data.semester.activate',
+        'master_data.kelas.manage',
+        'master_data.mapel.manage',
+        'master_data.program.manage',
+        'master_data.kurikulum.manage',
+        'akademik.jadwal.manage',
+        'akademik.kalender.manage',
+        'akademik.rapor.manage',
+        'master_data.guru.verify',
+    ];
+
     private function syncForSchool(int $schoolId): void
     {
         $existing = DB::table('permissions')
@@ -157,25 +177,50 @@ class SyncPermissions extends Command
         DB::table('permissions')->insert($toInsert);
         $this->line("   + Ditambahkan " . count($toInsert) . " permission baru.");
 
-        // Auto-assign ke operator
+        // Auto-assign ke operator — KECUALI yang masuk blacklist domain Wakasek/Kepsek
         $superOpRole = DB::table('roles')
             ->where('school_id', $schoolId)
             ->where('slug', 'operator')
             ->first();
 
         if ($superOpRole) {
-            $newPermIds = DB::table('permissions')
+            $allowedSlugs = array_diff(
+                array_column($toInsert, 'slug'),
+                $this->operatorBlacklist
+            );
+
+            if (!empty($allowedSlugs)) {
+                $newPermIds = DB::table('permissions')
+                    ->where('school_id', $schoolId)
+                    ->whereIn('slug', $allowedSlugs)
+                    ->pluck('id');
+
+                $pivotData = $newPermIds->map(fn($permId) => [
+                    'role_id' => $superOpRole->id,
+                    'permission_id' => $permId,
+                ])->toArray();
+
+                DB::table('role_permissions')->insertOrIgnore($pivotData);
+                $this->line('   + Ditambahkan ke role operator (' . count($allowedSlugs) . ' permission).');
+            }
+
+            // Cabut ulang blacklist dari operator — jaga-jaga kalau sebelumnya
+            // sudah terlanjur ter-assign (misal dari run SyncPermissions lama)
+            $blacklistPermIds = DB::table('permissions')
                 ->where('school_id', $schoolId)
-                ->whereIn('slug', array_column($toInsert, 'slug'))
+                ->whereIn('slug', $this->operatorBlacklist)
                 ->pluck('id');
 
-            $pivotData = $newPermIds->map(fn($permId) => [
-                'role_id' => $superOpRole->id,
-                'permission_id' => $permId,
-            ])->toArray();
+            if ($blacklistPermIds->isNotEmpty()) {
+                $deleted = DB::table('role_permissions')
+                    ->where('role_id', $superOpRole->id)
+                    ->whereIn('permission_id', $blacklistPermIds)
+                    ->delete();
 
-            DB::table('role_permissions')->insertOrIgnore($pivotData);
-            $this->line("   + Ditambahkan ke role operator.");
+                if ($deleted > 0) {
+                    $this->line("   - Dicabut {$deleted} permission dari operator (domain Wakasek/Kepsek).");
+                }
+            }
         }
     }
 }
