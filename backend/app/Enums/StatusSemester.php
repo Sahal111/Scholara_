@@ -53,7 +53,9 @@ enum StatusSemester: string
     public function allowedTransitions(): array
     {
         return match ($this) {
-            self::UPCOMING => [self::ACTIVE],
+                // UPCOMING bisa langsung CLOSED — untuk semester yang tidak pernah diaktifkan
+                // (misal: TA diselesaikan tapi Semester Genap belum pernah dipakai)
+            self::UPCOMING => [self::ACTIVE, self::CLOSED],
             self::ACTIVE => [self::CLOSED],
             self::CLOSED => [self::ARCHIVED],
             self::ARCHIVED => [],

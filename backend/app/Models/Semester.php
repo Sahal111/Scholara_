@@ -60,6 +60,8 @@ class Semester extends Model
             if (empty($model->status)) {
                 $model->status = StatusSemester::UPCOMING;
             }
+            // Sync is_active dari status — konsisten dengan TahunAjaran::syncLegacyFlags()
+            $model->is_active = $model->status === StatusSemester::ACTIVE;
         });
 
         static::updating(function (Semester $model) {

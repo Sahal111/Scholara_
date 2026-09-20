@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\MasterData;
 
+use App\Enums\StatusSemester;
 use App\Enums\StatusTahunAjaran;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TahunAjaran\AktifkanSemesterRequest as SetSemesterAktifRequest;
@@ -329,38 +330,47 @@ class TahunAjaranController extends Controller
 
         DB::beginTransaction();
         try {
-            // Non-aktifkan TA lain yang masih ACTIVE
+            // Non-aktifkan TA lain yang masih ACTIVE → COMPLETED
+            // Semesternya sekalian di-CLOSE via Eloquent agar model hook jalan
             TahunAjaran::where('school_id', $schoolId)
                 ->where('status', StatusTahunAjaran::ACTIVE->value)
                 ->where('id', '!=', $tahunAjaran->id)
                 ->each(function (TahunAjaran $ta) {
-                    // TA yang digeser dari ACTIVE → COMPLETED (bukan langsung archived)
                     $ta->update(['status' => StatusTahunAjaran::COMPLETED]);
-                    Semester::where('tahun_ajaran_id', $ta->id)->update(['is_active' => false]);
+                    Semester::where('tahun_ajaran_id', $ta->id)
+                        ->whereIn('status', [StatusSemester::UPCOMING->value, StatusSemester::ACTIVE->value])
+                        ->each(fn(Semester $s) => $s->update(['status' => StatusSemester::CLOSED]));
                 });
 
-            // Nonaktifkan semua semester sekolah ini
-            Semester::where('school_id', $schoolId)->update(['is_active' => false]);
-
-            // Aktifkan TA dan mulai dari semester Ganjil
+            // Aktifkan TA
             $tahunAjaran->update(['status' => StatusTahunAjaran::ACTIVE]);
 
-            Semester::where('tahun_ajaran_id', $tahunAjaran->id)
-                ->where('nama', 'Ganjil')
-                ->update(['is_active' => true]);
+            // Aktifkan semester pertama (urut tgl_mulai) — tidak hardcode nama 'Ganjil'
+            // agar kompatibel dengan sekolah yang menamai semesternya berbeda
+            $semesterPertama = Semester::where('tahun_ajaran_id', $tahunAjaran->id)
+                ->whereNotNull('tgl_mulai')
+                ->orderBy('tgl_mulai')
+                ->first();
+
+            if ($semesterPertama) {
+                $semesterPertama->update(['status' => StatusSemester::ACTIVE]);
+            }
 
             ActivityLog::log(
                 'aktifkan',
                 'tahun_ajaran',
                 $tahunAjaran->id,
-                "Kepsek mengaktifkan tahun ajaran {$tahunAjaran->tahun}."
+                "Kepsek mengaktifkan tahun ajaran {$tahunAjaran->tahun}." .
+                ($semesterPertama ? " Semester {$semesterPertama->nama} otomatis aktif." : '')
             );
 
             DB::commit();
 
+            $namaAktif = $semesterPertama?->nama ?? 'pertama';
+
             return $this->success(
                 $tahunAjaran->load('semesters'),
-                'Tahun ajaran berhasil diaktifkan. Semester Ganjil otomatis aktif.'
+                "Tahun ajaran berhasil diaktifkan. Semester {$namaAktif} otomatis aktif."
             );
         } catch (\Exception $e) {
             DB::rollBack();
@@ -406,7 +416,10 @@ class TahunAjaranController extends Controller
 
         DB::beginTransaction();
         try {
-            Semester::where('tahun_ajaran_id', $tahunAjaran->id)->update(['is_active' => false]);
+            // Tutup semua semester via Eloquent agar model hook jalan dan status ter-update
+            Semester::where('tahun_ajaran_id', $tahunAjaran->id)
+                ->whereIn('status', [StatusSemester::UPCOMING->value, StatusSemester::ACTIVE->value])
+                ->each(fn(Semester $s) => $s->update(['status' => StatusSemester::CLOSED]));
 
             $tahunAjaran->update([
                 'status' => StatusTahunAjaran::COMPLETED,

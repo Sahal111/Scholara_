@@ -189,7 +189,8 @@ class TahunAjaranPolicy
     public function forceDelete(User $user, TahunAjaran $tahunAjaran): bool
     {
         return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasPermission('master_data.tahun_ajaran.manage');
+            && $user->hasPermission('master_data.tahun_ajaran.manage')
+            && $tahunAjaran->status === StatusTahunAjaran::DRAFT;
     }
 
     // ── Private helper ────────────────────────────────────────────────────────

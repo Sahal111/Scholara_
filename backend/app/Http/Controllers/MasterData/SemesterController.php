@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Semester\ActivateSemesterRequest;
 use App\Http\Requests\Semester\ArchiveSemesterRequest;
 use App\Http\Requests\Semester\UpdateSemesterRequest;
+use App\Models\ActivityLog;
 use App\Models\Semester;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -76,10 +77,17 @@ class SemesterController extends Controller
      */
     public function update(UpdateSemesterRequest $request, string $ulid): JsonResponse
     {
-        $semester = Semester::where('ulid', $ulid)->firstOrFail();
+        $semester = Semester::with('tahunAjaran')->where('ulid', $ulid)->firstOrFail();
         Gate::authorize('update', $semester);
 
         $semester->update($request->validated());
+
+        ActivityLog::log(
+            'update',
+            'semester',
+            $semester->id,
+            "Memperbarui data Semester {$semester->nama} (TA {$semester->tahunAjaran->tahun})."
+        );
 
         return $this->success($semester->fresh(), 'Semester berhasil diperbarui.');
     }
@@ -108,6 +116,13 @@ class SemesterController extends Controller
 
             $semester->update(['status' => StatusSemester::ACTIVE]);
         });
+
+        ActivityLog::log(
+            'activate',
+            'semester',
+            $semester->id,
+            "Mengaktifkan Semester {$semester->nama} (TA {$semester->tahunAjaran->tahun})."
+        );
 
         return $this->success(
             $semester->fresh(),
@@ -138,6 +153,13 @@ class SemesterController extends Controller
 
         $semester->update(['status' => StatusSemester::CLOSED]);
 
+        ActivityLog::log(
+            'close',
+            'semester',
+            $semester->id,
+            "Menutup Semester {$semester->nama} (TA {$semester->tahunAjaran->tahun})."
+        );
+
         return $this->success($semester->fresh(), "Semester {$semester->nama} berhasil ditutup.");
     }
 
@@ -155,6 +177,13 @@ class SemesterController extends Controller
             'archived_at' => now(),
         ]);
 
+        ActivityLog::log(
+            'archive',
+            'semester',
+            $semester->id,
+            "Mengarsipkan Semester {$semester->nama} (TA {$semester->tahunAjaran->tahun})."
+        );
+
         return $this->success($semester->fresh(), "Semester {$semester->nama} berhasil diarsipkan.");
     }
 
@@ -171,6 +200,13 @@ class SemesterController extends Controller
             'status' => StatusSemester::CLOSED,
             'archived_at' => null,
         ]);
+
+        ActivityLog::log(
+            'unarchive',
+            'semester',
+            $semester->id,
+            "Mengeluarkan Semester {$semester->nama} dari arsip (TA {$semester->tahunAjaran->tahun})."
+        );
 
         return $this->success($semester->fresh(), "Semester {$semester->nama} berhasil dikeluarkan dari arsip.");
     }
