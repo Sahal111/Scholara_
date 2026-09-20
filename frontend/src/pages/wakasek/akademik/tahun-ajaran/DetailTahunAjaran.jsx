@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
 import { tahunAjaranKeys } from "../../../../hooks/api/useTahunAjaran";
+import { useActivateSemester } from "../../../../hooks/api/useSemester";
 import ModalTahunAjaranComp from "./components/ModalTahunAjaran";
 import ModalChecklistKesiapanComp from "./components/ModalChecklistKesiapan";
 import {
@@ -67,21 +68,7 @@ export default function DetailTahunAjaran({
       ),
   });
 
-  const setSemesterAktif = useMutation({
-    mutationFn: (semesterNama) =>
-      api.patch(`${apiBase}/${id}/semester-aktif`, {
-        semester_nama: semesterNama,
-      }),
-    onSuccess: (_, semesterNama) => {
-      toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-    },
-    onError: (err) =>
-      toast.error(
-        err.response?.data?.message ?? "Gagal mengganti semester aktif.",
-      ),
-  });
+  const setSemesterAktif = useActivateSemester(id);
 
   const arsipkanTA = useMutation({
     mutationFn: () => api.patch(`${apiBase}/${id}/arsip`),
@@ -445,7 +432,14 @@ export default function DetailTahunAjaran({
                           title: `Ganti ke Semester ${target}`,
                           message: `Semester aktif akan dipindahkan ke Semester ${target}.`,
                           isDanger: false,
-                          onConfirm: () => setSemesterAktif.mutate(target),
+                          onConfirm: () => {
+                            const targetSem = semesters.find(
+                              (s) => s.nama === target,
+                            );
+                            if (targetSem?.ulid) {
+                              setSemesterAktif.mutate({ ulid: targetSem.ulid });
+                            }
+                          },
                         });
                       }}
                       className="w-full px-4 py-2.5 text-left text-xs font-semibold text-[#3f4945] hover:bg-[#f8faf9] flex items-center gap-2.5"

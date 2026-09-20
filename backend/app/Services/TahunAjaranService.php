@@ -13,6 +13,7 @@ use App\Models\MataPelajaran;
 use App\Models\PlotGuruMapel;
 use App\Models\RiwayatKelas;
 use App\Models\Siswa;
+use App\Enums\StatusSemester;
 use App\Models\TahunAjaran;
 use App\Models\ActivityLog;
 use Carbon\Carbon;
@@ -277,7 +278,7 @@ class TahunAjaranService
         $tahunAjaran->nama = $tahunAjaran->tahun;
         $tahunAjaran->tanggal_mulai = $ganjil?->tgl_mulai;
         $tahunAjaran->tanggal_selesai = $tglSelesai;
-        $tahunAjaran->semester_aktif = $semesters->firstWhere('is_active', true)?->nama;
+        $tahunAjaran->semester_aktif = $semesters->first(fn($s) => $s->status === StatusSemester::ACTIVE)?->nama;
         $tahunAjaran->kepsek_nama = $kepsekNama;
         $tahunAjaran->kepsek_nip = $kepsekNip;
         $tahunAjaran->total_hari_libur = $totalHariLibur;

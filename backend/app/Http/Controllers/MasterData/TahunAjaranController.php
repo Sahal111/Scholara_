@@ -381,27 +381,56 @@ class TahunAjaranController extends Controller
     /**
      * WAKASEK: Ganti semester aktif (Ganjil ↔ Genap).
      * PATCH /tahun-ajaran/{ulid}/semester-aktif
+     *
+     * @deprecated Gunakan PATCH /semesters/{ulid}/activate via SemesterController::activate().
+     *             Endpoint ini dipertahankan untuk backward-compat. Logika di-fix agar
+     *             konsisten: mengubah status enum via Eloquent (bukan raw query builder),
+     *             sehingga model hook sync is_active berjalan dengan benar.
      */
     public function setSemesterAktif(SetSemesterAktifRequest $request, string $ulid): JsonResponse
     {
         $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
         Gate::authorize('setSemesterAktif', $tahunAjaran);
 
-        Semester::where('tahun_ajaran_id', $tahunAjaran->id)->update(['is_active' => false]);
-        Semester::where('tahun_ajaran_id', $tahunAjaran->id)
+        $semester = Semester::where('tahun_ajaran_id', $tahunAjaran->id)
             ->where('nama', $request->semester_nama)
-            ->update(['is_active' => true]);
+            ->firstOrFail();
 
-        ActivityLog::log(
-            'set_semester_aktif',
-            'tahun_ajaran',
-            $tahunAjaran->id,
-            "Wakasek mengaktifkan Semester {$request->semester_nama} pada tahun ajaran {$tahunAjaran->tahun}."
-        );
+        if (!$semester->canTransitionTo(StatusSemester::ACTIVE)) {
+            return $this->error(
+                "Semester {$semester->nama} tidak dapat diaktifkan dari status {$semester->status->label()}.",
+                'INVALID_TRANSITION',
+                422
+            );
+        }
+
+        DB::beginTransaction();
+        try {
+            // Tutup semester lain di TA yang sama yang sedang ACTIVE — via Eloquent agar model hook jalan
+            Semester::where('tahun_ajaran_id', $tahunAjaran->id)
+                ->where('status', StatusSemester::ACTIVE->value)
+                ->where('id', '!=', $semester->id)
+                ->each(fn(Semester $s) => $s->update(['status' => StatusSemester::CLOSED]));
+
+            // Aktifkan via status enum — model updating hook akan sync is_active otomatis
+            $semester->update(['status' => StatusSemester::ACTIVE]);
+
+            ActivityLog::log(
+                'set_semester_aktif',
+                'tahun_ajaran',
+                $tahunAjaran->id,
+                "Wakasek mengaktifkan Semester {$semester->nama} pada tahun ajaran {$tahunAjaran->tahun}."
+            );
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return $this->error('Terjadi kesalahan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
+        }
 
         return $this->success(
             $tahunAjaran->load('semesters'),
-            "Semester {$request->semester_nama} berhasil diaktifkan."
+            "Semester {$semester->nama} berhasil diaktifkan."
         );
     }
 

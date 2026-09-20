@@ -1,10 +1,11 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../../contexts/AuthContext";
 import api from "../../../../lib/axios";
 import toast from "react-hot-toast";
 import { tahunAjaranKeys } from "../../../../hooks/api/useTahunAjaran";
+import { useActivateSemester } from "../../../../hooks/api/useSemester";
 import ModalBuatSemesterComp from "./components/ModalBuatSemester";
 import MetricCardComp from "./components/MetricCard";
 import KalenderItemComp from "./components/KalenderItem";
@@ -73,23 +74,7 @@ export default function DetailSemester({
     staleTime: 60_000,
   });
 
-  const setSemAktif = useMutation({
-    mutationFn: () =>
-      api.patch(`${apiBase}/${taId}/semester-aktif`, {
-        semester_nama: semesterNama,
-      }),
-    onSuccess: () => {
-      toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
-      queryClient.invalidateQueries({
-        queryKey: tahunAjaranKeys.detail(taId),
-      });
-      queryClient.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-    },
-    onError: (err) =>
-      toast.error(
-        err.response?.data?.message ?? "Gagal mengaktifkan semester.",
-      ),
-  });
+  const setSemAktif = useActivateSemester(taId);
 
   if (isLoading) return <SkeletonPage />;
 
@@ -321,7 +306,7 @@ export default function DetailSemester({
                 <button
                   onClick={() => {
                     if (confirm(`Aktifkan Semester ${semester.nama}?`))
-                      setSemAktif.mutate();
+                      setSemAktif.mutate({ ulid: semester.ulid });
                   }}
                   disabled={setSemAktif.isPending}
                   className="px-6 py-3 rounded-full bg-[#006e2a]/10 border border-[#006e2a]/20 text-[#006e2a] font-bold text-xs uppercase tracking-widest hover:bg-[#006e2a]/20 transition flex items-center gap-2 disabled:opacity-60"

@@ -12,7 +12,6 @@ import {
   useApproveTahunAjaran,
   useRejectTahunAjaran,
   useAktifkanTahunAjaran,
-  useSetSemesterAktif,
   useSelesaikanTahunAjaran,
   useDeleteTahunAjaran,
   useArsipkanTahunAjaran,
@@ -202,8 +201,7 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
   const approveMut = useApproveTahunAjaran();
   const rejectMut = useRejectTahunAjaran();
   const aktifkanMut = useAktifkanTahunAjaran();
-  const setSemesterAktif = useSetSemesterAktif(); // legacy — via TA ulid + nama
-  const activateSemesterMut = useActivateSemester(); // baru — via semester ulid langsung
+  const activateSemesterMut = useActivateSemester(); // via semester ulid langsung
   const selesaikanMut = useSelesaikanTahunAjaran();
   const hapusMut = useDeleteTahunAjaran();
   const arsipkanMut = useArsipkanTahunAjaran();

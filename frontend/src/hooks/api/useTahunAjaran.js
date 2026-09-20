@@ -197,30 +197,6 @@ export function useAktifkanTahunAjaran() {
 }
 
 /**
- * WAKASEK: Ganti semester aktif (Ganjil ↔ Genap) dalam TA yang ACTIVE
- * PATCH /tahun-ajaran/{ulid}/semester-aktif
- */
-export function useSetSemesterAktif() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ taId, semesterNama }) =>
-      api.patch(`${BASE}/${taId}/semester-aktif`, {
-        semester_nama: semesterNama,
-      }),
-    onSuccess: (_, { taId, semesterNama }) => {
-      qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
-      qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(taId) });
-      toast.success(`Semester ${semesterNama} berhasil diaktifkan.`);
-    },
-    onError: (err) => {
-      toast.error(
-        err.response?.data?.message ?? "Gagal mengaktifkan semester.",
-      );
-    },
-  });
-}
-
-/**
  * WAKASEK: Selesaikan / tutup buku TA dari ACTIVE → COMPLETED
  * PATCH /tahun-ajaran/{ulid}/selesaikan
  */
