@@ -266,7 +266,7 @@ export default function DetailSemester({
             <div className="relative z-10 flex flex-col gap-3 max-w-2xl">
               <nav className="flex items-center gap-1.5 text-sm text-[#3f4945] font-medium flex-wrap">
                 <Link
-                  to="/wakasek/tahun-ajaran"
+                  to={basePath}
                   className="hover:text-[#006e2a] transition-colors"
                 >
                   Tahun Ajaran
@@ -275,7 +275,7 @@ export default function DetailSemester({
                   chevron_right
                 </span>
                 <Link
-                  to={`/wakasek/tahun-ajaran/${taId}`}
+                  to={`${basePath}/${taId}`}
                   className="hover:text-[#006e2a] transition-colors"
                 >
                   {ta.tahun}

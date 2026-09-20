@@ -7,7 +7,7 @@ import {
   useApproveTahunAjaran,
   useRejectTahunAjaran,
   useAktifkanTahunAjaran,
-} from "../../hooks/api/useTahunAjaran";
+} from "../../../hooks/api/useTahunAjaran";
 import {
   fmt,
   getWorkflowStatus,
@@ -15,7 +15,7 @@ import {
   TA_STATUS_CONFIG,
   getTglMulai,
   getTglSelesai,
-} from "../wakasek/akademik/tahun-ajaran/utils/tahunAjaranHelpers";
+} from "../../wakasek/akademik/tahun-ajaran/utils/tahunAjaranHelpers";
 
 // ── Status Badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {

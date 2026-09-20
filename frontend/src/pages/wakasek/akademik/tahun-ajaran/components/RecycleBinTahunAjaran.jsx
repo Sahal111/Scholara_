@@ -279,7 +279,9 @@ function TrashCard({ item, onRestore, onForceDelete, canManage }) {
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
-export default function RecycleBinTahunAjaran() {
+export default function RecycleBinTahunAjaran({
+  basePath = "/wakasek/tahun-ajaran",
+}) {
   const { hasPermission } = useAuth();
   const canManage = hasPermission("master_data.tahun_ajaran.manage");
   const { data: trashData, isLoading, isError } = useTrashTahunAjaran();
@@ -373,7 +375,7 @@ export default function RecycleBinTahunAjaran() {
           {/* Top row: back + breadcrumb */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <Link
-              to="/wakasek/tahun-ajaran"
+              to={basePath}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/80 backdrop-blur-md hover:bg-[#e6e9e8] text-[#00342b] rounded-2xl transition-all border border-[#bfc9c4]/30 shadow-sm group w-fit"
             >
               <span className="material-symbols-outlined text-[20px] group-hover:-translate-x-1 transition-transform">

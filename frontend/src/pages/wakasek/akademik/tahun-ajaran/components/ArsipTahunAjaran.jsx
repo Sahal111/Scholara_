@@ -107,7 +107,7 @@ function StatusBadge({ archivedAt }) {
 
 // ── Table Row ─────────────────────────────────────────────────────────────────
 
-function ArsipRow({ item, onUnarsip }) {
+function ArsipRow({ item, onUnarsip, basePath = "/wakasek/tahun-ajaran" }) {
   return (
     <tr className="hover:bg-[#006e2a]/5 transition-all duration-300 group">
       <td className="py-8 px-4">
@@ -129,7 +129,7 @@ function ArsipRow({ item, onUnarsip }) {
       <td className="py-8 px-4 text-right">
         <div className="flex items-center justify-end gap-2">
           <Link
-            to={`/wakasek/tahun-ajaran/arsip/${item.ulid}`}
+            to={`${basePath}/arsip/${item.ulid}`}
             className="text-[#707975]/40 hover:text-[#00342b] transition-all p-2 rounded-full hover:bg-[#eceeed]"
             title="Lihat Detail"
           >
@@ -154,7 +154,7 @@ function ArsipRow({ item, onUnarsip }) {
 
 // ── Mobile Card ───────────────────────────────────────────────────────────────
 
-function ArsipCard({ item, onUnarsip }) {
+function ArsipCard({ item, onUnarsip, basePath = "/wakasek/tahun-ajaran" }) {
   return (
     <div className="bg-white/80 backdrop-blur-md border border-white/40 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300">
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -171,7 +171,7 @@ function ArsipCard({ item, onUnarsip }) {
 
       <div className="flex items-center gap-2 border-t border-[#eceeed] pt-3">
         <Link
-          to={`/wakasek/tahun-ajaran/arsip/${item.ulid}`}
+          to={`${basePath}/arsip/${item.ulid}`}
           className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-[#f2f4f3] text-[#3f4945] text-xs font-bold hover:bg-[#e6e9e8] transition"
         >
           <span className="material-symbols-outlined text-[15px]">
@@ -193,7 +193,7 @@ function ArsipCard({ item, onUnarsip }) {
 
 // ── Empty State ───────────────────────────────────────────────────────────────
 
-function EmptyState() {
+function EmptyState({ basePath = "/wakasek/tahun-ajaran" }) {
   return (
     <div className="flex flex-col items-center justify-center p-16 bg-white/80 backdrop-blur-md border border-white/40 rounded-[2.5rem] shadow-lg text-center">
       <span
@@ -209,7 +209,7 @@ function EmptyState() {
         pada daftar tahun ajaran.
       </p>
       <Link
-        to="/wakasek/tahun-ajaran"
+        to={basePath}
         className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#006e2a]/10 text-[#006e2a] text-sm font-bold hover:bg-[#006e2a]/20 transition"
       >
         <span className="material-symbols-outlined text-[18px]">
@@ -247,7 +247,9 @@ function ErrorState({ onRetry }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
-export default function ArsipTahunAjaran() {
+export default function ArsipTahunAjaran({
+  basePath = "/wakasek/tahun-ajaran",
+}) {
   const {
     data: rawItems = [],
     isLoading,
@@ -321,7 +323,7 @@ export default function ArsipTahunAjaran() {
         <section className="flex flex-col gap-2">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
             <Link
-              to="/wakasek/tahun-ajaran"
+              to={basePath}
               className="flex items-center gap-2 px-4 py-2 bg-[#f2f4f3] hover:bg-[#e6e9e8] text-[#00342b] rounded-full transition-all border border-[#bfc9c4]/20 group shrink-0"
             >
               <span className="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">
@@ -457,7 +459,7 @@ export default function ArsipTahunAjaran() {
           ) : isError ? (
             <ErrorState onRetry={refetch} />
           ) : rawItems.length === 0 ? (
-            <EmptyState />
+            <EmptyState basePath={basePath} />
           ) : (
             <>
               {/* ── Desktop Table ── */}
@@ -509,6 +511,7 @@ export default function ArsipTahunAjaran() {
                             key={item.ulid}
                             item={item}
                             onUnarsip={setConfirmUnarsip}
+                            basePath={basePath}
                           />
                         ))
                       )}
@@ -547,6 +550,7 @@ export default function ArsipTahunAjaran() {
                         key={item.ulid}
                         item={item}
                         onUnarsip={setConfirmUnarsip}
+                        basePath={basePath}
                       />
                     ))}
                   </>

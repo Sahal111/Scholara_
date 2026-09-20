@@ -27,7 +27,7 @@ import MasterSiswa from "./pages/operator/master/masterDataSiswa/MasterSiswa";
 import TambahEditSiswa from "./pages/operator/master/masterDataSiswa/TambahEditSiswa";
 import MasterKelas from "./pages/operator/master/masterDataKelas/MasterKelas";
 import MasterOrtu from "./pages/operator/master/masterDataOrtu/MasterOrtu";
-import TahunAjaranSemester from "./pages/wakasek/akademik/tahun-ajaran/TahunAjaranSemester";
+import TahunAjaranSemesterOperator from "./pages/operator/master/masterDataTahunAjaran/TahunAjaranSemester";
 import ApprovalOrtu from "./pages/operator/ApprovalOrtu";
 import DetailGuru from "./pages/operator/master/masterDataGuru/DetailGuru";
 import DetailSiswa from "./pages/operator/master/masterDataSiswa/DetailSiswa";
@@ -36,11 +36,12 @@ import DetailKelas from "./pages/operator/master/masterDataKelas/DetailKelas";
 import DetailKelasPeriodeAkademik from "./pages/operator/master/masterDataKelas/DetailKelasPeriodeAkademik";
 import DetailOrtu from "./pages/operator/master/masterDataOrtu/DetailOrtu";
 import NaikKelas from "./pages/operator/master/NaikKelas";
-import DetailTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/DetailTahunAjaran";
-import DetailSemester from "./pages/wakasek/akademik/tahun-ajaran/DetailSemester";
-import RecycleBinTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/components/RecycleBinTahunAjaran";
-import ArsipTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/components/ArsipTahunAjaran";
-import DetailArsipTahunAjaran from "./pages/wakasek/akademik/tahun-ajaran/DetailArsipTahunAjaran";
+// Operator — Tahun Ajaran (file terpisah per role, lihat pages/operator/master/masterDataTahunAjaran/)
+import DetailTahunAjaranOperator from "./pages/operator/master/masterDataTahunAjaran/DetailTahunAjaran";
+import DetailSemesterOperator from "./pages/operator/master/masterDataTahunAjaran/DetailSemester";
+import RecycleBinTahunAjaranOperator from "./pages/operator/master/masterDataTahunAjaran/components/RecycleBinTahunAjaran";
+import ArsipTahunAjaranOperator from "./pages/operator/master/masterDataTahunAjaran/components/ArsipTahunAjaran";
+import DetailArsipTahunAjaranOperator from "./pages/operator/master/masterDataTahunAjaran/DetailArsipTahunAjaran";
 import MasterMapel from "./pages/wakasek/akademik/mapel/MasterMapel";
 import MasterJadwal from "./pages/wakasek/akademik/jadwal/MasterJadwal";
 import PengumumanOperator from "./pages/operator/master/PengumumanOperator";
@@ -73,7 +74,10 @@ import MonitoringAbsensi from "./pages/kepsek/MonitoringAbsensi";
 import PengumumanKepsek from "./pages/kepsek/PengumumanKepsek";
 import KalenderAkademik from "./pages/kepsek/KalenderAkademik";
 import ProfilKepsek from "./pages/kepsek/ProfilKepsek";
-import TahunAjaranKepsek from "./pages/kepsek/TahunAjaranKepsek";
+import TahunAjaranKepsek from "./pages/kepsek/tahunAjaran/TahunAjaranKepsek";
+// Kepsek — Tahun Ajaran (file terpisah per role, lihat pages/kepsek/tahunAjaran/)
+import DetailTahunAjaranKepsek from "./pages/kepsek/tahunAjaran/DetailTahunAjaran";
+import DetailSemesterKepsek from "./pages/kepsek/tahunAjaran/DetailSemester";
 
 // Ortu
 import OrtuLayout from "./pages/ortu/OrtuLayout";
@@ -110,8 +114,13 @@ import MasterMapelWakasek from "./pages/wakasek/akademik/mapel/MasterMapelWakase
 import MasterKelasWakasek from "./pages/wakasek/akademik/kelas/MasterKelasWakasek";
 import DetailKelasWakasek from "./pages/wakasek/akademik/kelas/DetailKelasWakasek";
 import DetailKelasPeriodeAkademikWakasek from "./pages/wakasek/akademik/kelas/DetailKelasPeriodeAkademikWakasek";
-// Wakasek reuse TahunAjaranSemester, DetailTahunAjaran, DetailSemester, DetailArsipTahunAjaran
-// yang sudah di-import di blok atas (baris ~30, 39-44)
+// Wakasek — Tahun Ajaran (file asli / sumber kebenaran)
+import TahunAjaranSemesterWakasek from "./pages/wakasek/akademik/tahun-ajaran/TahunAjaranSemester";
+import DetailTahunAjaranWakasek from "./pages/wakasek/akademik/tahun-ajaran/DetailTahunAjaran";
+import DetailSemesterWakasek from "./pages/wakasek/akademik/tahun-ajaran/DetailSemester";
+import RecycleBinTahunAjaranWakasek from "./pages/wakasek/akademik/tahun-ajaran/components/RecycleBinTahunAjaran";
+import ArsipTahunAjaranWakasek from "./pages/wakasek/akademik/tahun-ajaran/components/ArsipTahunAjaran";
+import DetailArsipTahunAjaranWakasek from "./pages/wakasek/akademik/tahun-ajaran/DetailArsipTahunAjaran";
 // Wakasek halaman khusus (view-only / wakasek API prefix)
 import DataGuruWakasek from "./pages/wakasek/DataGuruWakasek";
 import DetailGuruWakasek from "./pages/wakasek/DetailGuruWakasek";
@@ -205,9 +214,7 @@ export default function App() {
         <Route path="master/ortu" element={<MasterOrtu />} />
         <Route
           path="master/tahun-ajaran"
-          element={
-            <TahunAjaranSemester basePath="/operator/master/tahun-ajaran" />
-          }
+          element={<TahunAjaranSemesterOperator />}
         />
         <Route path="ortu-pending" element={<ApprovalOrtu />} />
         <Route path="master/guru/:nuptk" element={<DetailGuru />} />
@@ -222,28 +229,23 @@ export default function App() {
         <Route path="master/naik-kelas" element={<NaikKelas />} />
         <Route
           path="master/tahun-ajaran/recycle-bin"
-          element={<RecycleBinTahunAjaran />}
+          element={<RecycleBinTahunAjaranOperator />}
         />
         <Route
           path="master/tahun-ajaran/arsip"
-          element={<ArsipTahunAjaran />}
+          element={<ArsipTahunAjaranOperator />}
         />
         <Route
           path="master/tahun-ajaran/arsip/:id"
-          element={<DetailArsipTahunAjaran />}
+          element={<DetailArsipTahunAjaranOperator />}
         />
         <Route
           path="master/tahun-ajaran/:id"
-          element={
-            <DetailTahunAjaran
-              basePath="/operator/master/tahun-ajaran"
-              kelasPath="/operator/master/kelas"
-            />
-          }
+          element={<DetailTahunAjaranOperator />}
         />
         <Route
           path="master/tahun-ajaran/:taId/semester/:semesterNama"
-          element={<DetailSemester />}
+          element={<DetailSemesterOperator />}
         />
         <Route path="master/mapel" element={<MasterMapel />} />
         <Route path="master/jadwal-pelajaran" element={<MasterJadwal />} />
@@ -290,6 +292,11 @@ export default function App() {
         <Route index element={<DashboardKepsek />} />
         <Route path="monitoring-absensi" element={<MonitoringAbsensi />} />
         <Route path="tahun-ajaran" element={<TahunAjaranKepsek />} />
+        <Route path="tahun-ajaran/:id" element={<DetailTahunAjaranKepsek />} />
+        <Route
+          path="tahun-ajaran/:taId/semester/:semesterNama"
+          element={<DetailSemesterKepsek />}
+        />
         <Route path="guru" element={<DataGuruKepsek />} />
         <Route path="guru/:nuptk" element={<DetailGuruKepsek />} />
         <Route path="siswa" element={<DataSiswaKepsek />} />
@@ -368,7 +375,9 @@ export default function App() {
         {/* Bug #4 fix: oper basePath agar navigasi detail/recycle-bin tidak lari ke /operator */}
         <Route
           path="tahun-ajaran"
-          element={<TahunAjaranSemester basePath="/wakasek/tahun-ajaran" />}
+          element={
+            <TahunAjaranSemesterWakasek basePath="/wakasek/tahun-ajaran" />
+          }
         />
         {/*
           BUG-01 fix: tambah route recycle-bin dan arsip yang sebelumnya tidak terdaftar
@@ -379,21 +388,38 @@ export default function App() {
         */}
         <Route
           path="tahun-ajaran/recycle-bin"
-          element={<RecycleBinTahunAjaran />}
+          element={
+            <RecycleBinTahunAjaranWakasek basePath="/wakasek/tahun-ajaran" />
+          }
         />
-        <Route path="tahun-ajaran/arsip" element={<ArsipTahunAjaran />} />
+        <Route
+          path="tahun-ajaran/arsip"
+          element={<ArsipTahunAjaranWakasek basePath="/wakasek/tahun-ajaran" />}
+        />
         <Route
           path="tahun-ajaran/arsip/:id"
-          element={<DetailArsipTahunAjaran />}
+          element={
+            <DetailArsipTahunAjaranWakasek
+              basePath="/wakasek/tahun-ajaran"
+              apiBase="/operator/master-data/tahun-ajaran"
+            />
+          }
         />
         {/* Bug #5a fix: param harus taId & semesterNama sesuai useParams() di DetailSemester.jsx */}
         <Route
           path="tahun-ajaran/:taId/semester/:semesterNama"
-          element={<DetailSemester />}
+          element={
+            <DetailSemesterWakasek
+              basePath="/wakasek/tahun-ajaran"
+              apiBase="/operator/master-data/tahun-ajaran"
+            />
+          }
         />
         <Route
           path="tahun-ajaran/:id"
-          element={<DetailTahunAjaran basePath="/wakasek/tahun-ajaran" />}
+          element={
+            <DetailTahunAjaranWakasek basePath="/wakasek/tahun-ajaran" />
+          }
         />
         <Route path="program-pendidikan" element={<MasterProgramWakasek />} />
         <Route
