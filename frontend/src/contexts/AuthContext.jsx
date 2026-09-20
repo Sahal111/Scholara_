@@ -58,11 +58,17 @@ export function AuthProvider({ children }) {
   /**
    * Cek apakah user aktif memiliki permission tertentu.
    * Permission disimpan di user.permissions (array string slug).
-   * Operator mendapat semua permission — shortcircuit via role check.
+   *
+   * Evaluasi HANYA dari daftar permission yang di-assign di backend —
+   * tidak ada shortcircuit berdasarkan role name. Ini memastikan setiap
+   * role (termasuk operator) hanya bisa melakukan aksi sesuai permission
+   * yang ditetapkan di SchoolSeeder / RBAC settings.
+   *
+   * Contoh: operator TIDAK punya tahun_ajaran.review / approve — hanya
+   * Wakasek & Kepsek yang punya, sesuai domain ownership di docs/07-rbac-standard.md.
    */
   const hasPermission = (slug) => {
     if (!user) return false;
-    if (user.roles?.includes("operator")) return true;
     return Array.isArray(user.permissions) && user.permissions.includes(slug);
   };
 
