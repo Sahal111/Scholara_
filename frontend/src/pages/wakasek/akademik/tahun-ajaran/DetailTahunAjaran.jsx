@@ -49,7 +49,7 @@ export default function DetailTahunAjaran({
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: tahunAjaranKeys.detail(id),
-    queryFn: () => api.get(`${apiBase}/${id}`).then((r) => r.data),
+    queryFn: () => api.get(`${apiBase}/${id}`).then((r) => r.data.data),
     retry: false, // ← jangan retry, biar error langsung kelihatan
     staleTime: 30_000,
   });

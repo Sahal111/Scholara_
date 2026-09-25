@@ -69,7 +69,7 @@ export default function DetailSemester({
   // yang dikirim dari TahunAjaranSemester.jsx maupun useTahunAjaran.js hook.
   const { data, isLoading, isError } = useQuery({
     queryKey: tahunAjaranKeys.detail(taId),
-    queryFn: () => api.get(`${apiBase}/${taId}`).then((r) => r.data),
+    queryFn: () => api.get(`${apiBase}/${taId}`).then((r) => r.data.data),
     enabled: !!taId,
     staleTime: 60_000,
   });
@@ -78,7 +78,7 @@ export default function DetailSemester({
 
   if (isLoading) return <SkeletonPage />;
 
-  if (isError || !data?.data?.data) {
+  if (isError || !data?.data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-[#3f4945]">
         <span className="material-symbols-outlined text-[56px] text-[#bfc9c4]">
@@ -98,7 +98,7 @@ export default function DetailSemester({
     );
   }
 
-  const ta = data.data?.data;
+  const ta = data?.data;
   const semesters = ta?.semesters ?? [];
   const semester = semesters.find(
     (s) => s.nama?.toLowerCase() === semesterNama?.toLowerCase(),
@@ -2366,26 +2366,26 @@ export default function DetailSemester({
             const leftLink = isGanjil
               ? taPrev
                 ? {
-                    to: `/wakasek/tahun-ajaran/${taPrev.ulid}/semester/Genap`,
+                    to: `${basePath}/${taPrev.ulid}/semester/Genap`,
                     label: "Semester Sebelumnya",
                     title: `${taPrev.tahun} — Genap`,
                   }
                 : null
               : {
-                  to: `/wakasek/tahun-ajaran/${taId}/semester/Ganjil`,
+                  to: `${basePath}/${taId}/semester/Ganjil`,
                   label: "Semester Sebelumnya",
                   title: `${ta.tahun} — Ganjil`,
                 };
 
             const rightLink = isGanjil
               ? {
-                  to: `/wakasek/tahun-ajaran/${taId}/semester/Genap`,
+                  to: `${basePath}/${taId}/semester/Genap`,
                   label: "Semester Selanjutnya",
                   title: `${ta.tahun} — Genap`,
                 }
               : taNext
                 ? {
-                    to: `/wakasek/tahun-ajaran/${taNext.ulid}/semester/Ganjil`,
+                    to: `${basePath}/${taNext.ulid}/semester/Ganjil`,
                     label: "Semester Selanjutnya",
                     title: `${taNext.tahun} — Ganjil`,
                   }
