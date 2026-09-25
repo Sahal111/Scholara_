@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useTahunAjaranList,
@@ -330,7 +331,7 @@ function ModalAktifkan({ item, onClose }) {
 }
 
 // ── Kartu TA ──────────────────────────────────────────────────────────────────
-function KartuTahunAjaran({ ta, onApprove, onReject, onAktifkan }) {
+function KartuTahunAjaran({ ta, onApprove, onReject, onAktifkan, basePath }) {
   const status = getWorkflowStatus(ta);
   const cfg = TA_STATUS_CONFIG[status] ?? TA_STATUS_CONFIG.draft;
   const tglMulai = getTglMulai(ta);
@@ -407,7 +408,7 @@ function KartuTahunAjaran({ ta, onApprove, onReject, onAktifkan }) {
       {/* Action buttons */}
       {(showApprove || showReject || showAktifkan) && (
         <div
-          className={`px-5 pb-5 flex gap-2 ${showApprove && showReject ? "flex-row" : ""}`}
+          className={`px-5 flex gap-2 ${showApprove && showReject ? "flex-row" : ""}`}
         >
           {showReject && (
             <button
@@ -459,7 +460,7 @@ function KartuTahunAjaran({ ta, onApprove, onReject, onAktifkan }) {
 
       {/* Status info kalau tidak ada aksi */}
       {!showApprove && !showReject && !showAktifkan && (
-        <div className="px-5 pb-4">
+        <div className="px-5">
           <p className="text-[11px] text-gray-400 italic">
             {status === TA_STATUS.DRAFT &&
               "Menunggu wakasek submit untuk review."}
@@ -469,6 +470,19 @@ function KartuTahunAjaran({ ta, onApprove, onReject, onAktifkan }) {
           </p>
         </div>
       )}
+
+      {/* Tombol Lihat Detail — selalu muncul di semua kartu */}
+      <div className="px-5 pb-5 pt-3">
+        <Link
+          to={`${basePath}/${ta.ulid}`}
+          className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border border-gray-200 text-gray-500 text-sm font-semibold hover:bg-gray-50 hover:text-gray-700 hover:border-gray-300 transition"
+        >
+          <span className="material-symbols-outlined text-base">
+            open_in_new
+          </span>
+          Lihat Detail
+        </Link>
+      </div>
     </div>
   );
 }
@@ -640,6 +654,7 @@ export default function TahunAjaranKepsek() {
                 onApprove={setApproveModal}
                 onReject={setRejectModal}
                 onAktifkan={setAktifkanModal}
+                basePath="/kepsek/tahun-ajaran"
               />
             ))}
           </div>
@@ -660,6 +675,7 @@ export default function TahunAjaranKepsek() {
                 onApprove={setApproveModal}
                 onReject={setRejectModal}
                 onAktifkan={setAktifkanModal}
+                basePath="/kepsek/tahun-ajaran"
               />
             ))}
           </div>
