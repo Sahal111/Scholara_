@@ -16,7 +16,7 @@ import {
   TA_STATUS_CONFIG,
   getTglMulai,
   getTglSelesai,
-} from "../../wakasek/akademik/tahun-ajaran/utils/tahunAjaranHelpers";
+} from "../../../shared/tahun-ajaran/utils/tahunAjaranHelpers";
 
 // ── Status Badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ status }) {

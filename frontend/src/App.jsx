@@ -115,12 +115,12 @@ import MasterKelasWakasek from "./pages/wakasek/akademik/kelas/MasterKelasWakase
 import DetailKelasWakasek from "./pages/wakasek/akademik/kelas/DetailKelasWakasek";
 import DetailKelasPeriodeAkademikWakasek from "./pages/wakasek/akademik/kelas/DetailKelasPeriodeAkademikWakasek";
 // Wakasek — Tahun Ajaran (file asli / sumber kebenaran)
-import TahunAjaranSemesterWakasek from "./pages/wakasek/akademik/tahun-ajaran/TahunAjaranSemester";
-import DetailTahunAjaranWakasek from "./pages/wakasek/akademik/tahun-ajaran/DetailTahunAjaran";
-import DetailSemesterWakasek from "./pages/wakasek/akademik/tahun-ajaran/DetailSemester";
-import RecycleBinTahunAjaranWakasek from "./pages/wakasek/akademik/tahun-ajaran/components/RecycleBinTahunAjaran";
-import ArsipTahunAjaranWakasek from "./pages/wakasek/akademik/tahun-ajaran/components/ArsipTahunAjaran";
-import DetailArsipTahunAjaranWakasek from "./pages/wakasek/akademik/tahun-ajaran/DetailArsipTahunAjaran";
+import TahunAjaranSemesterWakasek from "./shared/tahun-ajaran/TahunAjaranSemester";
+import DetailTahunAjaranWakasek from "./shared/tahun-ajaran/DetailTahunAjaran";
+import DetailSemesterWakasek from "./shared/tahun-ajaran/DetailSemester";
+import RecycleBinTahunAjaranWakasek from "./shared/tahun-ajaran/components/RecycleBinTahunAjaran";
+import ArsipTahunAjaranWakasek from "./shared/tahun-ajaran/components/ArsipTahunAjaran";
+import DetailArsipTahunAjaranWakasek from "./shared/tahun-ajaran/DetailArsipTahunAjaran";
 // Wakasek halaman khusus (view-only / wakasek API prefix)
 import DataGuruWakasek from "./pages/wakasek/DataGuruWakasek";
 import DetailGuruWakasek from "./pages/wakasek/DetailGuruWakasek";
