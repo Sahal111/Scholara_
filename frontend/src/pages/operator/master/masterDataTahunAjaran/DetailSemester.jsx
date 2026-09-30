@@ -4,7 +4,7 @@ export default function DetailSemester() {
   return (
     <DetailSemesterBase
       basePath="/operator/master/tahun-ajaran"
-      apiBase="/operator/tahun-ajaran"
+      apiBase="/operator/master-data/tahun-ajaran"
     />
   );
 }

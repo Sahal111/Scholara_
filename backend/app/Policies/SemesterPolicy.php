@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\StatusSemester;
+use App\Enums\StatusTahunAjaran;
 use App\Models\Semester;
 use App\Models\User;
 
@@ -12,7 +13,7 @@ use App\Models\User;
  * Permission map:
  *   master_data.semester.view     → viewAny, view
  *   master_data.semester.manage   → update (hanya saat belum CLOSED/ARCHIVED)
- *   master_data.semester.activate → activate (UPCOMING/CLOSED → ACTIVE)
+ *   master_data.semester.activate → activate (UPCOMING → ACTIVE, TA harus ACTIVE)
  *   master_data.semester.archive  → archive (CLOSED → ARCHIVED), unarchive
  *
  * Semester tidak punya create/delete mandiri — dibuat otomatis saat TA dibuat.
@@ -33,27 +34,40 @@ class SemesterPolicy
 
     /**
      * Edit tanggal/nama semester.
-     * Hanya boleh selama status belum CLOSED atau ARCHIVED.
-     * Ini solusi untuk Temuan 5 (over-locking) — Wakasek tetap bisa
-     * ubah rentang tanggal Semester Genap saat TA sudah ACTIVE.
+     * - TA draft/under_review → Operator & Wakasek (manage permission)
+     * - TA approved/active    → Wakasek saja (activate permission)
+     * Semester yang sudah CLOSED/ARCHIVED tidak bisa diedit.
      */
     public function update(User $user, Semester $semester): bool
     {
-        return $this->sameSchool($user, $semester)
-            && !$semester->isLocked()
-            && $user->hasPermission('master_data.semester.manage');
+        if (!$this->sameSchool($user, $semester) || $semester->isLocked()) {
+            return false;
+        }
+
+        $ta = $semester->tahunAjaran;
+
+        // Setelah TA disetujui/aktif, hanya Wakasek yang boleh ubah tanggal
+        if ($ta && $ta->status->isLocked()) {
+            return $user->hasPermission('master_data.semester.activate');
+        }
+
+        // TA masih draft/under_review — Operator dan Wakasek boleh
+        return $user->hasPermission('master_data.semester.manage');
     }
 
     /**
      * Set semester ini sebagai ACTIVE.
      * Otomatis menutup (CLOSED) semester lain di TA yang sama.
      * Permission: master_data.semester.activate (default: Wakasek).
+     * Syarat: TA harus berstatus ACTIVE.
      */
     public function activate(User $user, Semester $semester): bool
     {
         return $this->sameSchool($user, $semester)
             && $user->hasPermission('master_data.semester.activate')
-            && $semester->canTransitionTo(StatusSemester::ACTIVE);
+            && $semester->canTransitionTo(StatusSemester::ACTIVE)
+            && $semester->tahunAjaran
+            && $semester->tahunAjaran->status === StatusTahunAjaran::ACTIVE;
     }
 
     /**

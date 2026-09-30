@@ -239,13 +239,14 @@ export default function App() {
           path="master/tahun-ajaran/arsip/:id"
           element={<DetailArsipTahunAjaranOperator />}
         />
-        <Route
-          path="master/tahun-ajaran/:id"
-          element={<DetailTahunAjaranOperator />}
-        />
+        {/* Semester detail — SEBELUM :id agar tidak tertangkap wildcard */}
         <Route
           path="master/tahun-ajaran/:taId/semester/:semesterNama"
           element={<DetailSemesterOperator />}
+        />
+        <Route
+          path="master/tahun-ajaran/:id"
+          element={<DetailTahunAjaranOperator />}
         />
         <Route path="master/mapel" element={<MasterMapel />} />
         <Route path="master/jadwal-pelajaran" element={<MasterJadwal />} />
@@ -292,11 +293,12 @@ export default function App() {
         <Route index element={<DashboardKepsek />} />
         <Route path="monitoring-absensi" element={<MonitoringAbsensi />} />
         <Route path="tahun-ajaran" element={<TahunAjaranKepsek />} />
-        <Route path="tahun-ajaran/:id" element={<DetailTahunAjaranKepsek />} />
+        {/* Semester detail — SEBELUM :id agar tidak tertangkap wildcard */}
         <Route
           path="tahun-ajaran/:taId/semester/:semesterNama"
           element={<DetailSemesterKepsek />}
         />
+        <Route path="tahun-ajaran/:id" element={<DetailTahunAjaranKepsek />} />
         <Route path="guru" element={<DataGuruKepsek />} />
         <Route path="guru/:nuptk" element={<DetailGuruKepsek />} />
         <Route path="siswa" element={<DataSiswaKepsek />} />

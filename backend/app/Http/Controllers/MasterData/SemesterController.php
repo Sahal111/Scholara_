@@ -80,6 +80,27 @@ class SemesterController extends Controller
         $semester = Semester::with('tahunAjaran')->where('ulid', $ulid)->firstOrFail();
         Gate::authorize('update', $semester);
 
+        // Semester ACTIVE — hanya boleh ubah tgl_selesai
+        if ($semester->status === StatusSemester::ACTIVE) {
+            $fieldsBeingChanged = array_diff(array_keys($request->validated()), ['tgl_selesai', 'catatan']);
+            if (!empty($fieldsBeingChanged)) {
+                return $this->error(
+                    'Semester yang sedang aktif hanya boleh mengubah tanggal selesai.',
+                    'ACTIVE_SEMESTER_LOCKED',
+                    422
+                );
+            }
+        }
+
+        // Setelah TA disetujui — wajib isi alasan perubahan
+        if ($semester->tahunAjaran->status->isLocked() && !$request->filled('catatan')) {
+            return $this->error(
+                'Perubahan tanggal setelah TA disetujui wajib menyertakan alasan.',
+                'REASON_REQUIRED',
+                422
+            );
+        }
+
         $semester->update($request->validated());
 
         ActivityLog::log(
@@ -87,6 +108,7 @@ class SemesterController extends Controller
             'semester',
             $semester->id,
             "Memperbarui data Semester {$semester->nama} (TA {$semester->tahunAjaran->tahun})."
+            . ($request->catatan ? " Alasan: {$request->catatan}" : '')
         );
 
         return $this->success($semester->fresh(), 'Semester berhasil diperbarui.');
@@ -104,6 +126,30 @@ class SemesterController extends Controller
     {
         $semester = Semester::with('tahunAjaran')->where('ulid', $ulid)->firstOrFail();
         Gate::authorize('activate', $semester);
+
+        // Guard: TA harus ACTIVE sebelum semester bisa diaktifkan
+        if ($semester->tahunAjaran->status !== StatusTahunAjaran::ACTIVE) {
+            return $this->error(
+                'Semester hanya bisa diaktifkan saat tahun ajaran sedang AKTIF. '
+                . "Status TA saat ini: {$semester->tahunAjaran->status->label()}.",
+                'TA_NOT_ACTIVE',
+                422
+            );
+        }
+
+        // Guard: Semester Ganjil harus sudah pernah active/closed sebelum Genap bisa diaktifkan
+        if ($semester->nama === 'Genap') {
+            $ganjil = Semester::where('tahun_ajaran_id', $semester->tahun_ajaran_id)
+                ->where('nama', 'Ganjil')
+                ->first();
+            if ($ganjil && $ganjil->status === StatusSemester::UPCOMING) {
+                return $this->error(
+                    'Semester Ganjil harus diaktifkan terlebih dahulu sebelum mengaktifkan Semester Genap.',
+                    'GANJIL_NOT_STARTED',
+                    422
+                );
+            }
+        }
 
         DB::transaction(function () use ($semester) {
             // Tutup semester lain di TA yang sama yang sedang ACTIVE
@@ -149,6 +195,30 @@ class SemesterController extends Controller
                 'TA_NOT_ACTIVE',
                 422
             );
+        }
+
+        // Guard: tidak boleh close semester terakhir yang aktif
+        // jika masih ada semester upcoming (harus aktifkan berikutnya dulu,
+        // atau selesaikan TA)
+        $adaSemesterLainAktif = Semester::where('tahun_ajaran_id', $semester->tahun_ajaran_id)
+            ->where('id', '!=', $semester->id)
+            ->where('status', StatusSemester::ACTIVE->value)
+            ->exists();
+
+        if (!$adaSemesterLainAktif) {
+            $adaSemesterUpcoming = Semester::where('tahun_ajaran_id', $semester->tahun_ajaran_id)
+                ->where('id', '!=', $semester->id)
+                ->where('status', StatusSemester::UPCOMING->value)
+                ->exists();
+
+            if ($adaSemesterUpcoming) {
+                return $this->error(
+                    'Tidak dapat menutup semester terakhir yang aktif. '
+                    . 'Aktifkan semester berikutnya terlebih dahulu, atau selesaikan tahun ajaran.',
+                    'LAST_ACTIVE_SEMESTER',
+                    422
+                );
+            }
         }
 
         $semester->update(['status' => StatusSemester::CLOSED]);

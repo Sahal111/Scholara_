@@ -1249,6 +1249,24 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                   </button>
                 )}
 
+                {/* EDIT SEMESTER — wakasek, saat APPROVED / ACTIVE */}
+                {actions.showEditSemester && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      close();
+                      setBuatSemesterTA(actionItem);
+                      setBuatSemesterOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-sm font-medium text-text-primary hover:bg-surface-container-low hover:text-primary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-text-secondary">
+                      edit_calendar
+                    </span>
+                    <span>Edit Semester</span>
+                  </button>
+                )}
+
                 {/* SUBMIT REVIEW — wakasek, dari DRAFT */}
                 {actions.showSubmitReview && (
                   <>
@@ -1357,11 +1375,34 @@ export default function TahunAjaran({ basePath = "/wakasek/tahun-ajaran" }) {
                       type="button"
                       onClick={() => {
                         close();
+                        // Step 1: coba tanpa konfirmasi
+                        // Jika ada semester upcoming, backend return UPCOMING_SEMESTER_WARNING
                         openConfirm({
                           title: "Selesaikan Tahun Ajaran",
                           message: `Tutup buku "${actionItem.tahun}"? Semua semester akan dinonaktifkan. TA bisa diarsipkan oleh operator setelahnya.`,
                           onConfirm: () =>
-                            selesaikanMut.mutate(actionItem.ulid),
+                            selesaikanMut.mutate(
+                              { ulid: actionItem.ulid, konfirmasi: false },
+                              {
+                                onError: (err) => {
+                                  const code = err.response?.data?.error_code;
+                                  if (code === "UPCOMING_SEMESTER_WARNING") {
+                                    const msg = err.response?.data?.message ?? "";
+                                    // Step 2: tampilkan konfirmasi kedua
+                                    openConfirm({
+                                      title: "Ada Semester Belum Digunakan",
+                                      message: msg,
+                                      isDanger: true,
+                                      onConfirm: () =>
+                                        selesaikanMut.mutate({
+                                          ulid: actionItem.ulid,
+                                          konfirmasi: true,
+                                        }),
+                                    });
+                                  }
+                                },
+                              },
+                            ),
                           isDanger: false,
                         });
                       }}

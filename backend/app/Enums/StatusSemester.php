@@ -9,7 +9,7 @@ namespace App\Enums;
  *   UPCOMING → ACTIVE → CLOSED → ARCHIVED
  *
  * Siapa yang transisi:
- *   UPCOMING → ACTIVE   : Wakasek (set semester aktif, permission: tahun_ajaran.review)
+ *   UPCOMING → ACTIVE   : Wakasek (set semester aktif, permission: master_data.semester.activate, TA harus ACTIVE)
  *   ACTIVE   → CLOSED   : Wakasek (tutup semester — biasanya otomatis saat TA selesai
  *                          atau saat beralih ke semester berikutnya)
  *   CLOSED   → ARCHIVED : Operator (arsipkan setelah rapor selesai)

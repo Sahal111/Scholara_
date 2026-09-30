@@ -51,7 +51,10 @@ export function useSemesterDetail(ulid) {
 
 /**
  * Update tanggal / nama semester.
- * Wakasek bisa edit meski TA sudah ACTIVE — lock hanya di level status semester.
+ * Aturan setelah backend diperbarui:
+ * - TA draft/under_review: Operator & Wakasek boleh edit semua field
+ * - TA approved/active: Wakasek saja, wajib isi `catatan` (alasan)
+ * - Semester ACTIVE: hanya boleh ubah tgl_selesai
  */
 export function useUpdateSemester(taUlid = null) {
   const qc = useQueryClient();
@@ -65,7 +68,14 @@ export function useUpdateSemester(taUlid = null) {
       qc.invalidateQueries({ queryKey: semesterKeys.lists() });
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message ?? "Gagal memperbarui semester.");
+      const code = err.response?.data?.error_code;
+      if (code === "REASON_REQUIRED") {
+        toast.error("Wajib isi alasan perubahan setelah TA disetujui.");
+      } else if (code === "ACTIVE_SEMESTER_LOCKED") {
+        toast.error("Semester aktif hanya boleh mengubah tanggal selesai.");
+      } else {
+        toast.error(err.response?.data?.message ?? "Gagal memperbarui semester.");
+      }
     },
   });
 }
@@ -73,6 +83,7 @@ export function useUpdateSemester(taUlid = null) {
 /**
  * Aktifkan semester — menutup otomatis semester lain di TA yang sama.
  * Permission: master_data.semester.activate (Wakasek).
+ * Syarat: TA harus berstatus ACTIVE, dan Ganjil harus aktif/closed sebelum Genap.
  */
 export function useActivateSemester(taUlid = null) {
   const qc = useQueryClient();
@@ -87,9 +98,14 @@ export function useActivateSemester(taUlid = null) {
       qc.invalidateQueries({ queryKey: semesterKeys.lists() });
     },
     onError: (err) => {
-      toast.error(
-        err.response?.data?.message ?? "Gagal mengaktifkan semester.",
-      );
+      const code = err.response?.data?.error_code;
+      if (code === "TA_NOT_ACTIVE") {
+        toast.error("Tahun ajaran belum aktif — minta Kepala Sekolah mengaktifkannya terlebih dahulu.");
+      } else if (code === "GANJIL_NOT_STARTED") {
+        toast.error("Semester Ganjil harus diaktifkan terlebih dahulu sebelum Semester Genap.");
+      } else {
+        toast.error(err.response?.data?.message ?? "Gagal mengaktifkan semester.");
+      }
     },
   });
 }
@@ -97,6 +113,7 @@ export function useActivateSemester(taUlid = null) {
 /**
  * Tutup semester (ACTIVE → CLOSED).
  * Permission: master_data.semester.activate (Wakasek).
+ * Catatan: tidak bisa close semester terakhir jika masih ada upcoming.
  */
 export function useCloseSemester(taUlid = null) {
   const qc = useQueryClient();
@@ -110,7 +127,12 @@ export function useCloseSemester(taUlid = null) {
       qc.invalidateQueries({ queryKey: semesterKeys.lists() });
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message ?? "Gagal menutup semester.");
+      const code = err.response?.data?.error_code;
+      if (code === "LAST_ACTIVE_SEMESTER") {
+        toast.error("Aktifkan semester berikutnya terlebih dahulu, atau selesaikan tahun ajaran.");
+      } else {
+        toast.error(err.response?.data?.message ?? "Gagal menutup semester.");
+      }
     },
   });
 }

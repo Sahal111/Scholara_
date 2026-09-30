@@ -271,12 +271,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
         });
 
         // Wakasek: submit ke review, tutup buku
-        // CATATAN: semester-aktif (cara lama) sudah DEPRECATED — gunakan PATCH /semesters/{ulid}/activate
         Route::middleware('permission:master_data.tahun_ajaran.review')->group(function () {
             Route::patch('/tahun-ajaran/{ulid}/submit-review', [TahunAjaranController::class, 'submitReview']);
-            // @deprecated — endpoint ini diganti oleh PATCH /semesters/{ulid}/activate
-            // Masih aktif untuk backward-compatibility tapi TIDAK boleh dipakai di UI baru.
-            Route::patch('/tahun-ajaran/{ulid}/semester-aktif', [TahunAjaranController::class, 'setSemesterAktif']);
             Route::patch('/tahun-ajaran/{ulid}/selesaikan', [TahunAjaranController::class, 'selesaikan']);
         });
 

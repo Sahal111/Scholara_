@@ -19,6 +19,7 @@ class UpdateSemesterRequest extends FormRequest
             'nama' => 'sometimes|string|max:50',
             'tgl_mulai' => 'sometimes|nullable|date',
             'tgl_selesai' => 'sometimes|nullable|date|after_or_equal:tgl_mulai',
+            'catatan' => 'nullable|string|max:500',
         ];
     }
 

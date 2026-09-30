@@ -5,8 +5,8 @@ namespace App\Http\Requests\Semester;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Request untuk SET semester aktif (UPCOMING/CLOSED → ACTIVE).
- * Wakasek mengatur pergantian semester.
+ * Request untuk SET semester aktif (UPCOMING → ACTIVE).
+ * Wakasek mengatur pergantian semester. TA harus berstatus ACTIVE.
  */
 class ActivateSemesterRequest extends FormRequest
 {

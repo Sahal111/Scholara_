@@ -199,18 +199,28 @@ export function useAktifkanTahunAjaran() {
 /**
  * WAKASEK: Selesaikan / tutup buku TA dari ACTIVE → COMPLETED
  * PATCH /tahun-ajaran/{ulid}/selesaikan
+ *
+ * Dua langkah jika ada semester upcoming:
+ *  1. mutate({ ulid }) → backend return 422 UPCOMING_SEMESTER_WARNING
+ *  2. User konfirmasi → mutate({ ulid, konfirmasi: true }) → berhasil
  */
 export function useSelesaikanTahunAjaran() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/selesaikan`),
-    onSuccess: (_, ulid) => {
+    mutationFn: ({ ulid, konfirmasi = false }) =>
+      api.patch(`${BASE}/${ulid}/selesaikan`, {
+        konfirmasi_tutup_upcoming: konfirmasi,
+      }),
+    onSuccess: (_, { ulid }) => {
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(ulid) });
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });
       toast.success("Tahun ajaran berhasil diselesaikan (tutup buku).");
     },
     onError: (err) => {
+      const code = err.response?.data?.error_code;
+      // UPCOMING_SEMESTER_WARNING ditangani di komponen — bukan toast error
+      if (code === "UPCOMING_SEMESTER_WARNING") return;
       toast.error(
         err.response?.data?.message ?? "Gagal menyelesaikan tahun ajaran.",
       );
@@ -351,7 +361,8 @@ export function useForceDeleteTahunAjaran() {
  */
 export const useSetTahunAjaranAktif = useAktifkanTahunAjaran;
 
-/** Update tanggal semester melalui endpoint update TA */
+/** @deprecated Gunakan useUpdateSemester dari useSemester.js
+ * Update tanggal semester via endpoint TA — legacy, hanya untuk modal buat/edit TA. */
 export function useUpdateSemester(taId) {
   const qc = useQueryClient();
   return useMutation({

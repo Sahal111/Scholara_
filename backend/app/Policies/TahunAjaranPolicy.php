@@ -18,7 +18,7 @@ use App\Models\User;
  *
  *   master_data.tahun_ajaran.view     → viewAny, view
  *   master_data.tahun_ajaran.manage   → create, update (hanya saat DRAFT), delete, restore
- *   master_data.tahun_ajaran.review   → submitReview, setSemesterAktif, complete
+ *   master_data.tahun_ajaran.review   → submitReview
  *   master_data.tahun_ajaran.approve  → approve, reject
  *   master_data.tahun_ajaran.activate → activate
  *   master_data.tahun_ajaran.archive  → arsip, unarsip
@@ -118,17 +118,6 @@ class TahunAjaranPolicy
             && $tahunAjaran->canTransitionTo(StatusTahunAjaran::ACTIVE);
     }
 
-    /**
-     * Ganti semester aktif (Ganjil ↔ Genap) dalam TA yang sedang ACTIVE.
-     * Permission: master_data.tahun_ajaran.review (default: Wakasek).
-     * Mengatur ritme akademik adalah tanggung jawab Wakasek.
-     */
-    public function setSemesterAktif(User $user, TahunAjaran $tahunAjaran): bool
-    {
-        return $this->sameSchool($user, $tahunAjaran)
-            && $user->hasPermission('master_data.tahun_ajaran.review')
-            && $tahunAjaran->status === StatusTahunAjaran::ACTIVE;
-    }
 
     /**
      * Selesaikan / tutup buku TA dari ACTIVE ke COMPLETED.

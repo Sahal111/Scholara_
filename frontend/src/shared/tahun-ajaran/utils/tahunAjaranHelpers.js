@@ -249,9 +249,14 @@ export function getTahunAjaranActions(t, perms = {}) {
     // ── Kepsek: aktifkan — hanya saat APPROVED
     showAktifkan: canActivate && status === TA_STATUS.APPROVED,
 
-    // ── Wakasek: ganti semester aktif — hanya saat ACTIVE
-    // Dulu pakai canReview, sekarang pakai canSemesterActivate (permission terpisah)
-    showSetSemesterAktif: canSemesterActivate && status === TA_STATUS.ACTIVE,
+    // ── Wakasek: edit tanggal semester — saat TA sudah approved atau active
+    // (lewat ModalBuatSemester yang smart-route ke endpoint individual)
+    showEditSemester:
+      canSemesterActivate &&
+      (status === TA_STATUS.APPROVED || status === TA_STATUS.ACTIVE),
+
+    // ── Wakasek: semester activation sudah lewat SemesterCard → useActivateSemester
+    // (endpoint terpisah: PATCH /semesters/{ulid}/activate, bukan di TA lagi)
 
     // ── Wakasek: selesaikan / tutup buku — hanya saat ACTIVE
     // Dulu canReview — sekarang canComplete (permission terpisah: tahun_ajaran.complete)

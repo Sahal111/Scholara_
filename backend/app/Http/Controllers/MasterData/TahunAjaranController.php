@@ -5,7 +5,6 @@ namespace App\Http\Controllers\MasterData;
 use App\Enums\StatusSemester;
 use App\Enums\StatusTahunAjaran;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\TahunAjaran\AktifkanSemesterRequest as SetSemesterAktifRequest;
 use App\Http\Requests\TahunAjaran\ArsipTahunAjaranRequest;
 use App\Http\Requests\TahunAjaran\StoreTahunAjaranRequest;
 use App\Http\Requests\TahunAjaran\UpdateTahunAjaranRequest;
@@ -378,61 +377,6 @@ class TahunAjaranController extends Controller
         }
     }
 
-    /**
-     * WAKASEK: Ganti semester aktif (Ganjil ↔ Genap).
-     * PATCH /tahun-ajaran/{ulid}/semester-aktif
-     *
-     * @deprecated Gunakan PATCH /semesters/{ulid}/activate via SemesterController::activate().
-     *             Endpoint ini dipertahankan untuk backward-compat. Logika di-fix agar
-     *             konsisten: mengubah status enum via Eloquent (bukan raw query builder),
-     *             sehingga model hook sync is_active berjalan dengan benar.
-     */
-    public function setSemesterAktif(SetSemesterAktifRequest $request, string $ulid): JsonResponse
-    {
-        $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
-        Gate::authorize('setSemesterAktif', $tahunAjaran);
-
-        $semester = Semester::where('tahun_ajaran_id', $tahunAjaran->id)
-            ->where('nama', $request->semester_nama)
-            ->firstOrFail();
-
-        if (!$semester->canTransitionTo(StatusSemester::ACTIVE)) {
-            return $this->error(
-                "Semester {$semester->nama} tidak dapat diaktifkan dari status {$semester->status->label()}.",
-                'INVALID_TRANSITION',
-                422
-            );
-        }
-
-        DB::beginTransaction();
-        try {
-            // Tutup semester lain di TA yang sama yang sedang ACTIVE — via Eloquent agar model hook jalan
-            Semester::where('tahun_ajaran_id', $tahunAjaran->id)
-                ->where('status', StatusSemester::ACTIVE->value)
-                ->where('id', '!=', $semester->id)
-                ->each(fn(Semester $s) => $s->update(['status' => StatusSemester::CLOSED]));
-
-            // Aktifkan via status enum — model updating hook akan sync is_active otomatis
-            $semester->update(['status' => StatusSemester::ACTIVE]);
-
-            ActivityLog::log(
-                'set_semester_aktif',
-                'tahun_ajaran',
-                $tahunAjaran->id,
-                "Wakasek mengaktifkan Semester {$semester->nama} pada tahun ajaran {$tahunAjaran->tahun}."
-            );
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return $this->error('Terjadi kesalahan: ' . $e->getMessage(), 'SERVER_ERROR', 500);
-        }
-
-        return $this->success(
-            $tahunAjaran->load('semesters'),
-            "Semester {$semester->nama} berhasil diaktifkan."
-        );
-    }
 
     /**
      * WAKASEK: Selesaikan / tutup buku TA dari ACTIVE → COMPLETED.
@@ -442,6 +386,21 @@ class TahunAjaranController extends Controller
     {
         $tahunAjaran = TahunAjaran::where('ulid', $ulid)->firstOrFail();
         Gate::authorize('complete', $tahunAjaran);
+
+        // Peringatan: ada semester yang masih upcoming (belum pernah digunakan)
+        $upcomingSemesters = Semester::where('tahun_ajaran_id', $tahunAjaran->id)
+            ->where('status', StatusSemester::UPCOMING->value)
+            ->pluck('nama');
+
+        if ($upcomingSemesters->isNotEmpty() && !request()->boolean('konfirmasi_tutup_upcoming')) {
+            return $this->error(
+                'Semester berikut masih berstatus Upcoming dan akan ditutup paksa: '
+                . $upcomingSemesters->join(', ')
+                . '. Kirim ulang dengan konfirmasi_tutup_upcoming=true untuk melanjutkan.',
+                'UPCOMING_SEMESTER_WARNING',
+                422
+            );
+        }
 
         DB::beginTransaction();
         try {
@@ -460,6 +419,7 @@ class TahunAjaranController extends Controller
                 'tahun_ajaran',
                 $tahunAjaran->id,
                 "Wakasek menyelesaikan (tutup buku) tahun ajaran {$tahunAjaran->tahun}."
+                . ($upcomingSemesters->isNotEmpty() ? " Semester upcoming yang ditutup paksa: {$upcomingSemesters->join(', ')}." : '')
             );
 
             DB::commit();
