@@ -1,0 +1,51 @@
+=== DIAGNOSA KURIKULUM — 2026-10-03 21:56:05 ===
+
+--- A. STATUS MIGRATION ---
+[A1. migration 09_03 / 09_08 yang sudah Ran] 
+    2026_09_03_000001_create_kurikulums_table
+    2026_09_03_000002_migrate_kurikulum_enum_to_fk
+    2026_09_03_000003_seed_kurikulum_permissions
+    2026_09_03_000004_create_kurikulum_pivot_tables
+    2026_09_03_000005_add_softdelete_to_kurikulum_komponen_nilaians
+    2026_09_08_000001_fix_tahun_ajaran_audit_ulid_and_guru_mutasi_table
+    2026_09_08_000002_fix_kurikulum_enum_consistency
+
+--- B. MATRIKS KOMPATIBILITAS ---
+[B1. kurikulum_program_pendidikans (total baris)] 0
+[B2. program_pendidikans (total baris)] 0
+[B3. program_pendidikans WHERE school_id IS NULL] 0
+[B4. kolom program_pendidikans.school_id] nullable=NO, tipe=bigint unsigned
+[B5. jumlah program per jenis] (kosong)
+
+--- C. KELAS ---
+[C1. kelas (total baris)] 2
+[C2. kelas WHERE kurikulum_id IS NULL] 2
+[C3. kolom kelas.kurikulum (tipe ENUM saat ini)] nullable=NO, tipe=enum('K13','Merdeka','Keduanya')
+[C4. sebaran nilai kelas.kurikulum] Merdeka=2
+[C5. sebaran kelas.kurikulum_id] NULL=2
+
+--- D. DUPLIKAT (UNIQUE TIDAK BERLAKU SAAT KOLOM NULL) ---
+[D1. kurikulums platform dengan kode kembar] tidak ada (OK)
+[D2. kurikulum_program_pendidikans platform kembar] tidak ada (OK)
+[D3. kurikulum_tahun_ajarans kembar (semester_id NULL)] tidak ada (OK)
+
+--- E. DATA KURIKULUM & IMPLEMENTASI ---
+[E1. kurikulums (total baris)] 4
+[E2. kurikulums per school_id (NULL = platform)] school#NULL=4
+[E3. kurikulum_tahun_ajarans (total baris)] 0
+[E4. kurikulum_komponen_nilaians (total baris)] 10
+
+--- F. MAPEL (bahan rencana backfill struktur) ---
+[F1. mapels (total baris, termasuk soft-deleted)] 0
+[F2. mapels WHERE kurikulum_id IS NULL] 0
+[F3. mapels.tingkat berformat CSV (mengandung koma)] 0
+[F4. mapels.tingkat NULL (berlaku semua tingkat)] 0
+[F5. sebaran mapels.kelompok] (kosong)
+[F6. kolom mapels.kurikulum] nullable=YES, tipe=varchar(50)
+[F7. mapels dengan program_pendidikan_id terisi] 0
+
+--- G. PENUGASAN GURU ---
+[G1. plot_guru_mapels (total baris)] 0
+[G2. plot_guru_mapels dengan beban_jam = 0] 0
+
+=== SELESAI. Tidak ada perubahan data/skema. ===
