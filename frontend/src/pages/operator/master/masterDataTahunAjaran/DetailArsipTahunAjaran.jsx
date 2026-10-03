@@ -4,7 +4,7 @@ export default function DetailArsipTahunAjaran() {
   return (
     <DetailArsipBase
       basePath="/operator/master/tahun-ajaran"
-      apiBase="/operator/tahun-ajaran"
+      apiBase="/operator/master-data/tahun-ajaran"
     />
   );
 }

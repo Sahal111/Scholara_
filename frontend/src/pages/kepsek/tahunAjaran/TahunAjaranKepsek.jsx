@@ -255,6 +255,7 @@ function ModalReject({ item, onClose }) {
 // ── Modal Aktifkan ────────────────────────────────────────────────────────────
 function ModalAktifkan({ item, onClose }) {
   const aktifkanMut = useAktifkanTahunAjaran();
+  const [catatan, setCatatan] = useState("");
 
   return createPortal(
     <div
@@ -289,6 +290,14 @@ function ModalAktifkan({ item, onClose }) {
             <strong>Selesai</strong>.
           </p>
         </div>
+        <textarea
+          value={catatan}
+          onChange={(e) => setCatatan(e.target.value)}
+          maxLength={500}
+          rows={2}
+          placeholder="Catatan untuk wakasek / operator (opsional)"
+          className="w-full mb-5 px-3 py-2 rounded-xl border border-gray-200 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-green-200 focus:border-green-400 resize-none"
+        />
         <div className="flex gap-3">
           <button
             type="button"
@@ -301,7 +310,10 @@ function ModalAktifkan({ item, onClose }) {
           <button
             type="button"
             onClick={() =>
-              aktifkanMut.mutate(item.ulid, { onSuccess: onClose })
+              aktifkanMut.mutate(
+                { ulid: item.ulid, catatan: catatan.trim() },
+                { onSuccess: onClose },
+              )
             }
             disabled={aktifkanMut.isPending}
             className="flex-1 py-2.5 rounded-xl bg-green-600 text-white text-sm font-semibold hover:bg-green-700 transition disabled:opacity-50 flex items-center justify-center gap-2"

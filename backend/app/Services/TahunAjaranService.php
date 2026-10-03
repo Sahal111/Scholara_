@@ -239,12 +239,26 @@ class TahunAjaranService
         $hariEfektif = $hariTotal !== null ? max(0, $hariTotal - $totalHariLibur) : null;
 
         // ── Aktivitas log ─────────────────────────────────────────────────────
+        // Termasuk log edit semester (module 'semester') milik TA ini, supaya
+        // alasan edit tanggal semester terlihat di feed aktivitas.
+        $semesterIds = $semesters->pluck('id');
         $aktivitas = ActivityLog::with('user:id,username')
-            ->where('module', 'tahun_ajaran')
-            ->where('subject_id', $id)
+            ->where(function ($q) use ($id, $semesterIds) {
+                $q->where(fn($w) => $w->where('module', 'tahun_ajaran')->where('subject_id', $id))
+                    ->orWhere(fn($w) => $w->where('module', 'semester')->whereIn('subject_id', $semesterIds));
+            })
             ->latest()
-            ->take(8)
-            ->get(['id', 'user_id', 'action', 'keterangan', 'created_at']);
+            ->take(15)
+            ->get(['id', 'user_id', 'action', 'module', 'subject_id', 'keterangan', 'created_at']);
+
+        // Petakan log semester ke ulid-nya (id internal tidak diekspos ke frontend)
+        $semesterUlidById = $semesters->pluck('ulid', 'id');
+        $aktivitas->each(function ($log) use ($semesterUlidById) {
+            $log->semester_ulid = $log->module === 'semester'
+                ? ($semesterUlidById[$log->subject_id] ?? null)
+                : null;
+            $log->makeHidden(['subject_id']);
+        });
 
         // ── Navigasi prev/next TA — pakai ulid agar konsisten dengan standar API ──
         $allTA = TahunAjaran::orderBy('tahun')->pluck('tahun', 'ulid');

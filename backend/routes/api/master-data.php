@@ -251,7 +251,7 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
             // Static routes BEFORE /{ulid} wildcard
             Route::get('/tahun-ajaran/trash', [TahunAjaranController::class, 'trash']);
             Route::get('/tahun-ajaran/arsip', [TahunAjaranController::class, 'arsipList']);
-            Route::get('/tahun-ajaran/{ulid}', [TahunAjaranController::class, 'show']);
+            Route::get('/tahun-ajaran/{ulid}', [TahunAjaranController::class, 'show'])->whereUlid('ulid');
         });
 
         // Operator: administrasi data (create/update/delete hanya saat DRAFT)

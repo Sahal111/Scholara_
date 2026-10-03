@@ -39,7 +39,7 @@ export function useTahunAjaranDetail(id) {
     queryKey: tahunAjaranKeys.detail(id),
     queryFn: async () => {
       const { data } = await api.get(`${BASE}/${id}`);
-      return data;
+      return data.data;
     },
     enabled: Boolean(id),
     staleTime: 60_000,
@@ -179,8 +179,13 @@ export function useRejectTahunAjaran() {
 export function useAktifkanTahunAjaran() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (ulid) => api.patch(`${BASE}/${ulid}/aktifkan`),
-    onSuccess: (_, ulid) => {
+    // Terima string ulid (legacy) atau { ulid, catatan }
+    mutationFn: (arg) => {
+      const { ulid, catatan } = typeof arg === "string" ? { ulid: arg } : arg;
+      return api.patch(`${BASE}/${ulid}/aktifkan`, catatan ? { catatan } : {});
+    },
+    onSuccess: (_, arg) => {
+      const ulid = typeof arg === "string" ? arg : arg.ulid;
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.lists() });
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.detail(ulid) });
       qc.invalidateQueries({ queryKey: tahunAjaranKeys.dropdown() });

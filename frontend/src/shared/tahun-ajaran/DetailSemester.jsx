@@ -126,11 +126,14 @@ export default function DetailSemester({
     );
   }
 
-  const payload = data.data;
+  const payload = data;
   const kelasList = payload.kelas ?? [];
   const kalenderAll = payload.kalender ?? [];
   const aktivitas = payload.aktivitas ?? [];
   const checklist = payload.checklist ?? {};
+  const riwayatSemester = aktivitas
+    .filter((a) => a.semester_ulid && a.semester_ulid === semester.ulid)
+    .slice(0, 5);
   const tglMulai = semester.tgl_mulai;
   const tglSelesai = semester.tgl_selesai;
   const isAktif = semester.is_active;
@@ -241,6 +244,50 @@ export default function DetailSemester({
           <div className="absolute -top-40 right-0 w-[600px] h-[600px] rounded-full bg-[#006e2a] opacity-[0.05] filter blur-[120px]" />
           <div className="absolute -bottom-40 -left-40 w-[800px] h-[800px] rounded-full bg-[#ffdeac] opacity-[0.05] filter blur-[120px]" />
         </div>
+        
+        {(ta.catatan_review || riwayatSemester.length > 0) && (
+          <section className="relative z-10 space-y-3">
+            {ta.catatan_review && (
+              <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+                <span className="material-symbols-outlined text-amber-500 text-xl shrink-0">
+                  sticky_note_2
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">
+                    Catatan Kepala Sekolah
+                  </p>
+                  <p className="text-sm text-amber-900 leading-relaxed break-words">
+                    {ta.catatan_review}
+                  </p>
+                </div>
+              </div>
+            )}
+            {riwayatSemester.length > 0 && (
+              <div className="rounded-2xl border border-[#bfc9c4]/30 bg-white/70 px-5 py-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#3f4945]/60 mb-3">
+                  Riwayat Perubahan Semester {semester.nama}
+                </p>
+                <ul className="space-y-2.5">
+                  {riwayatSemester.map((act) => (
+                    <li
+                      key={act.id}
+                      className="text-xs text-[#3f4945] leading-relaxed"
+                    >
+                      <span className="font-bold text-[#00342b]">
+                        {act.user?.username ?? "Sistem"}
+                      </span>
+                      <span className="text-[#3f4945]/50">
+                        {" "}
+                        · {fmt(act.created_at)}
+                      </span>
+                      <p className="mt-0.5 break-words">{act.keterangan}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
 
         {/* ── SECTION: Header ── */}
         <section className="relative z-10">

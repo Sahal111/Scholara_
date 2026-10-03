@@ -347,7 +347,8 @@ frontend/src/
 - [x] Master Data Orang Tua — CRUD, attach anak, detail keluarga — `MasterOrtu.jsx`, `DetailOrtu.jsx`, `TambahEditOrtu.jsx`
 - [x] Master Data Mapel — CRUD, toggle aktif, import/export/template Excel (.xlsx) — `MasterMapel.jsx`, `MasterDataMapelController.php`
 - [x] Master Data Jadwal Pelajaran — CRUD — `MasterJadwal.jsx`, `JadwalPelajaranController.php`
-- [x] **Master Data Tahun Ajaran & Semester** — CRUD tahun ajaran, CRUD semester, set aktif, set semester aktif, detail TA, detail Semester, validasi hapus & DB integrity — `TahunAjaranSemester.jsx`, `DetailTahunAjaran.jsx`, `DetailSemester.jsx`, `TahunAjaranController.php`
+- [x] **Master Data Tahun Ajaran & Semester (CRUD)** — CRUD tahun ajaran, CRUD semester, set aktif, set semester aktif, validasi hapus & DB integrity (lolos tes) — `TahunAjaranSemester.jsx`, `TahunAjaranController.php`, `SemesterController.php`
+  - ⚠️ Yang COMPLETED hanya CRUD-nya. Halaman **isi** Detail TA, Detail Semester, dan Detail Arsip BELUM selesai — lihat section 13.
 - [x] Naik Kelas — preview & proses massal — `NaikKelas.jsx`, `NaikKelasController.php`
 - [x] Pengumuman — CRUD — `PengumumanOperator.jsx`, `PengumumanController.php`
 - [x] Galeri Foto — upload & hapus — `GaleriOperator.jsx`, `GaleriController.php`
@@ -419,12 +420,32 @@ frontend/src/
 - [x] Fix route mapel: `/export`, `/import`, `/template` didaftarkan SEBELUM `/{id}` agar tidak jatuh ke wildcard
 - [x] Fix import/export mapel: ganti CSV → Excel (.xlsx) menggunakan PhpSpreadsheet
 - [x] Fix `WaliKelasLayout.jsx`: path diperbaiki dari `/wakasek/*` ke `/walikelas/*`
+- [x] Fix cache React Query tahun ajaran: `useTahunAjaranDetail` harus mengembalikan `data.data` (sudah di-unwrap), karena key `tahunAjaranKeys.detail(ulid)` dipakai juga oleh `DetailTahunAjaran` & `DetailSemester`. Bentuk berbeda → "Semester tidak ditemukan" / crash `s.status` sampai halaman di-refresh
+- [x] Fix route `GET /operator/master-data/tahun-ajaran/{ulid}` diberi `->whereUlid('ulid')` agar `/tahun-ajaran/aktif` (didaftarkan di group lain) tidak tertangkap wildcard dan 404
 
 ---
 
 ## 13. 🚧 IN PROGRESS — Sedang Dikerjakan
 
-- [ ] *(kosong)*
+Modul **Tahun Ajaran & Semester** — CRUD sudah COMPLETED (section 12). Yang belum selesai / belum lolos tes adalah **isi halaman detail**:
+
+- [ ] **Isi Detail Tahun Ajaran** — `shared/tahun-ajaran/DetailTahunAjaran.jsx` (wrapper per role: operator, wakasek, kepsek)
+- [ ] **Isi Detail Semester** — `shared/tahun-ajaran/DetailSemester.jsx`
+- [ ] **Isi Detail Arsip** — `shared/tahun-ajaran/DetailArsipTahunAjaran.jsx`
+
+**Perubahan yang sudah masuk tapi belum lolos tes** (jangan dianggap selesai):
+- `DetailSemester`: `payload` sekarang = `data` (hasil `buildDetail`), bukan `data.data`; ditambah blok catatan Kepsek + riwayat perubahan semester
+- `DetailTahunAjaran`: banner catatan Kepsek, feed aktivitas 5 entri, tombol kelas disembunyikan jika `kelasPath` null (Kepsek tidak punya halaman kelas → wrapper Kepsek set `kelasPath={null}`)
+- Catatan Kepsek saat **Aktifkan** (opsional) disimpan ke `catatan_review` + ActivityLog; log edit semester (`module = 'semester'`) ikut tampil di feed aktivitas TA lewat `semester_ulid`
+- `DetailArsipTahunAjaran` operator: `apiBase` dibetulkan ke `/operator/master-data/tahun-ajaran`
+
+**Known issues / TODO:**
+- Tombol "Edit Semester" tampil untuk semua role tanpa cek permission; input `tgl_mulai` terkunci saat semester `active` (disengaja, backend `ACTIVE_SEMESTER_LOCKED`) tapi UI belum menjelaskan alasannya
+- Wrapper wakasek untuk detail arsip masih salah `apiBase` (`/wakasek/tahun-ajaran`); file tidak dipakai karena `App.jsx` import langsung dari shared
+- Feed "Log Perubahan Terbaru" di Detail TA: tombol "Lihat Semua" masih membuka modal checklist, bukan daftar log lengkap
+- Layar putih total di halaman Kepsek (tanpa sidebar) pernah dilaporkan; penyebabnya belum terverifikasi setelah fix `kelasPath` — butuh error console + URL jika muncul lagi
+
+> Pindahkan ke COMPLETED hanya setelah user bilang "done" / "selesai" per halaman detail.
 
 ---
 

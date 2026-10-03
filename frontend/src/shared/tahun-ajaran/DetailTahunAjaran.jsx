@@ -277,6 +277,22 @@ export default function DetailTahunAjaran({
         </div>
       </div>
 
+      {ta.catatan_review && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+          <span className="material-symbols-outlined text-amber-500 text-xl shrink-0">
+            sticky_note_2
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-1">
+              Catatan Kepala Sekolah
+            </p>
+            <p className="text-sm text-amber-900 leading-relaxed break-words">
+              {ta.catatan_review}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── 2. Hero Header Section ── */}
       <section className="animate-fade-in-up">
         <div className="glass-panel rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 lg:p-12 border border-white/80 shadow-[0_20px_50px_rgba(0,52,43,0.05)] relative overflow-hidden group">
@@ -2421,13 +2437,17 @@ export default function DetailTahunAjaran({
                 className="pl-9 pr-4 py-2 rounded-full border border-[#bfc9c4]/40 text-xs bg-white focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] outline-none w-48 sm:w-64"
               />
             </div>
-            <button
-              onClick={() => navigate(kelasPath)}
-              className="px-4 py-2 rounded-full bg-[#00342b] text-white text-xs font-bold hover:bg-[#004d40] transition-colors flex items-center gap-1.5 shrink-0"
-            >
-              <span className="material-symbols-outlined text-[16px]">add</span>
-              Kelola Kelas
-            </button>
+            {kelasPath && (
+              <button
+                onClick={() => navigate(kelasPath)}
+                className="px-4 py-2 rounded-full bg-[#00342b] text-white text-xs font-bold hover:bg-[#004d40] transition-colors flex items-center gap-1.5 shrink-0"
+              >
+                <span className="material-symbols-outlined text-[16px]">
+                  add
+                </span>
+                Kelola Kelas
+              </button>
+            )}
           </div>
         </div>
 
@@ -2439,7 +2459,7 @@ export default function DetailTahunAjaran({
             <p className="text-sm font-medium">
               Belum ada kelas yang terdaftar pada tahun ajaran ini.
             </p>
-            {canManage && (
+            {canManage && kelasPath && (
               <button
                 onClick={() => navigate(kelasPath)}
                 className="text-[#006e2a] text-xs font-bold hover:underline"
@@ -2536,12 +2556,14 @@ export default function DetailTahunAjaran({
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      <button
-                        onClick={() => navigate(`${kelasPath}/${k.id}`)}
-                        className="px-3 py-1 rounded-full border border-[#00342b]/20 hover:border-[#00342b] text-[#00342b] hover:bg-[#00342b]/5 font-bold transition-all text-[11px]"
-                      >
-                        Detail
-                      </button>
+                      {kelasPath && (
+                        <button
+                          onClick={() => navigate(`${kelasPath}/${k.id}`)}
+                          className="px-3 py-1 rounded-full border border-[#00342b]/20 hover:border-[#00342b] text-[#00342b] hover:bg-[#00342b]/5 font-bold transition-all text-[11px]"
+                        >
+                          Detail
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -2582,7 +2604,7 @@ export default function DetailTahunAjaran({
 
             <div className="flex flex-col gap-6">
               {aktivitas.length > 0 ? (
-                aktivitas.slice(0, 3).map((act, index) => (
+                aktivitas.slice(0, 5).map((act, index) => (
                   <div
                     key={act.id || index}
                     className="relative flex gap-4 sm:gap-6 group/item cursor-pointer p-2 -ml-2 rounded-2xl transition-all duration-500 ease-out hover:-translate-y-1 hover:shadow-xl hover:shadow-[#00342b]/5 hover:bg-white/60"

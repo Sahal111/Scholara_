@@ -320,10 +320,14 @@ class TahunAjaranController extends Controller
      * Hanya satu TA yang boleh ACTIVE per sekolah.
      * Otomatis set semester Ganjil sebagai aktif.
      */
-    public function aktifkan(string $ulid): JsonResponse
+    public function aktifkan(Request $request, string $ulid): JsonResponse
     {
         $tahunAjaran = TahunAjaran::with('semesters')->where('ulid', $ulid)->firstOrFail();
         Gate::authorize('activate', $tahunAjaran);
+        $validated = $request->validate([
+            'catatan' => ['nullable', 'string', 'max:500'],
+        ]);
+        $catatan = trim($validated['catatan'] ?? '');
 
         $schoolId = $tahunAjaran->school_id;
 
@@ -341,8 +345,11 @@ class TahunAjaranController extends Controller
                         ->each(fn(Semester $s) => $s->update(['status' => StatusSemester::CLOSED]));
                 });
 
-            // Aktifkan TA
-            $tahunAjaran->update(['status' => StatusTahunAjaran::ACTIVE]);
+            // Aktifkan TA. Catatan kepsek (jika diisi) disimpan agar terlihat wakasek/operator.
+            $tahunAjaran->update(array_filter([
+                'status' => StatusTahunAjaran::ACTIVE,
+                'catatan_review' => $catatan !== '' ? $catatan : null,
+            ], fn($v) => $v !== null));
 
             // Aktifkan semester pertama (urut tgl_mulai) — tidak hardcode nama 'Ganjil'
             // agar kompatibel dengan sekolah yang menamai semesternya berbeda
@@ -360,7 +367,8 @@ class TahunAjaranController extends Controller
                 'tahun_ajaran',
                 $tahunAjaran->id,
                 "Kepsek mengaktifkan tahun ajaran {$tahunAjaran->tahun}." .
-                ($semesterPertama ? " Semester {$semesterPertama->nama} otomatis aktif." : '')
+                ($semesterPertama ? " Semester {$semesterPertama->nama} otomatis aktif." : '') .
+                ($catatan !== '' ? " Catatan: {$catatan}" : '')
             );
 
             DB::commit();
