@@ -243,25 +243,28 @@ class KurikulumService
         });
     }
 
-    // ── Validasi Kompatibilitas (dipakai service lain) ───────────────────────
-
     /**
      * Validasi apakah kombinasi kurikulum + program_pendidikan valid.
-     * Dipakai oleh KelasService sebelum simpan kelas baru.
+     * Aturan dibaca dari `kurikulum_jenis_programs` (per JENIS program).
+     *
+     * CATATAN: belum dipanggil dari mana pun — akan dipasang di Kelas pada tahap
+     * berikutnya, setelah backfill implementasi kurikulum berjalan.
      *
      * @throws \DomainException jika tidak kompatibel
      */
     public function assertProgramKompatibel(int $kurikulumId, int $programPendidikanId): void
     {
-        $kompatibel = \DB::table('kurikulum_program_pendidikans')
-            ->where('kurikulum_id', $kurikulumId)
-            ->where('program_pendidikan_id', $programPendidikanId)
-            ->where('is_active', true)
-            ->exists();
+        $program = \App\Models\ProgramPendidikan::find($programPendidikanId);
+
+        $kompatibel = $program !== null
+            && DB::table('kurikulum_jenis_programs')
+                ->where('kurikulum_id', $kurikulumId)
+                ->where('jenis_program', $program->jenis)
+                ->where('is_active', true)
+                ->exists();
 
         if (!$kompatibel) {
             $kurikulum = Kurikulum::find($kurikulumId);
-            $program = \App\Models\ProgramPendidikan::find($programPendidikanId);
 
             throw new \DomainException(
                 "Program \"{$program?->nama}\" tidak kompatibel dengan kurikulum \"{$kurikulum?->nama}\". " .
@@ -410,20 +413,33 @@ class KurikulumService
      */
     public function programKompatibel(int $schoolId, int $kurikulumId): \Illuminate\Support\Collection
     {
-        return \DB::table('kurikulum_program_pendidikans as kpp')
-            ->join('program_pendidikans as pp', 'pp.id', '=', 'kpp.program_pendidikan_id')
-            ->where('kpp.kurikulum_id', $kurikulumId)
-            ->where('kpp.is_active', true)
-            ->where(function ($q) use ($schoolId) {
-                $q->whereNull('kpp.school_id')
-                    ->orWhere('kpp.school_id', $schoolId);
-            })
+        return DB::table('kurikulum_jenis_programs as kjp')
+            ->join('program_pendidikans as pp', 'pp.jenis', '=', 'kjp.jenis_program')
+            ->where('kjp.kurikulum_id', $kurikulumId)
+            ->where('kjp.is_active', true)
+            ->where('pp.school_id', $schoolId)
             ->whereNull('pp.deleted_at')
-            ->select(['pp.id', 'pp.ulid', 'pp.nama', 'pp.jenis', 'pp.jenjang_sasaran', 'kpp.catatan'])
+            ->select(['pp.id', 'pp.ulid', 'pp.nama', 'pp.jenis', 'pp.jenjang_sasaran', 'kjp.catatan'])
             ->orderBy('pp.jenis')
             ->get();
     }
 
+    // ── Resolusi nilai legacy (kelas.kurikulum → kurikulums.id) ───────────────
+
+    public function resolveIdDariLegacy(?string $legacy): ?int
+    {
+        $platform = fn() => DB::table('kurikulums')
+            ->whereNull('school_id')
+            ->whereNull('deleted_at');
+
+        $kode = $legacy === 'K13' ? 'K13' : 'MERDEKA';
+
+        $id = $platform()->where('kode', $kode)->value('id')
+            ?? $platform()->where('is_platform_default', true)->value('id');
+
+        return $id !== null ? (int) $id : null;
+    }
+    
     // ── Helpers Private ──────────────────────────────────────────────────────
 
     private function syncKomponenNilais(Kurikulum $kurikulum, int $schoolId, array $komponens): void

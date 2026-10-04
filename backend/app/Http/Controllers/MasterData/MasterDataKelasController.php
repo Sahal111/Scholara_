@@ -10,11 +10,16 @@ use App\Http\Requests\Kelas\UpdateKelasRequest;
 use App\Models\Kelas;
 use App\Models\RiwayatKelas;
 use App\Models\TahunAjaran;
+use App\Services\KurikulumService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class MasterDataKelasController extends Controller
 {
+    public function __construct(
+        private readonly KurikulumService $kurikulumService
+    ) {}
+
     public function index(Request $request)
     {
         $tahunAjaranAktif = \App\Models\TahunAjaran::where('is_active', true)->value('id');
@@ -69,6 +74,7 @@ class MasterDataKelasController extends Controller
             'tingkat' => $request->tingkat,
             'program_pendidikan_id' => $request->program_pendidikan_id,
             'kurikulum' => $request->kurikulum,
+            'kurikulum_id' => $this->kurikulumService->resolveIdDariLegacy($request->kurikulum),
             'wali_kelas_id' => $request->wali_kelas_id,
             'kapasitas' => $request->kapasitas,
             'ruangan' => $request->ruangan,
@@ -90,6 +96,10 @@ class MasterDataKelasController extends Controller
             // program_pendidikan_id boleh di-null-kan (sekolah ubah jenjang kelas)
             'program_pendidikan_id' => $request->has('program_pendidikan_id') ? $request->program_pendidikan_id : $kelas->program_pendidikan_id,
             'kurikulum' => $request->kurikulum,
+            // Hitung ulang hanya jika kurikulum berubah / belum terisi (jangan timpa pilihan custom)
+            'kurikulum_id' => ($kelas->kurikulum_id === null || $request->kurikulum !== $kelas->kurikulum)
+                ? $this->kurikulumService->resolveIdDariLegacy($request->kurikulum)
+                : $kelas->kurikulum_id,
             'wali_kelas_id' => $request->has('wali_kelas_id') ? $request->wali_kelas_id : $kelas->wali_kelas_id,
             'kapasitas' => $request->kapasitas ?? $kelas->kapasitas,
             'ruangan' => $request->ruangan ?? $kelas->ruangan,
