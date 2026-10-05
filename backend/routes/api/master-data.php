@@ -12,6 +12,7 @@ use App\Http\Controllers\MasterData\Guru\GuruMutasiController;
 use App\Http\Controllers\MasterData\GuruCutiController;
 use App\Http\Controllers\MasterData\JadwalPelajaranController;
 use App\Http\Controllers\MasterData\KurikulumController;
+use App\Http\Controllers\MasterData\KurikulumStrukturController;
 use App\Http\Controllers\MasterData\ProgramPendidikanController;
 use App\Http\Controllers\MasterData\MasterDataKelasController;
 use App\Http\Controllers\MasterData\MasterDataMapelController;
@@ -419,6 +420,21 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
         Route::middleware('permission:master_data.kurikulum.view')->group(function () {
             Route::get('/kurikulum/tahun-ajaran/{tahunAjaranId}', [KurikulumController::class, 'kurikulumUntukTahunAjaran'])
                 ->name('master-data.kurikulum.tahun-ajaran.index');
+        });
+
+        // ── Struktur kurikulum (mapel + alokasi JP per implementasi × tingkat × program) ──
+        Route::middleware('permission:master_data.kurikulum.view')->group(function () {
+            Route::get('/kurikulum/implementasi/{implementasiUlid}/struktur', [KurikulumStrukturController::class, 'index'])
+                ->name('master-data.kurikulum.struktur.index');
+        });
+
+        Route::middleware('permission:master_data.kurikulum.manage')->group(function () {
+            Route::post('/kurikulum/implementasi/{implementasiUlid}/struktur', [KurikulumStrukturController::class, 'store'])
+                ->name('master-data.kurikulum.struktur.store');
+            Route::put('/kurikulum/struktur/{ulid}', [KurikulumStrukturController::class, 'update'])
+                ->name('master-data.kurikulum.struktur.update');
+            Route::delete('/kurikulum/struktur/{ulid}', [KurikulumStrukturController::class, 'destroy'])
+                ->name('master-data.kurikulum.struktur.destroy');
         });
 
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────

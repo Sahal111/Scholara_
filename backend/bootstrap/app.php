@@ -31,6 +31,19 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 
+        // Pelanggaran aturan bisnis dari Service (mis. KurikulumService) → 422, bukan 500.
+        // Pesan exception sengaja ditampilkan: ditulis untuk pengguna (Bahasa Indonesia).
+        $exceptions->dontReport(\DomainException::class);
+        $exceptions->render(function (\DomainException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'DOMAIN_ERROR',
+                    'message' => $e->getMessage(),
+                ], 422);
+            }
+        });
+
         // Validation error → 422
         $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
             if ($request->expectsJson()) {

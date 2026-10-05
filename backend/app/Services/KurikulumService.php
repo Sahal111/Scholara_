@@ -340,6 +340,7 @@ class KurikulumService
             ->firstOrFail();
 
         \DB::table('kurikulum_tahun_ajarans')->insertOrIgnore([
+            'ulid' => (string) \Illuminate\Support\Str::ulid(),
             'school_id' => $schoolId,
             'kurikulum_id' => $kurikulum->id,
             'tahun_ajaran_id' => $tahunAjaran->id,
@@ -368,6 +369,7 @@ class KurikulumService
             ->where('kta.is_active', true)
             ->whereNull('k.deleted_at')
             ->select([
+                'kta.ulid as implementasi_ulid',
                 'k.ulid',
                 'k.nama',
                 'k.kode',
