@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\StatusImplementasiKurikulum;
 use App\Models\KurikulumStruktur;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\DB;
  *
  * Aturan bisnis:
  *   - Implementasi harus milik sekolah ini dan masih aktif.
+ *   - Struktur hanya bisa diubah saat status implementasi = DRAFT
+ *     (terkunci saat UNDER_REVIEW, APPROVED, ACTIVE, COMPLETED).
  *   - Tingkat harus termasuk tingkat_kelas implementasi (jika dibatasi).
  *   - Program (jika diisi) harus kompatibel dengan kurikulum (per JENIS program).
  *   - Satu mapel hanya sekali per (implementasi, tingkat, program).
@@ -56,7 +59,7 @@ class KurikulumStrukturService
         return KurikulumStruktur::query()
             ->where('school_id', $schoolId)
             ->where('kurikulum_tahun_ajaran_id', $implementasiId)
-            ->when($tingkat !== null, fn($q) => $q->where('tingkat', $tingkat))
+            ->when($tingkat !== null, fn ($q) => $q->where('tingkat', $tingkat))
             ->when($programId !== null, function ($q) use ($programId) {
                 $q->where(function ($w) use ($programId) {
                     $w->whereNull('program_pendidikan_id')
@@ -84,9 +87,7 @@ class KurikulumStrukturService
      */
     public function tambah(object $implementasi, array $data): KurikulumStruktur
     {
-        if (!$implementasi->is_active) {
-            throw new \DomainException('Implementasi kurikulum ini tidak aktif, struktur tidak bisa diubah.');
-        }
+        $this->assertBisaDiedit($implementasi);
 
         $this->assertTingkatDiizinkan($implementasi, (int) $data['tingkat']);
 
@@ -122,6 +123,8 @@ class KurikulumStrukturService
             ->where('ulid', $ulid)
             ->firstOrFail();
 
+        $this->assertBisaDiedit($this->implementasiDari($struktur));
+
         $struktur->update(Arr::only($data, [
             'kelompok',
             'alokasi_jp_minggu',
@@ -136,14 +139,48 @@ class KurikulumStrukturService
 
     public function hapus(int $schoolId, string $ulid): void
     {
-        KurikulumStruktur::query()
+        $struktur = KurikulumStruktur::query()
             ->where('school_id', $schoolId)
             ->where('ulid', $ulid)
-            ->firstOrFail()
-            ->delete();
+            ->firstOrFail();
+
+        $this->assertBisaDiedit($this->implementasiDari($struktur));
+
+        $struktur->delete();
     }
 
     // ── Private ──────────────────────────────────────────────────────────────
+
+    private function implementasiDari(KurikulumStruktur $struktur): object
+    {
+        return DB::table('kurikulum_tahun_ajarans')
+            ->where('id', $struktur->kurikulum_tahun_ajaran_id)
+            ->first();
+    }
+
+    /**
+     * Struktur hanya boleh diubah saat implementasi aktif-secara-flag DAN
+     * berstatus DRAFT.
+     *
+     * @throws \DomainException
+     */
+    private function assertBisaDiedit(object $implementasi): void
+    {
+        if (!$implementasi->is_active) {
+            throw new \DomainException(
+                'Implementasi kurikulum ini dinonaktifkan, struktur tidak bisa diubah.'
+            );
+        }
+
+        $status = StatusImplementasiKurikulum::dari($implementasi->status ?? null);
+
+        if (!$status->isEditable()) {
+            throw new \DomainException(
+                "Struktur terkunci karena berstatus \"{$status->label()}\". "
+                . 'Hanya struktur berstatus Draft yang bisa diubah.'
+            );
+        }
+    }
 
     /**
      * tingkat_kelas NULL = semua tingkat; selain itu hanya tingkat yang terdaftar.
