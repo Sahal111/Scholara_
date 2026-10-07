@@ -12,6 +12,7 @@ use App\Http\Controllers\MasterData\Guru\GuruMutasiController;
 use App\Http\Controllers\MasterData\GuruCutiController;
 use App\Http\Controllers\MasterData\JadwalPelajaranController;
 use App\Http\Controllers\MasterData\KurikulumController;
+use App\Http\Controllers\MasterData\KurikulumCakupanController;
 use App\Http\Controllers\MasterData\KurikulumStrukturController;
 use App\Http\Controllers\MasterData\ProgramPendidikanController;
 use App\Http\Controllers\MasterData\MasterDataKelasController;
@@ -396,6 +397,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
                 ->name('master-data.kurikulum.index');
             Route::get('/kurikulum/{ulid}', [KurikulumController::class, 'show'])
                 ->name('master-data.kurikulum.show');
+            Route::get('/kurikulum/implementasi/{ulid}/cakupan', [KurikulumCakupanController::class, 'index'])
+                ->name('master-data.kurikulum.implementasi.cakupan');
         });
 
         Route::middleware('permission:master_data.kurikulum.manage')->group(function () {
