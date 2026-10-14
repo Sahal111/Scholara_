@@ -259,6 +259,10 @@ class SchoolSeeder extends Seeder
             // kurikulum — fleksibel per sekolah, bisa custom atau pakai platform default
             ['slug' => 'master_data.kurikulum.view', 'nama' => 'Lihat Kurikulum', 'modul' => 'master_data'],
             ['slug' => 'master_data.kurikulum.manage', 'nama' => 'Kelola Kurikulum', 'modul' => 'master_data'],
+            ['slug' => 'master_data.kurikulum.review', 'nama' => 'Ajukan Struktur Kurikulum ke Review', 'modul' => 'master_data'],
+            ['slug' => 'master_data.kurikulum.approve', 'nama' => 'Approve / Reject Struktur Kurikulum', 'modul' => 'master_data'],
+            ['slug' => 'master_data.kurikulum.activate', 'nama' => 'Aktifkan Struktur Kurikulum', 'modul' => 'master_data'],
+            ['slug' => 'master_data.kurikulum.complete', 'nama' => 'Selesaikan Struktur Kurikulum', 'modul' => 'master_data'],
 
             // absensi
             ['slug' => 'absensi.input', 'nama' => 'Input Absensi', 'modul' => 'absensi'],
@@ -389,6 +393,10 @@ class SchoolSeeder extends Seeder
                     'master_data.mapel.manage',
                     'master_data.program.manage',
                     'master_data.kurikulum.manage',
+                    'master_data.kurikulum.review',
+                    'master_data.kurikulum.approve',
+                    'master_data.kurikulum.activate',
+                    'master_data.kurikulum.complete',
                     'akademik.jadwal.manage',
                     'akademik.kalender.manage',
                     'akademik.rapor.manage',
@@ -426,6 +434,8 @@ class SchoolSeeder extends Seeder
                 'master_data.semester.view',
                 'master_data.program.view',
                 'master_data.kurikulum.view',
+                'master_data.kurikulum.approve',
+                'master_data.kurikulum.activate',
 
                 // Akademik — pantau semua, tidak kelola
                 'akademik.jadwal.view',
@@ -564,6 +574,8 @@ class SchoolSeeder extends Seeder
                 'master_data.program.manage',
                 'master_data.kurikulum.view',
                 'master_data.kurikulum.manage',
+                'master_data.kurikulum.review',
+                'master_data.kurikulum.complete',
 
                 // ── Akademik operasional ──
                 'akademik.jadwal.view',

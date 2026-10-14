@@ -64,3 +64,51 @@
 [2026-10-14 16:20:11] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
 [2026-10-14 16:20:11] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
 [2026-10-14 16:20:11] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: siswas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: siswas.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: siswas.nisn selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: gurus.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: gurus.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: gurus.nip selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: gurus.nuptk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: orang_tuas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:30] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:27:32] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":6} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: siswas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: siswas.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: siswas.nisn selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: gurus.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: gurus.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: gurus.nip selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: gurus.nuptk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: orang_tuas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:09] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:28:11] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":6} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: siswas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: siswas.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: siswas.nisn selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: gurus.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: gurus.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: gurus.nip selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: gurus.nuptk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: orang_tuas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:18] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:40:21] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":7} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: siswas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: siswas.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: siswas.nisn selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: gurus.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: gurus.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: gurus.nip selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: gurus.nuptk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: orang_tuas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:06] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-14 16:41:09] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":7} 
