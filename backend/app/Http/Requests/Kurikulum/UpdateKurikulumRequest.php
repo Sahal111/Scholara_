@@ -9,7 +9,7 @@ class UpdateKurikulumRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('master_data.kurikulum.manage');
+        return $this->user()->hasPermission('master_data.kurikulum.manage');
     }
 
     public function rules(): array

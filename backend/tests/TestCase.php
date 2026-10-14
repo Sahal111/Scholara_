@@ -64,6 +64,36 @@ abstract class TestCase extends BaseTestCase
     }
 
     /**
+     * Beri role sejumlah permission (dibuat jika belum ada).
+     */
+    protected function grantPermissions(int $schoolId, Role $role, array $slugs): void
+    {
+        foreach ($slugs as $slug) {
+            $permId = \DB::table('permissions')
+                ->where('school_id', $schoolId)
+                ->where('slug', $slug)
+                ->value('id');
+
+            if (!$permId) {
+                $permId = \DB::table('permissions')->insertGetId([
+                    'school_id' => $schoolId,
+                    'slug' => $slug,
+                    'nama' => $slug,
+                    'modul' => explode('.', $slug)[0],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+
+            \DB::table('role_permissions')->insertOrIgnore([
+                'role_id' => $role->id,
+                'permission_id' => $permId,
+                'school_id' => $schoolId,
+            ]);
+        }
+    }
+
+    /**
      * Buat user dengan role tertentu, menerima object School.
      * Alias untuk createUserWithRole yang menerima School object.
      */

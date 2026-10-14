@@ -14,6 +14,7 @@ use App\Http\Controllers\MasterData\JadwalPelajaranController;
 use App\Http\Controllers\MasterData\KurikulumController;
 use App\Http\Controllers\MasterData\KurikulumCakupanController;
 use App\Http\Controllers\MasterData\KurikulumStrukturController;
+use App\Http\Controllers\MasterData\KurikulumWorkflowController;
 use App\Http\Controllers\MasterData\ProgramPendidikanController;
 use App\Http\Controllers\MasterData\MasterDataKelasController;
 use App\Http\Controllers\MasterData\MasterDataMapelController;
@@ -440,6 +441,43 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
                 ->name('master-data.kurikulum.struktur.destroy');
         });
 
+        // ── Workflow implementasi kurikulum ──────────────────────────────────────
+        // DRAFT → UNDER_REVIEW → APPROVED → ACTIVE → COMPLETED
+        // Wakasek: ajukan-review, selesaikan | Kepsek: setujui, tolak, aktifkan
+        // Semua berbasis {ulid} implementasi (kurikulum_tahun_ajarans.ulid).
+        Route::middleware('permission:master_data.kurikulum.view')->group(function () {
+            Route::get('/kurikulum/implementasi/{ulid}', [KurikulumWorkflowController::class, 'show'])
+                ->whereUlid('ulid')
+                ->name('master-data.kurikulum.implementasi.show');
+        });
+
+        Route::middleware('permission:master_data.kurikulum.review')->group(function () {
+            Route::patch('/kurikulum/implementasi/{ulid}/ajukan-review', [KurikulumWorkflowController::class, 'ajukanReview'])
+                ->whereUlid('ulid')
+                ->name('master-data.kurikulum.implementasi.ajukan-review');
+        });
+
+        Route::middleware('permission:master_data.kurikulum.complete')->group(function () {
+            Route::patch('/kurikulum/implementasi/{ulid}/selesaikan', [KurikulumWorkflowController::class, 'selesaikan'])
+                ->whereUlid('ulid')
+                ->name('master-data.kurikulum.implementasi.selesaikan');
+        });
+
+        Route::middleware('permission:master_data.kurikulum.approve')->group(function () {
+            Route::patch('/kurikulum/implementasi/{ulid}/setujui', [KurikulumWorkflowController::class, 'setujui'])
+                ->whereUlid('ulid')
+                ->name('master-data.kurikulum.implementasi.setujui');
+            Route::patch('/kurikulum/implementasi/{ulid}/tolak', [KurikulumWorkflowController::class, 'tolak'])
+                ->whereUlid('ulid')
+                ->name('master-data.kurikulum.implementasi.tolak');
+        });
+
+        Route::middleware('permission:master_data.kurikulum.activate')->group(function () {
+            Route::patch('/kurikulum/implementasi/{ulid}/aktifkan', [KurikulumWorkflowController::class, 'aktifkan'])
+                ->whereUlid('ulid')
+                ->name('master-data.kurikulum.implementasi.aktifkan');
+        });
+        
         // ── JADWAL PELAJARAN ──────────────────────────────────────────────────────
     
         // GET hanya butuh .view — operator (view-only) dan wakasek (manage) sama-sama bisa baca.

@@ -1,4 +1,4 @@
-=== DIAGNOSA KURIKULUM — 2026-10-03 21:56:05 ===
+=== DIAGNOSA KURIKULUM — 2026-10-14 16:20:13 ===
 
 --- A. STATUS MIGRATION ---
 [A1. migration 09_03 / 09_08 yang sudah Ran] 
@@ -18,11 +18,11 @@
 [B5. jumlah program per jenis] (kosong)
 
 --- C. KELAS ---
-[C1. kelas (total baris)] 2
-[C2. kelas WHERE kurikulum_id IS NULL] 2
+[C1. kelas (total baris)] 0
+[C2. kelas WHERE kurikulum_id IS NULL] 0
 [C3. kolom kelas.kurikulum (tipe ENUM saat ini)] nullable=NO, tipe=enum('K13','Merdeka','Keduanya')
-[C4. sebaran nilai kelas.kurikulum] Merdeka=2
-[C5. sebaran kelas.kurikulum_id] NULL=2
+[C4. sebaran nilai kelas.kurikulum] (kosong)
+[C5. sebaran kelas.kurikulum_id] (kosong)
 
 --- D. DUPLIKAT (UNIQUE TIDAK BERLAKU SAAT KOLOM NULL) ---
 [D1. kurikulums platform dengan kode kembar] tidak ada (OK)
