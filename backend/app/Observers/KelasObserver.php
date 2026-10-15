@@ -33,6 +33,7 @@ class KelasObserver
     private function log(string $action, Kelas $kelas, string $keterangan): void
     {
         ActivityLog::create([
+            'school_id' => $kelas->school_id,
             'user_id' => auth()->id(),
             'action' => $action,
             'module' => 'kelas',

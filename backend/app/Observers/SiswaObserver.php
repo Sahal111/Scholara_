@@ -33,6 +33,7 @@ class SiswaObserver
     private function log(string $action, Siswa $siswa, string $keterangan): void
     {
         ActivityLog::create([
+            'school_id' => $siswa->school_id,
             'user_id' => auth()->id(),
             'action' => $action,
             'module' => 'siswa',

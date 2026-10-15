@@ -33,6 +33,7 @@ class GuruObserver
     private function log(string $action, Guru $guru, string $keterangan): void
     {
         ActivityLog::create([
+            'school_id' => $guru->school_id,
             'user_id' => auth()->id(),
             'action' => $action,
             'module' => 'guru',
