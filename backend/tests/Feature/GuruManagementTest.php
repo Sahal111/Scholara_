@@ -244,15 +244,15 @@ class GuruManagementTest extends TestCase
         $this->createGuru('NUPTK001', 'Guru Export Test');
 
         $gurus = Guru::with([
-            'pendidikan',
-            'sertifikasi',
-            'diklat',
-            'jabatan',
-            'inpassing',
+            'pendidikans',
+            'sertifikasis',
+            'diklats',
+            'jabatans',
+            'inpassings',
             'mutasi',
             'kompetensi',
             'kontakDarurat',
-            'dokumen',
+            'dokumens',
         ])->get();
 
         $service = app(GuruExportService::class);
@@ -272,15 +272,15 @@ class GuruManagementTest extends TestCase
         $this->createGuru('NUPTK001');
 
         $gurus = Guru::with([
-            'pendidikan',
-            'sertifikasi',
-            'diklat',
-            'jabatan',
-            'inpassing',
+            'pendidikans',
+            'sertifikasis',
+            'diklats',
+            'jabatans',
+            'inpassings',
             'mutasi',
             'kompetensi',
             'kontakDarurat',
-            'dokumen',
+            'dokumens',
         ])->get();
 
         $service = app(GuruExportService::class);
@@ -298,7 +298,7 @@ class GuruManagementTest extends TestCase
     public function test_guru_export_service_empty_collection_still_returns_xlsx(): void
     {
         $service = app(GuruExportService::class);
-        $bytes = $service->build(collect());
+        $bytes = $service->build(new \Illuminate\Database\Eloquent\Collection());
 
         $this->assertIsString($bytes);
         $this->assertNotEmpty($bytes);

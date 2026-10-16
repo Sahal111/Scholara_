@@ -22,7 +22,10 @@ class GuruImportController extends Controller
         private MultiSheetXlsxService $xlsx,
         private GuruImportService $importService,
     ) {
-        $this->middleware(fn($req, $next) => $this->authorize('import', Guru::class) ?? $next($req));
+        $this->middleware(function ($req, $next) {
+            $this->authorize('import', Guru::class);
+            return $next($req);
+        });
     }
 
     public function downloadTemplate()

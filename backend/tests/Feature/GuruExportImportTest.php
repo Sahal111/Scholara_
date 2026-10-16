@@ -243,10 +243,9 @@ class GuruExportImportTest extends TestCase
         $this->assertEmpty($results['errors'], 'Tidak boleh ada error messages.');
 
         // Pastikan tersimpan di DB
-        $this->assertDatabaseHas('gurus', [
-            'nuptk' => $nuptk,
-            'nama' => 'Guru Import Baru',
-        ]);
+        $guru = \App\Models\Guru::withoutGlobalScopes()->where('nama', 'Guru Import Baru')->first();
+        $this->assertNotNull($guru, 'Guru hasil import harus tersimpan.');
+        $this->assertEquals($nuptk, $guru->nuptk);
     }
 
     /** import() guru yang sudah ada → diperbarui = 1, berhasil = 0. */

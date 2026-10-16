@@ -30,6 +30,26 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
 
         // ── GURU ──────────────────────────────────────────────────────────────────
     
+        // Import
+        Route::middleware('permission:master_data.guru.import')->group(function () {
+            Route::get('/guru/template', [GuruImportController::class, 'downloadTemplate']);
+            Route::post('/guru/import', [GuruImportController::class, 'import']);
+            Route::post('/guru/import-preview', [GuruImportController::class, 'importPreview']);
+            Route::post('/guru/import-execute', [GuruImportController::class, 'importExecute']);
+            Route::post('/guru/import-zip', [GuruImportController::class, 'importZip']);
+            Route::post('/guru/import-foto', [GuruImportController::class, 'importFoto']);
+            Route::get('/guru/import-status/{batchId}', [GuruImportController::class, 'importStatus']);
+            Route::get('/guru/import-history', [GuruImportController::class, 'importHistory']);
+            Route::get('/guru/import-error-report/{batchId}', [GuruImportController::class, 'importErrorReport']);
+            Route::post('/guru/restore', [GuruImportController::class, 'restoreBackup']);
+        });
+
+        // Export & Backup
+        Route::middleware('permission:master_data.guru.export')->group(function () {
+            Route::get('/guru/export', [GuruExportController::class, 'export']);
+            Route::get('/guru/backup', [GuruExportController::class, 'exportBackup']);
+        });
+
         // List, stats, utility — view permission
         Route::middleware('permission:master_data.guru.view')->group(function () {
             Route::get('/guru', [MasterGuruController::class, 'index']);
@@ -76,26 +96,7 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
             });
         });
 
-        // Import
-        Route::middleware('permission:master_data.guru.import')->group(function () {
-            Route::get('/guru/template', [GuruImportController::class, 'downloadTemplate']);
-            Route::post('/guru/import', [GuruImportController::class, 'import']);
-            Route::post('/guru/import-preview', [GuruImportController::class, 'importPreview']);
-            Route::post('/guru/import-execute', [GuruImportController::class, 'importExecute']);
-            Route::post('/guru/import-zip', [GuruImportController::class, 'importZip']);
-            Route::post('/guru/import-foto', [GuruImportController::class, 'importFoto']);
-            Route::get('/guru/import-status/{batchId}', [GuruImportController::class, 'importStatus']);
-            Route::get('/guru/import-history', [GuruImportController::class, 'importHistory']);
-            Route::get('/guru/import-error-report/{batchId}', [GuruImportController::class, 'importErrorReport']);
-            Route::post('/guru/restore', [GuruImportController::class, 'restoreBackup']);
-        });
-
-        // Export & Backup
-        Route::middleware('permission:master_data.guru.export')->group(function () {
-            Route::get('/guru/export', [GuruExportController::class, 'export']);
-            Route::get('/guru/backup', [GuruExportController::class, 'exportBackup']);
-        });
-
+       
         // Create / Update / Delete guru
         Route::middleware('permission:master_data.guru.create')->group(function () {
             Route::post('/guru', [MasterGuruController::class, 'store']);

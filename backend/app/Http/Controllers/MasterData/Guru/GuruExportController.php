@@ -11,7 +11,10 @@ class GuruExportController extends Controller
 {
     public function __construct(private GuruExportService $exportService)
     {
-        $this->middleware(fn($req, $next) => $this->authorize('export', Guru::class) ?? $next($req));
+        $this->middleware(function ($req, $next) {
+            $this->authorize('export', Guru::class);
+            return $next($req);
+        });
     }
 
     public function export(Request $request)

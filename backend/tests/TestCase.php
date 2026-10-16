@@ -10,6 +10,20 @@ use Illuminate\Support\Facades\Hash;
 
 abstract class TestCase extends BaseTestCase
 {
+
+    /** Permission default per role untuk tes (meniru yang dimiliki role di produksi). */
+    private const DEFAULT_ROLE_PERMISSIONS = [
+        'operator' => [
+            'master_data.guru.view',
+            'master_data.guru.create',
+            'master_data.guru.update',
+            'master_data.guru.delete',
+            'master_data.guru.export',
+            'master_data.guru.import',
+            'master_data.guru.verify',
+        ],
+    ];
+
     /**
      * Buat sekolah dummy untuk testing.
      */
@@ -59,6 +73,8 @@ abstract class TestCase extends BaseTestCase
         ], $overrides));
 
         $user->roles()->attach($role, ['school_id' => $schoolId]);
+
+        $this->grantPermissions($schoolId, $role, self::DEFAULT_ROLE_PERMISSIONS[$roleSlug] ?? []);
 
         return $user;
     }

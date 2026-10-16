@@ -124,3 +124,239 @@
 [2026-10-15 22:52:14] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
 [2026-10-15 22:52:14] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
 [2026-10-15 22:52:17] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":7} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: siswas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: siswas.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: siswas.nisn selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: gurus.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: gurus.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: gurus.nip selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: gurus.nuptk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: orang_tuas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:21] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 13:48:24] testing.ERROR: App\Http\Middleware\PermissionMiddleware::handle(): Return value must be of type Symfony\Component\HttpFoundation\Response, Illuminate\Auth\Access\Response returned {"userId":9,"exception":"[object] (TypeError(code: 0): App\\Http\\Middleware\\PermissionMiddleware::handle(): Return value must be of type Symfony\\Component\\HttpFoundation\\Response, Illuminate\\Auth\\Access\\Response returned at /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/PermissionMiddleware.php:58)
+[stacktrace]
+#0 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\PermissionMiddleware->handle(Object(Illuminate\\Http\\Request), Object(Closure), 'master_data.gur...')
+#1 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/RoleMiddleware.php(56): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#2 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\RoleMiddleware->handle(Object(Illuminate\\Http\\Request), Object(Closure), 'operator', 'kepsek', 'wakasek', 'super_admin')
+#3 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#4 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#5 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(63): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#6 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Auth\\Middleware\\Authenticate->handle(Object(Illuminate\\Http\\Request), Object(Closure), 'sanctum')
+#7 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/TenantMiddleware.php(47): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#8 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\TenantMiddleware->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#9 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/InjectTokenFromCookie.php(30): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#10 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\InjectTokenFromCookie->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#11 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(74): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#12 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\HandleCors->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#13 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#14 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(821): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+#15 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(800): Illuminate\\Routing\\Router->runRouteWithinStack(Object(Illuminate\\Routing\\Route), Object(Illuminate\\Http\\Request))
+#16 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(764): Illuminate\\Routing\\Router->runRoute(Object(Illuminate\\Http\\Request), Object(Illuminate\\Routing\\Route))
+#17 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(753): Illuminate\\Routing\\Router->dispatchToRoute(Object(Illuminate\\Http\\Request))
+#18 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(200): Illuminate\\Routing\\Router->dispatch(Object(Illuminate\\Http\\Request))
+#19 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}(Object(Illuminate\\Http\\Request))
+#20 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#21 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#22 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#23 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#24 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#25 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#26 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#27 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\ValidatePostSize->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#28 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(109): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#29 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#30 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(74): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#31 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\HandleCors->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#32 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#33 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\TrustProxies->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#34 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#35 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#36 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePathEncoding.php(26): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#37 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\ValidatePathEncoding->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#38 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#39 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(175): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+#40 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(144): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter(Object(Illuminate\\Http\\Request))
+#41 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(607): Illuminate\\Foundation\\Http\\Kernel->handle(Object(Illuminate\\Http\\Request))
+#42 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(573): Illuminate\\Foundation\\Testing\\TestCase->call('POST', '/api/operator/m...', Array, Array, Array, Array, '[]')
+#43 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/tests/TestCase.php(167): Illuminate\\Foundation\\Testing\\TestCase->json('POST', '/api/operator/m...', Array, Array)
+#44 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/tests/Feature/GuruExportImportTest.php(413): Tests\\TestCase->jsonWithTenant('POST', '/api/operator/m...', Array, 20)
+#45 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(1667): Tests\\Feature\\GuruExportImportTest->test_import_api_dengan_file_valid_return_200()
+#46 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(519): PHPUnit\\Framework\\TestCase->runTest()
+#47 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestRunner/TestRunner.php(87): PHPUnit\\Framework\\TestCase->runBare()
+#48 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(365): PHPUnit\\Framework\\TestRunner->run(Object(Tests\\Feature\\GuruExportImportTest))
+#49 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\\Framework\\TestCase->run()
+#50 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\\Framework\\TestSuite->run()
+#51 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\\Framework\\TestSuite->run()
+#52 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/TextUI/TestRunner.php(64): PHPUnit\\Framework\\TestSuite->run()
+#53 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/TextUI/Application.php(211): PHPUnit\\TextUI\\TestRunner->run(Object(PHPUnit\\TextUI\\Configuration\\Configuration), Object(PHPUnit\\Runner\\ResultCache\\DefaultResultCache), Object(PHPUnit\\Framework\\TestSuite))
+#54 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/phpunit(104): PHPUnit\\TextUI\\Application->run(Array)
+#55 {main}
+"} 
+[2026-10-16 13:48:24] testing.ERROR: App\Http\Middleware\PermissionMiddleware::handle(): Return value must be of type Symfony\Component\HttpFoundation\Response, Illuminate\Auth\Access\Response returned {"userId":10,"exception":"[object] (TypeError(code: 0): App\\Http\\Middleware\\PermissionMiddleware::handle(): Return value must be of type Symfony\\Component\\HttpFoundation\\Response, Illuminate\\Auth\\Access\\Response returned at /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/PermissionMiddleware.php:58)
+[stacktrace]
+#0 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\PermissionMiddleware->handle(Object(Illuminate\\Http\\Request), Object(Closure), 'master_data.gur...')
+#1 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/RoleMiddleware.php(56): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#2 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\RoleMiddleware->handle(Object(Illuminate\\Http\\Request), Object(Closure), 'operator', 'kepsek', 'wakasek', 'super_admin')
+#3 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#4 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#5 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(63): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#6 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Auth\\Middleware\\Authenticate->handle(Object(Illuminate\\Http\\Request), Object(Closure), 'sanctum')
+#7 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/TenantMiddleware.php(47): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#8 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\TenantMiddleware->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#9 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/InjectTokenFromCookie.php(30): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#10 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\InjectTokenFromCookie->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#11 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(74): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#12 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\HandleCors->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#13 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#14 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(821): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+#15 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(800): Illuminate\\Routing\\Router->runRouteWithinStack(Object(Illuminate\\Routing\\Route), Object(Illuminate\\Http\\Request))
+#16 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(764): Illuminate\\Routing\\Router->runRoute(Object(Illuminate\\Http\\Request), Object(Illuminate\\Routing\\Route))
+#17 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(753): Illuminate\\Routing\\Router->dispatchToRoute(Object(Illuminate\\Http\\Request))
+#18 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(200): Illuminate\\Routing\\Router->dispatch(Object(Illuminate\\Http\\Request))
+#19 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}(Object(Illuminate\\Http\\Request))
+#20 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#21 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#22 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#23 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#24 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#25 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#26 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#27 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\ValidatePostSize->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#28 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(109): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#29 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#30 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(74): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#31 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\HandleCors->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#32 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#33 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\TrustProxies->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#34 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#35 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#36 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePathEncoding.php(26): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#37 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\ValidatePathEncoding->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#38 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#39 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(175): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+#40 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(144): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter(Object(Illuminate\\Http\\Request))
+#41 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(607): Illuminate\\Foundation\\Http\\Kernel->handle(Object(Illuminate\\Http\\Request))
+#42 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(573): Illuminate\\Foundation\\Testing\\TestCase->call('POST', '/api/operator/m...', Array, Array, Array, Array, '[]')
+#43 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/tests/TestCase.php(167): Illuminate\\Foundation\\Testing\\TestCase->json('POST', '/api/operator/m...', Array, Array)
+#44 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/tests/Feature/GuruExportImportTest.php(442): Tests\\TestCase->jsonWithTenant('POST', '/api/operator/m...', Array, 21)
+#45 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(1667): Tests\\Feature\\GuruExportImportTest->test_import_api_dengan_file_bukan_xlsx_return_422()
+#46 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(519): PHPUnit\\Framework\\TestCase->runTest()
+#47 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestRunner/TestRunner.php(87): PHPUnit\\Framework\\TestCase->runBare()
+#48 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(365): PHPUnit\\Framework\\TestRunner->run(Object(Tests\\Feature\\GuruExportImportTest))
+#49 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\\Framework\\TestCase->run()
+#50 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\\Framework\\TestSuite->run()
+#51 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\\Framework\\TestSuite->run()
+#52 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/TextUI/TestRunner.php(64): PHPUnit\\Framework\\TestSuite->run()
+#53 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/TextUI/Application.php(211): PHPUnit\\TextUI\\TestRunner->run(Object(PHPUnit\\TextUI\\Configuration\\Configuration), Object(PHPUnit\\Runner\\ResultCache\\DefaultResultCache), Object(PHPUnit\\Framework\\TestSuite))
+#54 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/phpunit(104): PHPUnit\\TextUI\\Application->run(Array)
+#55 {main}
+"} 
+[2026-10-16 13:48:24] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":7} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: siswas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: siswas.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: siswas.nisn selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: gurus.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: gurus.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: gurus.nip selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: gurus.nuptk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: orang_tuas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:32] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:03:34] testing.ERROR: App\Http\Middleware\PermissionMiddleware::handle(): Return value must be of type Symfony\Component\HttpFoundation\Response, Illuminate\Auth\Access\Response returned {"userId":1,"exception":"[object] (TypeError(code: 0): App\\Http\\Middleware\\PermissionMiddleware::handle(): Return value must be of type Symfony\\Component\\HttpFoundation\\Response, Illuminate\\Auth\\Access\\Response returned at /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/PermissionMiddleware.php:58)
+[stacktrace]
+#0 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\PermissionMiddleware->handle(Object(Illuminate\\Http\\Request), Object(Closure), 'master_data.gur...')
+#1 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/RoleMiddleware.php(56): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#2 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\RoleMiddleware->handle(Object(Illuminate\\Http\\Request), Object(Closure), 'operator', 'kepsek', 'wakasek', 'super_admin')
+#3 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Middleware/SubstituteBindings.php(50): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#4 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Routing\\Middleware\\SubstituteBindings->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#5 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Auth/Middleware/Authenticate.php(63): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#6 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Auth\\Middleware\\Authenticate->handle(Object(Illuminate\\Http\\Request), Object(Closure), 'sanctum')
+#7 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/TenantMiddleware.php(47): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#8 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\TenantMiddleware->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#9 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Http/Middleware/InjectTokenFromCookie.php(30): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#10 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): App\\Http\\Middleware\\InjectTokenFromCookie->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#11 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(74): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#12 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\HandleCors->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#13 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#14 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(821): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+#15 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(800): Illuminate\\Routing\\Router->runRouteWithinStack(Object(Illuminate\\Routing\\Route), Object(Illuminate\\Http\\Request))
+#16 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(764): Illuminate\\Routing\\Router->runRoute(Object(Illuminate\\Http\\Request), Object(Illuminate\\Routing\\Route))
+#17 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Routing/Router.php(753): Illuminate\\Routing\\Router->dispatchToRoute(Object(Illuminate\\Http\\Request))
+#18 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(200): Illuminate\\Routing\\Router->dispatch(Object(Illuminate\\Http\\Request))
+#19 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(180): Illuminate\\Foundation\\Http\\Kernel->Illuminate\\Foundation\\Http\\{closure}(Object(Illuminate\\Http\\Request))
+#20 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#21 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/ConvertEmptyStringsToNull.php(31): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#22 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\ConvertEmptyStringsToNull->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#23 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TransformsRequest.php(21): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#24 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/TrimStrings.php(51): Illuminate\\Foundation\\Http\\Middleware\\TransformsRequest->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#25 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\TrimStrings->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#26 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePostSize.php(27): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#27 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\ValidatePostSize->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#28 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/PreventRequestsDuringMaintenance.php(109): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#29 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\PreventRequestsDuringMaintenance->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#30 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/HandleCors.php(74): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#31 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\HandleCors->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#32 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/TrustProxies.php(58): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#33 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\TrustProxies->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#34 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Middleware/InvokeDeferredCallbacks.php(22): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#35 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Foundation\\Http\\Middleware\\InvokeDeferredCallbacks->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#36 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Http/Middleware/ValidatePathEncoding.php(26): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#37 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(219): Illuminate\\Http\\Middleware\\ValidatePathEncoding->handle(Object(Illuminate\\Http\\Request), Object(Closure))
+#38 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Pipeline/Pipeline.php(137): Illuminate\\Pipeline\\Pipeline->Illuminate\\Pipeline\\{closure}(Object(Illuminate\\Http\\Request))
+#39 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(175): Illuminate\\Pipeline\\Pipeline->then(Object(Closure))
+#40 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Http/Kernel.php(144): Illuminate\\Foundation\\Http\\Kernel->sendRequestThroughRouter(Object(Illuminate\\Http\\Request))
+#41 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(607): Illuminate\\Foundation\\Http\\Kernel->handle(Object(Illuminate\\Http\\Request))
+#42 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Testing/Concerns/MakesHttpRequests.php(573): Illuminate\\Foundation\\Testing\\TestCase->call('POST', '/api/operator/m...', Array, Array, Array, Array, '[]')
+#43 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/tests/TestCase.php(167): Illuminate\\Foundation\\Testing\\TestCase->json('POST', '/api/operator/m...', Array, Array)
+#44 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/tests/Feature/GuruExportImportTest.php(442): Tests\\TestCase->jsonWithTenant('POST', '/api/operator/m...', Array, 1)
+#45 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(1667): Tests\\Feature\\GuruExportImportTest->test_import_api_dengan_file_bukan_xlsx_return_422()
+#46 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(519): PHPUnit\\Framework\\TestCase->runTest()
+#47 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestRunner/TestRunner.php(87): PHPUnit\\Framework\\TestCase->runBare()
+#48 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestCase.php(365): PHPUnit\\Framework\\TestRunner->run(Object(Tests\\Feature\\GuruExportImportTest))
+#49 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\\Framework\\TestCase->run()
+#50 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\\Framework\\TestSuite->run()
+#51 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/Framework/TestSuite.php(369): PHPUnit\\Framework\\TestSuite->run()
+#52 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/TextUI/TestRunner.php(64): PHPUnit\\Framework\\TestSuite->run()
+#53 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/src/TextUI/Application.php(211): PHPUnit\\TextUI\\TestRunner->run(Object(PHPUnit\\TextUI\\Configuration\\Configuration), Object(PHPUnit\\Runner\\ResultCache\\DefaultResultCache), Object(PHPUnit\\Framework\\TestSuite))
+#54 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/phpunit/phpunit/phpunit(104): PHPUnit\\TextUI\\Application->run(Array)
+#55 {main}
+"} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: siswas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: siswas.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: siswas.nisn selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: gurus.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: gurus.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: gurus.nip selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: gurus.nuptk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: orang_tuas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:12] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:07:15] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":3} 
+[2026-10-16 14:07:15] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":3} 
+[2026-10-16 14:07:15] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":3} 
+[2026-10-16 14:07:15] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":4} 
+[2026-10-16 14:07:15] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":4} 
+[2026-10-16 14:07:15] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":4} 
+[2026-10-16 14:07:15] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":8} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: siswas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: siswas.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: siswas.nisn selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: gurus.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: gurus.no_kk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: gurus.nip selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: gurus.nuptk selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: orang_tuas.nik selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:56] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-16 14:08:58] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":3} 
+[2026-10-16 14:08:58] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":3} 
+[2026-10-16 14:08:58] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":3} 
+[2026-10-16 14:08:58] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":4} 
+[2026-10-16 14:08:58] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":4} 
+[2026-10-16 14:08:58] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":4} 
+[2026-10-16 14:08:59] testing.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":8} 
