@@ -108,6 +108,7 @@ import DashboardSuperAdmin from "./pages/superadmin/DashboardSuperAdmin";
 import WakasekLayout from "./pages/wakasek/WakasekLayout";
 import DashboardWakasek from "./pages/wakasek/DashboardWakasek";
 import MasterKurikulum from "./pages/wakasek/akademik/kurikulum/MasterKurikulum";
+import DetailImplementasiKurikulum from "./shared/kurikulum/DetailImplementasiKurikulum";
 import MasterProgramWakasek from "./pages/wakasek/akademik/program-pendidikan/MasterProgramWakasek";
 import RecycleBinProgramWakasek from "./pages/wakasek/akademik/program-pendidikan/RecycleBinProgramWakasek";
 import MasterMapelWakasek from "./pages/wakasek/akademik/mapel/MasterMapelWakasek";
@@ -291,6 +292,10 @@ export default function App() {
         }
       >
         <Route index element={<DashboardKepsek />} />
+        <Route
+          path="kurikulum/implementasi/:ulid"
+          element={<DetailImplementasiKurikulum />}
+        />
         <Route path="monitoring-absensi" element={<MonitoringAbsensi />} />
         <Route path="tahun-ajaran" element={<TahunAjaranKepsek />} />
         {/* Semester detail — SEBELUM :id agar tidak tertangkap wildcard */}
@@ -374,6 +379,10 @@ export default function App() {
 
         {/* Kebijakan Akademik */}
         <Route path="kurikulum" element={<MasterKurikulum />} />
+        <Route
+          path="kurikulum/implementasi/:ulid"
+          element={<DetailImplementasiKurikulum />}
+        />
         {/* Bug #4 fix: oper basePath agar navigasi detail/recycle-bin tidak lari ke /operator */}
         <Route
           path="tahun-ajaran"

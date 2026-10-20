@@ -261,3 +261,88 @@ export function useDaftarkanKurikulumKeTahunAjaran() {
     },
   });
 }
+
+// ── Workflow implementasi kurikulum ──────────────────────────────────────────
+// DRAFT → UNDER_REVIEW → APPROVED → ACTIVE → COMPLETED
+// (tolak: UNDER_REVIEW → DRAFT)
+//
+// Wakasek: ajukan-review, selesaikan | Kepsek: setujui, tolak, aktifkan
+// Semua berbasis ULID implementasi (kurikulum_tahun_ajarans.ulid).
+
+export const implementasiKeys = {
+  all: ["kurikulum-implementasi"],
+  detail: (ulid) => [...implementasiKeys.all, "detail", ulid],
+};
+
+/** Detail implementasi + status + aksi_tersedia (sudah difilter permission). */
+export function useImplementasiKurikulum(ulid) {
+  return useQuery({
+    queryKey: implementasiKeys.detail(ulid),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/implementasi/${ulid}`);
+      return data;
+    },
+    enabled: !!ulid,
+  });
+}
+
+function useWorkflowImplementasi(aksi, pesanSukses, pesanGagal) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ulid, ...body }) =>
+      api.patch(`${BASE}/implementasi/${ulid}/${aksi}`, body),
+    onSuccess: (_, { ulid }) => {
+      qc.invalidateQueries({ queryKey: implementasiKeys.detail(ulid) });
+      qc.invalidateQueries({ queryKey: kurikulumKeys.tahunAjarans() });
+      toast.success(pesanSukses);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message ?? pesanGagal);
+    },
+  });
+}
+
+/** WAKASEK: DRAFT → UNDER_REVIEW. payload: { ulid } */
+export function useAjukanReviewImplementasi() {
+  return useWorkflowImplementasi(
+    "ajukan-review",
+    "Struktur kurikulum diajukan. Menunggu review kepala sekolah.",
+    "Gagal mengajukan review.",
+  );
+}
+
+/** KEPSEK: UNDER_REVIEW → APPROVED. payload: { ulid, catatan? } */
+export function useSetujuiImplementasi() {
+  return useWorkflowImplementasi(
+    "setujui",
+    "Struktur kurikulum disetujui.",
+    "Gagal menyetujui struktur kurikulum.",
+  );
+}
+
+/** KEPSEK: UNDER_REVIEW → DRAFT. payload: { ulid, catatan } (wajib) */
+export function useTolakImplementasi() {
+  return useWorkflowImplementasi(
+    "tolak",
+    "Struktur kurikulum dikembalikan ke draft.",
+    "Gagal menolak struktur kurikulum.",
+  );
+}
+
+/** KEPSEK: APPROVED → ACTIVE. payload: { ulid } */
+export function useAktifkanImplementasi() {
+  return useWorkflowImplementasi(
+    "aktifkan",
+    "Kurikulum berhasil diaktifkan.",
+    "Gagal mengaktifkan kurikulum.",
+  );
+}
+
+/** WAKASEK: ACTIVE → COMPLETED. payload: { ulid } */
+export function useSelesaikanImplementasi() {
+  return useWorkflowImplementasi(
+    "selesaikan",
+    "Kurikulum ditandai selesai.",
+    "Gagal menyelesaikan kurikulum.",
+  );
+}
