@@ -445,6 +445,17 @@ Modul **Tahun Ajaran & Semester** — CRUD sudah COMPLETED (section 12). Yang be
 - Feed "Log Perubahan Terbaru" di Detail TA: tombol "Lihat Semua" masih membuka modal checklist, bukan daftar log lengkap
 - Layar putih total di halaman Kepsek (tanpa sidebar) pernah dilaporkan; penyebabnya belum terverifikasi setelah fix `kelasPath` — butuh error console + URL jika muncul lagi
 
+### Known issue: NUPTK/NIK/NIP terenkripsi tidak bisa dicari
+- Kolom `gurus.nuptk`, `nip`, `nik` dan `siswas.nik`, `nisn` memakai cast `EncryptedString`
+  (Crypt::encryptString, IV acak → ciphertext berbeda tiap kali).
+- Aplikasi mencari guru dengan `where('nuptk', $nuptk)` di banyak tempat
+  (GuruProfileController::show, GuruKepegawaianController, import service/job, Rule::unique).
+  Pencarian dan validasi keunikan berbasis kolom terenkripsi tidak pernah cocok.
+- Dampak: GET/PUT/DELETE /guru/{nuptk} dan validasi unik NUPTK tidak bekerja pada data baru.
+- Opsi: (1) blind index `nuptk_hash` (HMAC) untuk cari + unik, (2) rute berbasis ULID,
+  (3) NUPTK tidak dienkripsi (NIK/NIP tetap).
+- Tes yang menandai ini: GuruManagementTest (detail/update/delete/restore, create requires/unique).
+- Kolom sudah dilebarkan ke varchar(512) lewat migration 2026_10_14_000001.
 > Pindahkan ke COMPLETED hanya setelah user bilang "done" / "selesai" per halaman detail.
 
 ---
