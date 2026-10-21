@@ -407,3 +407,13 @@
 [2026-10-20 07:21:14] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
 [2026-10-20 07:21:14] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
 [2026-10-20 07:21:14] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-21 13:44:13] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Siswa","key":"nisn","id":1} 
+[2026-10-21 13:44:13] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Siswa","key":"nisn","id":2} 
+[2026-10-21 13:44:13] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
+[2026-10-21 13:52:57] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
+[2026-10-21 13:53:06] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Siswa","key":"nisn","id":1} 
+[2026-10-21 13:53:06] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Siswa","key":"nisn","id":2} 
+[2026-10-21 13:53:27] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
+[2026-10-21 13:54:23] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
+[2026-10-21 13:54:36] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
+[2026-10-21 13:54:40] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
