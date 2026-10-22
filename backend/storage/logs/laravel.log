@@ -417,3 +417,4 @@
 [2026-10-21 13:54:23] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
 [2026-10-21 13:54:36] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
 [2026-10-21 13:54:40] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
+[2026-10-22 16:39:19] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
