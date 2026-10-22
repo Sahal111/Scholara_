@@ -8,17 +8,26 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
  * Inject satu akun per role ke setiap sekolah yang sudah ada di DB.
  *
  * ⚡ IDEMPOTENT — aman dijalankan berulang kali.
- *    Skip user yang username-nya sudah ada di sekolah tersebut.
+ *    Akun yang sudah ada TIDAK dibuat ulang, tapi kredensialnya tetap
+ *    ditampilkan supaya daftar login selalu lengkap.
  *
  * Pola kredensial:
  *   email    : {prefix}_{jenis}@{subdomain}.sch.id
  *   password : password
+ *
+ * Super admin platform (1 akun):
+ *   email    : superadmin@platform.id
+ *   password : password
+ *
+ * ⚠️  LOGIN PAKAI EMAIL, bukan username. Username bisa kembar antar sekolah
+ *    sejenis (mis. dua sekolah MI sama-sama punya `wakasek_mi`).
  */
 class RoleUsersSeeder extends Seeder
 {
@@ -41,6 +50,10 @@ class RoleUsersSeeder extends Seeder
         'siswa' => 'siswa',
     ];
 
+    /** Email & username super admin platform. */
+    private const SUPERADMIN_EMAIL = 'superadmin@platform.id';
+    private const SUPERADMIN_USERNAME = 'superadmin';
+
     public function run(): void
     {
         $schools = School::withoutGlobalScopes()
@@ -52,12 +65,111 @@ class RoleUsersSeeder extends Seeder
             return;
         }
 
+        $this->seedSuperAdmin();
+
         foreach ($schools as $school) {
             $this->seedSchoolUsers($school);
         }
 
         $this->command->newLine();
         $this->command->info('✅ RoleUsersSeeder selesai.');
+        $this->command->newLine();
+        $this->command->line('ℹ️  Cara membaca daftar di atas:');
+        $this->command->line('   ✅ = akun baru dibuat      🔁 = akun sudah ada sebelumnya');
+        $this->command->line('   • Login pakai EMAIL (username bisa kembar antar sekolah sejenis).');
+        $this->command->line('   • Password bawaan seeder: password');
+        $this->command->line('   • Untuk akun 🔁, password hanya ditampilkan jika cocok dengan bawaan seeder.');
+    }
+
+    /**
+     * Pastikan ada satu akun super admin platform.
+     * Mengikuti konvensi TestingUserSeeder: dikaitkan ke sekolah pertama,
+     * dengan role `super_admin` (platform role) di sekolah tersebut.
+     */
+    private function seedSuperAdmin(): void
+    {
+        $anchor = School::withoutGlobalScopes()->orderBy('id')->first();
+
+        $this->command->newLine();
+        $this->command->line('🛡️  <fg=cyan>PLATFORM</> (Super Admin)');
+
+        $existing = User::withoutGlobalScopes()
+            ->where(function ($q) use ($anchor) {
+                $q->where('email', self::SUPERADMIN_EMAIL)
+                    ->orWhere(function ($q2) use ($anchor) {
+                        $q2->where('school_id', $anchor->id)
+                            ->where('username', self::SUPERADMIN_USERNAME);
+                    });
+            })
+            ->first();
+
+        if ($existing) {
+            $pw = $this->infoPassword($existing->password, ['password', 'superadmin123']);
+            $this->command->line("   🔁 [super_admin] → <fg=yellow>{$existing->email}</> / {$pw}");
+            return;
+        }
+
+        DB::transaction(function () use ($anchor) {
+            $roleId = DB::table('roles')
+                ->where('school_id', $anchor->id)
+                ->where('slug', 'super_admin')
+                ->value('id');
+
+            if (!$roleId) {
+                $role = [
+                    'school_id' => $anchor->id,
+                    'slug' => 'super_admin',
+                    'nama' => 'Global Super Admin (Developer)',
+                    'is_system' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+
+                if (Schema::hasColumn('roles', 'is_platform_role')) {
+                    $role['is_platform_role'] = 1;
+                }
+
+                $roleId = DB::table('roles')->insertGetId($role);
+            }
+
+            $user = User::withoutGlobalScopes()->create([
+                'school_id' => $anchor->id,
+                'name' => 'Super Admin Platform',
+                'email' => self::SUPERADMIN_EMAIL,
+                'username' => self::SUPERADMIN_USERNAME,
+                'password' => Hash::make('password'),
+                'is_active' => true,
+            ]);
+
+            DB::table('user_roles')->insertOrIgnore([
+                'user_id' => $user->id,
+                'role_id' => $roleId,
+                'school_id' => $anchor->id,
+                'created_at' => now(),
+            ]);
+        });
+
+        $this->command->line('   ✅ [super_admin] → <fg=green>' . self::SUPERADMIN_EMAIL . '</> / password');
+    }
+
+    /**
+     * Tampilkan password bawaan yang cocok dengan hash akun, atau tandai kustom.
+     *
+     * @param  string[]  $kandidat
+     */
+    private function infoPassword(?string $hash, array $kandidat = ['password']): string
+    {
+        if (!$hash) {
+            return '(tidak diketahui)';
+        }
+
+        foreach ($kandidat as $pw) {
+            if (Hash::check($pw, $hash)) {
+                return $pw;
+            }
+        }
+
+        return '(password kustom — tidak diubah)';
     }
 
     private function seedSchoolUsers(School $school): void
@@ -85,14 +197,15 @@ class RoleUsersSeeder extends Seeder
             $username = "{$prefix}_{$jenis}";
             $email = "{$username}@{$subdomain}.sch.id";
 
-            // Cek apakah user sudah ada
-            $exists = User::withoutGlobalScopes()
+            // Akun sudah ada → tidak dibuat ulang, tapi kredensialnya tetap ditampilkan
+            $existing = User::withoutGlobalScopes()
                 ->where('school_id', $school->id)
                 ->where('username', $username)
-                ->exists();
+                ->first();
 
-            if ($exists) {
-                $this->command->line("   ⏭️  [{$roleSlug}] sudah ada — skip.");
+            if ($existing) {
+                $pw = $this->infoPassword($existing->password);
+                $this->command->line("   🔁 [{$roleSlug}] → <fg=yellow>{$existing->email}</> / {$pw}");
                 continue;
             }
 
