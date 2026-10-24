@@ -39,9 +39,26 @@ class AuthController extends Controller
             });
         }
 
-        $user = $query->first();
+        // Username bisa sama di beberapa sekolah (mis. `wakasek_mi` di dua sekolah MI).
+        // Jangan menebak "user pertama": cocokkan password ke SEMUA kandidat.
+        $kandidat = $query->limit(10)->get();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        $cocok = $kandidat
+            ->filter(fn(User $u) => Hash::check($request->password, $u->password))
+            ->values();
+
+        // Tanpa konteks sekolah (localhost / mobile) dan lebih dari satu akun cocok:
+        // minta email. Pesan ini hanya muncul SETELAH password terbukti benar,
+        // jadi tidak membocorkan keberadaan username kepada orang tanpa password.
+        if (!$currentSchoolId && $cocok->count() > 1) {
+            throw ValidationException::withMessages([
+                'login' => ['Username ini dipakai di lebih dari satu sekolah dengan password yang sama. Masuk dengan email, atau buka alamat sekolah kamu.'],
+            ]);
+        }
+
+        $user = $cocok->first();
+
+        if (!$user) {
             throw ValidationException::withMessages([
                 'login' => ['Username/email atau password salah.'],
             ]);
