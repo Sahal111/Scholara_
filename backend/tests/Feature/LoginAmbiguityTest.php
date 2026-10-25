@@ -93,11 +93,11 @@ class LoginAmbiguityTest extends TestCase
             'created_at' => now(),
         ]);
 
-        $this->withServerVariables(['HTTP_HOST' => 'mia.scholara.test'])
-            ->postJson(self::LOGIN_URL, [
-                'login' => 'wakasek_mi',
-                'password' => 'password',
-            ])->assertOk();
+        // Host diberikan lewat URL penuh; HTTP_HOST manual akan ditimpa oleh host di URL
+        $this->postJson('http://mia.scholara.test' . self::LOGIN_URL, [
+            'login' => 'wakasek_mi',
+            'password' => 'password',
+        ])->assertOk();
 
         $this->assertDatabaseHas('personal_access_tokens', ['tokenable_id' => $this->userA->id]);
         $this->assertDatabaseMissing('personal_access_tokens', ['tokenable_id' => $this->userB->id]);
@@ -111,7 +111,7 @@ class LoginAmbiguityTest extends TestCase
         ]);
 
         $response->assertStatus(422);
-        $this->assertStringContainsString('Username/email atau password salah', $response->getContent());
+        $this->assertSame('Username/email atau password salah.', $response->json('errors.login.0'));
         $this->assertStringNotContainsString('lebih dari satu sekolah', $response->getContent());
     }
 }
