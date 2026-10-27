@@ -462,3 +462,24 @@
 [2026-10-25 13:26:35] testing.INFO: EncryptPiiFields: siswas.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
 [2026-10-25 13:26:35] testing.INFO: EncryptPiiFields: gurus.national_ids selesai. {"processed":0,"skipped":0,"errors":0} 
 [2026-10-25 13:26:35] testing.INFO: EncryptPiiFields: global_users.two_factor_recovery_codes selesai. {"processed":0,"skipped":0,"errors":0} 
+[2026-10-27 20:46:37] local.ERROR: Undefined property: App\Console\Commands\SyncPermissions::$operatorBlacklist {"exception":"[object] (ErrorException(code: 0): Undefined property: App\\Console\\Commands\\SyncPermissions::$operatorBlacklist at /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Console/Commands/SyncPermissions.php:106)
+[stacktrace]
+#0 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Bootstrap/HandleExceptions.php(262): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->handleError(2, 'Undefined prope...', '/Users/sahalanw...', 106)
+#1 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Console/Commands/SyncPermissions.php(106): Illuminate\\Foundation\\Bootstrap\\HandleExceptions->Illuminate\\Foundation\\Bootstrap\\{closure}(2, 'Undefined prope...', '/Users/sahalanw...', 106)
+#2 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/app/Console/Commands/SyncPermissions.php(38): App\\Console\\Commands\\SyncPermissions->syncForSchool(13)
+#3 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(36): App\\Console\\Commands\\SyncPermissions->handle()
+#4 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Container/Util.php(43): Illuminate\\Container\\BoundMethod::Illuminate\\Container\\{closure}()
+#5 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(96): Illuminate\\Container\\Util::unwrapIfClosure(Object(Closure))
+#6 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Container/BoundMethod.php(35): Illuminate\\Container\\BoundMethod::callBoundMethod(Object(Illuminate\\Foundation\\Application), Array, Object(Closure))
+#7 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Container/Container.php(799): Illuminate\\Container\\BoundMethod::call(Object(Illuminate\\Foundation\\Application), Array, Array, NULL)
+#8 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(211): Illuminate\\Container\\Container->call(Array)
+#9 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/symfony/console/Command/Command.php(341): Illuminate\\Console\\Command->execute(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#10 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Console/Command.php(180): Symfony\\Component\\Console\\Command\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Illuminate\\Console\\OutputStyle))
+#11 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/symfony/console/Application.php(1117): Illuminate\\Console\\Command->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#12 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/symfony/console/Application.php(356): Symfony\\Component\\Console\\Application->doRunCommand(Object(App\\Console\\Commands\\SyncPermissions), Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#13 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/symfony/console/Application.php(195): Symfony\\Component\\Console\\Application->doRun(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#14 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Console/Kernel.php(198): Symfony\\Component\\Console\\Application->run(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#15 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/Application.php(1235): Illuminate\\Foundation\\Console\\Kernel->handle(Object(Symfony\\Component\\Console\\Input\\ArgvInput), Object(Symfony\\Component\\Console\\Output\\ConsoleOutput))
+#16 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/artisan(16): Illuminate\\Foundation\\Application->handleCommand(Object(Symfony\\Component\\Console\\Input\\ArgvInput))
+#17 {main}
+"} 
