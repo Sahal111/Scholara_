@@ -101,9 +101,15 @@ class SyncPermissions extends Command
 
             // Cabut ulang blacklist dari operator — jaga-jaga kalau sebelumnya
             // sudah terlanjur ter-assign (misal dari run SyncPermissions lama)
+            // Blacklist operator = semua permission terdefinisi yang TIDAK ada di matriks operator
+            $operatorBlacklist = array_values(array_diff(
+                array_column(RbacCatalog::permissionDefinitions(), 'slug'),
+                RbacCatalog::rolePermissionMatrix()['operator'] ?? []
+            ));
+
             $blacklistPermIds = DB::table('permissions')
                 ->where('school_id', $schoolId)
-                ->whereIn('slug', $this->operatorBlacklist)
+                ->whereIn('slug', $operatorBlacklist)
                 ->pluck('id');
 
             if ($blacklistPermIds->isNotEmpty()) {
