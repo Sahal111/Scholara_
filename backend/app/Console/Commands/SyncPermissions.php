@@ -90,9 +90,12 @@ class SyncPermissions extends Command
                     ->whereIn('slug', $allowedSlugs)
                     ->pluck('id');
 
+                // role_permissions.school_id wajib diisi (NOT NULL). Tanpa ini baris pivot
+                // dibuang diam-diam oleh insertOrIgnore dan operator tidak mendapat apa pun.
                 $pivotData = $newPermIds->map(fn($permId) => [
                     'role_id' => $superOpRole->id,
                     'permission_id' => $permId,
+                    'school_id' => $schoolId,
                 ])->toArray();
 
                 DB::table('role_permissions')->insertOrIgnore($pivotData);
