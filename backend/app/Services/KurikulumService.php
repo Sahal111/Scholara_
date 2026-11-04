@@ -376,6 +376,7 @@ class KurikulumService
                 'k.jenis',
                 'kta.semester_id',
                 'kta.tingkat_kelas',
+                'kta.status',
                 'kta.catatan',
             ])
             ->orderBy('k.tahun_berlaku', 'desc')

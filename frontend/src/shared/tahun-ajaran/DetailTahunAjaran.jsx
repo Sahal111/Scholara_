@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import KurikulumTahunAjaranSection from "../kurikulum/components/KurikulumTahunAjaranSection";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../lib/axios";
@@ -25,6 +26,8 @@ export default function DetailTahunAjaran({
   basePath = "/wakasek/tahun-ajaran",
   kelasPath = "/wakasek/kelas",
   apiBase = "/operator/master-data/tahun-ajaran",
+  // Prefix route halaman workflow kurikulum; null = tanpa tombol "Buka" (mis. operator)
+  kurikulumPath = "/wakasek/kurikulum/implementasi",
 }) {
   const { hasPermission } = useAuth();
   const canManage = hasPermission("master_data.tahun_ajaran.manage");
@@ -1797,6 +1800,12 @@ export default function DetailTahunAjaran({
           </div>
         </div>
       </section>
+
+      {/* ── Kurikulum tahun ajaran (daftar implementasi + workflow) ── */}
+      <KurikulumTahunAjaranSection
+        tahunAjaranUlid={id}
+        detailPath={kurikulumPath}
+      />
 
       {/* ── 7. Komparasi Semester ── */}
       <section className="mb-16 bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-10 border border-white/50 shadow-xl relative overflow-hidden">

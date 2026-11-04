@@ -5,6 +5,7 @@ export default function DetailTahunAjaran() {
     <DetailTahunAjaranBase
       basePath="/operator/master/tahun-ajaran"
       kelasPath="/operator/master/kelas"
+      kurikulumPath={null}
     />
   );
 }

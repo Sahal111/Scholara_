@@ -11,6 +11,10 @@ import DetailTahunAjaranBase from "../../../shared/tahun-ajaran/DetailTahunAjara
 
 export default function DetailTahunAjaran() {
   return (
-    <DetailTahunAjaranBase basePath="/kepsek/tahun-ajaran" kelasPath={null} />
+    <DetailTahunAjaranBase
+      basePath="/kepsek/tahun-ajaran"
+      kelasPath={null}
+      kurikulumPath="/kepsek/kurikulum/implementasi"
+    />
   );
 }
