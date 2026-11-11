@@ -22,6 +22,7 @@
  *   routes/api/bk.php           → modul bimbingan konseling
  *   routes/api/perpustakaan.php → modul perpustakaan (buku & peminjaman)
  *   routes/api/tata-usaha.php   → modul tata usaha (surat & legalisir)
+ *   routes/api/penilaian.php    → modul penilaian & rapor siswa
  */
 
 require __DIR__ . '/api/auth.php';
@@ -39,3 +40,4 @@ require __DIR__ . '/api/lms.php';
 require __DIR__ . '/api/bk.php';
 require __DIR__ . '/api/perpustakaan.php';
 require __DIR__ . '/api/tata-usaha.php';
+require __DIR__ . '/api/penilaian.php';

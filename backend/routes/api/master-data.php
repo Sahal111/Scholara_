@@ -192,6 +192,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
     
         Route::middleware('permission:master_data.siswa.view')->group(function () {
             Route::get('/siswa', [MasterDataSiswaController::class, 'index']);
+            // Static routes SEBELUM wildcard {nisn} agar tidak tertangkap sebagai NISN
+            Route::get('/siswa/dropdown', [MasterDataSiswaController::class, 'dropdown']);
             Route::get('/siswa/orang-tua-options', [MasterDataSiswaController::class, 'orangTuaOptions']);
             Route::get('/siswa/{nisn}', [MasterDataSiswaController::class, 'show']);
         });

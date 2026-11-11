@@ -21,6 +21,7 @@ const menus = [
   { path: "/guru/siswa", label: "Data Siswa", icon: Users },
   { path: "/guru/absensi", label: "Input Absensi", icon: ClipboardList },
   { path: "/guru/rekap-absensi", label: "Rekap Absensi", icon: BarChart3 },
+  { path: "/guru/nilai", label: "Input Nilai", icon: ClipboardCheck },
   { path: "/guru/jadwal", label: "Jadwal Mengajar", icon: CalendarDays },
   { path: "/guru/lms/materi", label: "Materi", icon: BookOpen },
   { path: "/guru/lms/tugas", label: "Tugas", icon: ClipboardCheck },

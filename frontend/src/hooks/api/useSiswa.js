@@ -11,7 +11,25 @@ export const siswaKeys = {
   details: () => [...siswaKeys.all, "detail"],
   detail: (id) => [...siswaKeys.details(), id],
   stats: () => [...siswaKeys.all, "stats"],
+  dropdown: (filters) => [...siswaKeys.all, "dropdown", filters],
 };
+
+/**
+ * Hook untuk mengambil daftar siswa dalam format dropdown (id + nama saja).
+ * Berguna untuk select/combobox di form konseling, peminjaman, dsb.
+ * @param {Object} params - Filter opsional (kelas_id, angkatan, dsb.)
+ */
+export function useSiswaDropdown(params = {}) {
+  return useQuery({
+    queryKey: siswaKeys.dropdown(params),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/dropdown`, { params });
+      return data;
+    },
+    staleTime: 60_000, // dropdown jarang berubah, cache 1 menit
+    placeholderData: (prev) => prev,
+  });
+}
 
 export function useSiswaList(params = {}) {
   return useQuery({

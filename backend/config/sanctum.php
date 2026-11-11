@@ -48,9 +48,12 @@ return [
     | considered expired. This will override any values set in the token's
     | "expires_at" attribute, but first-party sessions are not affected.
     |
+    | Default: 10080 menit = 7 hari. Set via SANCTUM_TOKEN_EXPIRATION di .env.
+    | null = token tidak pernah expire (TIDAK AMAN untuk production).
+    |
     */
 
-    'expiration' => null,
+    'expiration' => env('SANCTUM_TOKEN_EXPIRATION', 10080),
 
     /*
     |--------------------------------------------------------------------------

@@ -73,6 +73,25 @@ class MasterDataSiswaController extends Controller
         return response()->json(['success' => true, 'data' => $data]);
     }
 
+    /**
+     * Dropdown ringan — hanya id, nama, nisn, dan kelas aktif.
+     * Digunakan oleh form tambah peminjaman, konseling, dsb.
+     */
+    public function dropdown(Request $request)
+    {
+        $query = Siswa::query()
+            ->select('id', 'nama', 'nisn')
+            ->with(['kelasAktif:id,nama_kelas'])
+            ->when($request->search, fn($q) => $q->where('nama', 'like', "%{$request->search}%")
+                ->orWhere('nisn', 'like', "%{$request->search}%"))
+            ->when($request->kelas_id, fn($q) => $q->whereHas('kelasAktif', fn($k) => $k->where('kelas_id', $request->kelas_id)))
+            ->orderBy('nama')
+            ->limit(50)
+            ->get();
+
+        return response()->json(['success' => true, 'data' => $query]);
+    }
+
     public function index(Request $request)
     {
         $query = Siswa::query()

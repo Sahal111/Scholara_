@@ -21,9 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Middleware yang dijalankan di semua API request — urutan penting:
-        // 1. CORS dulu supaya preflight request langsung dihandle
-        // 2. TenantMiddleware set school_id sebelum auth dan query apapun
+        // 1. SecurityHeaders — tambahkan security headers ke setiap response
+        // 2. CORS dulu supaya preflight request langsung dihandle
+        // 3. TenantMiddleware set school_id sebelum auth dan query apapun
         $middleware->api(prepend: [
+            \App\Http\Middleware\SecurityHeadersMiddleware::class,
             \Illuminate\Http\Middleware\HandleCors::class,
             \App\Http\Middleware\InjectTokenFromCookie::class,
             \App\Http\Middleware\TenantMiddleware::class,
