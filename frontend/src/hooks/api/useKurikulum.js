@@ -346,3 +346,89 @@ export function useSelesaikanImplementasi() {
     "Gagal menyelesaikan kurikulum.",
   );
 }
+
+// ── Struktur kurikulum (mapel + alokasi JP per tingkat) ──────────────────────
+// Hanya bisa diubah saat implementasi berstatus DRAFT (impl.is_editable).
+// GET perlu permission view; tambah/ubah/hapus perlu manage.
+
+export const strukturKeys = {
+  all: ["kurikulum-struktur"],
+  list: (implementasiUlid, filter = {}) => [
+    ...strukturKeys.all,
+    "list",
+    implementasiUlid,
+    filter,
+  ],
+};
+
+/** Daftar baris struktur milik satu implementasi. */
+export function useStrukturKurikulum(implementasiUlid, filter = {}) {
+  return useQuery({
+    queryKey: strukturKeys.list(implementasiUlid, filter),
+    queryFn: async () => {
+      const { data } = await api.get(
+        `${BASE}/implementasi/${implementasiUlid}/struktur`,
+        { params: filter },
+      );
+      return data;
+    },
+    enabled: !!implementasiUlid,
+  });
+}
+
+function useMutasiStruktur(buatRequest, pesanSukses, pesanGagal) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: buatRequest,
+    onSuccess: (_, { implementasiUlid }) => {
+      qc.invalidateQueries({ queryKey: strukturKeys.all });
+      // jumlah_struktur & status editable ada di detail implementasi
+      if (implementasiUlid) {
+        qc.invalidateQueries({
+          queryKey: implementasiKeys.detail(implementasiUlid),
+        });
+      }
+      toast.success(pesanSukses);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message ?? pesanGagal);
+    },
+  });
+}
+
+/**
+ * Tambah mapel ke struktur.
+ * payload: { implementasiUlid, mapel_ulid, tingkat, alokasi_jp_minggu,
+ *            alokasi_jp_tahun?, kelompok?, jenis_komponen?, is_wajib?, urutan_rapor? }
+ */
+export function useTambahStruktur() {
+  return useMutasiStruktur(
+    ({ implementasiUlid, ...body }) =>
+      api.post(`${BASE}/implementasi/${implementasiUlid}/struktur`, body),
+    "Mata pelajaran ditambahkan ke struktur.",
+    "Gagal menambahkan mata pelajaran.",
+  );
+}
+
+/**
+ * Ubah baris struktur (mapel & tingkat tidak bisa diubah).
+ * payload: { ulid, implementasiUlid, alokasi_jp_minggu?, alokasi_jp_tahun?,
+ *            kelompok?, jenis_komponen?, is_wajib?, urutan_rapor? }
+ */
+export function useUbahStruktur() {
+  return useMutasiStruktur(
+    ({ ulid, implementasiUlid: _impl, ...body }) =>
+      api.put(`${BASE}/struktur/${ulid}`, body),
+    "Struktur kurikulum diperbarui.",
+    "Gagal memperbarui struktur.",
+  );
+}
+
+/** payload: { ulid, implementasiUlid } */
+export function useHapusStruktur() {
+  return useMutasiStruktur(
+    ({ ulid }) => api.delete(`${BASE}/struktur/${ulid}`),
+    "Mata pelajaran dihapus dari struktur.",
+    "Gagal menghapus dari struktur.",
+  );
+}

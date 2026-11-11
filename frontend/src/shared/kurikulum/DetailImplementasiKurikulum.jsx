@@ -5,6 +5,7 @@ import DataField from "@/components/ui/DataField";
 import { useImplementasiKurikulum } from "@/hooks/api/useKurikulum";
 import ImplementasiStatusBadge from "./components/ImplementasiStatusBadge";
 import ImplementasiWorkflowPanel from "./components/ImplementasiWorkflowPanel";
+import StrukturKurikulumSection from "./components/StrukturKurikulumSection";
 import {
   IMPLEMENTASI_LANGKAH,
   IMPLEMENTASI_STATUS,
@@ -154,6 +155,13 @@ export default function DetailImplementasiKurikulum() {
 
           <ImplementasiWorkflowPanel impl={impl} />
         </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Struktur Kurikulum"
+        description="Mata pelajaran dan alokasi JP per tingkat"
+      >
+        <StrukturKurikulumSection impl={impl} />
       </SectionCard>
 
       <SectionCard title="Informasi" icon={Layers}>
