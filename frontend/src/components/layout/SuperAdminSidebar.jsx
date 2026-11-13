@@ -11,6 +11,7 @@ import {
   LogOut,
   Building2,
   Cpu,
+  BookOpen,
 } from "lucide-react";
 
 const navItems = [
@@ -24,6 +25,11 @@ const navItems = [
     label: "Tenant & Multi-School",
     icon: Building2,
     path: "/superadmin/tenant",
+  },
+  {
+    label: "Kurikulum Sekolah",
+    icon: BookOpen,
+    path: "/superadmin/kurikulum",
   },
   { label: "Role & Permissions System", icon: Key, path: "/superadmin/rbac" },
   {

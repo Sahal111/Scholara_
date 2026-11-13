@@ -10,7 +10,11 @@ import {
 } from "@/hooks/api/useKurikulum";
 import ImplementasiStatusBadge from "./ImplementasiStatusBadge";
 
-const TINGKAT = Array.from({ length: 12 }, (_, i) => i + 1);
+const TINGKAT_JENJANG = {
+  dasar: [1, 2, 3, 4, 5, 6],
+  menengah_pertama: [7, 8, 9],
+  menengah_atas: [10, 11, 12],
+};
 
 const JENIS_LABEL = {
   nasional: "Nasional",
@@ -31,6 +35,10 @@ function labelTingkat(tingkat) {
 function FormDaftarkan({ tahunAjaranUlid, sudahTerdaftar, onClose }) {
   const { data: res, isLoading } = useKurikulumDropdown();
   const daftarkan = useDaftarkanKurikulumKeTahunAjaran();
+  const { user } = useAuth();
+  const TINGKAT = TINGKAT_JENJANG[user?.school?.jenjang] ?? [
+    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
+  ];
 
   const [kurikulumUlid, setKurikulumUlid] = useState("");
   const [tingkat, setTingkat] = useState([]);

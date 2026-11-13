@@ -1,8 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext } from "react";
 import api from "../../lib/axios";
 import toast from "react-hot-toast";
 
 const BASE = "/operator/master-data/kurikulum";
+
+// Default = API tenant. Superadmin menimpanya (read-only per sekolah) lewat provider.
+const BaseCtx = createContext(BASE);
+export const KurikulumBaseProvider = BaseCtx.Provider;
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 export const kurikulumKeys = {
@@ -276,13 +281,26 @@ export const implementasiKeys = {
 
 /** Detail implementasi + status + aksi_tersedia (sudah difilter permission). */
 export function useImplementasiKurikulum(ulid) {
+  const base = useContext(BaseCtx);
   return useQuery({
     queryKey: implementasiKeys.detail(ulid),
     queryFn: async () => {
-      const { data } = await api.get(`${BASE}/implementasi/${ulid}`);
+      const { data } = await api.get(`${base}/implementasi/${ulid}`);
       return data;
     },
     enabled: !!ulid,
+  });
+}
+
+/** Daftar implementasi satu sekolah (lintas tahun ajaran). */
+export function useDaftarImplementasi() {
+  const base = useContext(BaseCtx);
+  return useQuery({
+    queryKey: [...implementasiKeys.all, "list", base],
+    queryFn: async () => {
+      const { data } = await api.get(`${base}/implementasi`);
+      return data;
+    },
   });
 }
 
@@ -293,6 +311,9 @@ function useWorkflowImplementasi(aksi, pesanSukses, pesanGagal) {
       api.patch(`${BASE}/implementasi/${ulid}/${aksi}`, body),
     onSuccess: (_, { ulid }) => {
       qc.invalidateQueries({ queryKey: implementasiKeys.detail(ulid) });
+      qc.invalidateQueries({
+        queryKey: [...implementasiKeys.all, "list"],
+      });
       qc.invalidateQueries({ queryKey: kurikulumKeys.tahunAjarans() });
       toast.success(pesanSukses);
     },
@@ -363,11 +384,12 @@ export const strukturKeys = {
 
 /** Daftar baris struktur milik satu implementasi. */
 export function useStrukturKurikulum(implementasiUlid, filter = {}) {
+  const base = useContext(BaseCtx);
   return useQuery({
     queryKey: strukturKeys.list(implementasiUlid, filter),
     queryFn: async () => {
       const { data } = await api.get(
-        `${BASE}/implementasi/${implementasiUlid}/struktur`,
+        `${base}/implementasi/${implementasiUlid}/struktur`,
         { params: filter },
       );
       return data;

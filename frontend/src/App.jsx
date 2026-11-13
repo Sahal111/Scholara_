@@ -31,149 +31,302 @@ import AkademikPage from "./pages/public/AkademikPage";
 import PpdbPage from "./pages/public/PpdbPage";
 
 // ── LAZY: Operator ────────────────────────────────────────────────────────────
-const OperatorLayout        = lazy(() => import("./pages/operator/OperatorLayout"));
-const DashboardOperator     = lazy(() => import("./pages/operator/DashboardOperator"));
-const ManajemenAkun         = lazy(() => import("./pages/operator/ManajemenAkun"));
-const MasterGuru            = lazy(() => import("./pages/operator/master/masterDataGuru/MasterGuru"));
-const TambahEditGuru        = lazy(() => import("./pages/operator/master/masterDataGuru/TambahEditGuru"));
-const DetailGuru            = lazy(() => import("./pages/operator/master/masterDataGuru/DetailGuru"));
-const MasterSiswa           = lazy(() => import("./pages/operator/master/masterDataSiswa/MasterSiswa"));
-const TambahEditSiswa       = lazy(() => import("./pages/operator/master/masterDataSiswa/TambahEditSiswa"));
-const DetailSiswa           = lazy(() => import("./pages/operator/master/masterDataSiswa/DetailSiswa"));
-const MutasiSiswa           = lazy(() => import("./pages/operator/master/masterDataSiswa/MutasiSiswa"));
-const MasterKelas           = lazy(() => import("./pages/operator/master/masterDataKelas/MasterKelas"));
-const DetailKelas           = lazy(() => import("./pages/operator/master/masterDataKelas/DetailKelas"));
-const DetailKelasPeriodeAkademik = lazy(() => import("./pages/operator/master/masterDataKelas/DetailKelasPeriodeAkademik"));
-const MasterOrtu            = lazy(() => import("./pages/operator/master/masterDataOrtu/MasterOrtu"));
-const DetailOrtu            = lazy(() => import("./pages/operator/master/masterDataOrtu/DetailOrtu"));
-const DetailDataOrtu        = lazy(() => import("./pages/operator/master/masterDataOrtu/DetailDataOrtu"));
-const TahunAjaranSemesterOperator = lazy(() => import("./pages/operator/master/masterDataTahunAjaran/TahunAjaranSemester"));
-const DetailTahunAjaranOperator   = lazy(() => import("./pages/operator/master/masterDataTahunAjaran/DetailTahunAjaran"));
-const DetailSemesterOperator      = lazy(() => import("./pages/operator/master/masterDataTahunAjaran/DetailSemester"));
-const RecycleBinTahunAjaranOperator = lazy(() => import("./pages/operator/master/masterDataTahunAjaran/components/RecycleBinTahunAjaran"));
-const ArsipTahunAjaranOperator    = lazy(() => import("./pages/operator/master/masterDataTahunAjaran/components/ArsipTahunAjaran"));
-const DetailArsipTahunAjaranOperator = lazy(() => import("./pages/operator/master/masterDataTahunAjaran/DetailArsipTahunAjaran"));
-const ApprovalOrtu          = lazy(() => import("./pages/operator/ApprovalOrtu"));
-const NaikKelas             = lazy(() => import("./pages/operator/master/NaikKelas"));
-const MasterMapel           = lazy(() => import("./pages/wakasek/akademik/mapel/MasterMapel"));
-const MasterJadwal          = lazy(() => import("./pages/wakasek/akademik/jadwal/MasterJadwal"));
-const PengumumanOperator    = lazy(() => import("./pages/operator/master/PengumumanOperator"));
-const GaleriOperator        = lazy(() => import("./pages/operator/master/GaleriOperator"));
+const OperatorLayout = lazy(() => import("./pages/operator/OperatorLayout"));
+const DashboardOperator = lazy(
+  () => import("./pages/operator/DashboardOperator"),
+);
+const ManajemenAkun = lazy(() => import("./pages/operator/ManajemenAkun"));
+const MasterGuru = lazy(
+  () => import("./pages/operator/master/masterDataGuru/MasterGuru"),
+);
+const TambahEditGuru = lazy(
+  () => import("./pages/operator/master/masterDataGuru/TambahEditGuru"),
+);
+const DetailGuru = lazy(
+  () => import("./pages/operator/master/masterDataGuru/DetailGuru"),
+);
+const MasterSiswa = lazy(
+  () => import("./pages/operator/master/masterDataSiswa/MasterSiswa"),
+);
+const TambahEditSiswa = lazy(
+  () => import("./pages/operator/master/masterDataSiswa/TambahEditSiswa"),
+);
+const DetailSiswa = lazy(
+  () => import("./pages/operator/master/masterDataSiswa/DetailSiswa"),
+);
+const MutasiSiswa = lazy(
+  () => import("./pages/operator/master/masterDataSiswa/MutasiSiswa"),
+);
+const MasterKelas = lazy(
+  () => import("./pages/operator/master/masterDataKelas/MasterKelas"),
+);
+const DetailKelas = lazy(
+  () => import("./pages/operator/master/masterDataKelas/DetailKelas"),
+);
+const DetailKelasPeriodeAkademik = lazy(
+  () =>
+    import("./pages/operator/master/masterDataKelas/DetailKelasPeriodeAkademik"),
+);
+const MasterOrtu = lazy(
+  () => import("./pages/operator/master/masterDataOrtu/MasterOrtu"),
+);
+const DetailOrtu = lazy(
+  () => import("./pages/operator/master/masterDataOrtu/DetailOrtu"),
+);
+const DetailDataOrtu = lazy(
+  () => import("./pages/operator/master/masterDataOrtu/DetailDataOrtu"),
+);
+const TahunAjaranSemesterOperator = lazy(
+  () =>
+    import("./pages/operator/master/masterDataTahunAjaran/TahunAjaranSemester"),
+);
+const DetailTahunAjaranOperator = lazy(
+  () =>
+    import("./pages/operator/master/masterDataTahunAjaran/DetailTahunAjaran"),
+);
+const DetailSemesterOperator = lazy(
+  () => import("./pages/operator/master/masterDataTahunAjaran/DetailSemester"),
+);
+const RecycleBinTahunAjaranOperator = lazy(
+  () =>
+    import("./pages/operator/master/masterDataTahunAjaran/components/RecycleBinTahunAjaran"),
+);
+const ArsipTahunAjaranOperator = lazy(
+  () =>
+    import("./pages/operator/master/masterDataTahunAjaran/components/ArsipTahunAjaran"),
+);
+const DetailArsipTahunAjaranOperator = lazy(
+  () =>
+    import("./pages/operator/master/masterDataTahunAjaran/DetailArsipTahunAjaran"),
+);
+const ApprovalOrtu = lazy(() => import("./pages/operator/ApprovalOrtu"));
+const NaikKelas = lazy(() => import("./pages/operator/master/NaikKelas"));
+const MasterMapel = lazy(
+  () => import("./pages/wakasek/akademik/mapel/MasterMapel"),
+);
+const MasterJadwal = lazy(
+  () => import("./pages/wakasek/akademik/jadwal/MasterJadwal"),
+);
+const PengumumanOperator = lazy(
+  () => import("./pages/operator/master/PengumumanOperator"),
+);
+const GaleriOperator = lazy(
+  () => import("./pages/operator/master/GaleriOperator"),
+);
 
 // ── LAZY: Guru ────────────────────────────────────────────────────────────────
-const GuruLayout            = lazy(() => import("./pages/guru/GuruLayout"));
-const DashboardGuru         = lazy(() => import("./pages/guru/DashboardGuru"));
-const DataSiswaGuru         = lazy(() => import("./pages/guru/DataSiswaGuru"));
-const DetailSiswaGuru       = lazy(() => import("./pages/guru/DetailSiswaGuru"));
-const InputAbsensi          = lazy(() => import("./pages/guru/InputAbsensi"));
-const RiwayatAbsensiSiswaGuru = lazy(() => import("./pages/guru/RiwayatAbsensiSiswaGuru"));
-const RekapAbsensiGuru      = lazy(() => import("./pages/guru/RekapAbsensiGuru"));
-const JadwalMengajarGuru    = lazy(() => import("./pages/guru/JadwalMengajarGuru"));
-const PengumumanGuru        = lazy(() => import("./pages/guru/PengumumanGuru"));
-const ProfilGuru            = lazy(() => import("./pages/guru/ProfilGuru"));
-const LmsMateri             = lazy(() => import("./pages/guru/lms/LmsMateri"));
-const LmsTugas              = lazy(() => import("./pages/guru/lms/LmsTugas"));
-const LmsUjian              = lazy(() => import("./pages/guru/lms/LmsUjian"));
-const InputNilaiPage        = lazy(() => import("./pages/guru/InputNilaiPage"));
+const GuruLayout = lazy(() => import("./pages/guru/GuruLayout"));
+const DashboardGuru = lazy(() => import("./pages/guru/DashboardGuru"));
+const DataSiswaGuru = lazy(() => import("./pages/guru/DataSiswaGuru"));
+const DetailSiswaGuru = lazy(() => import("./pages/guru/DetailSiswaGuru"));
+const InputAbsensi = lazy(() => import("./pages/guru/InputAbsensi"));
+const RiwayatAbsensiSiswaGuru = lazy(
+  () => import("./pages/guru/RiwayatAbsensiSiswaGuru"),
+);
+const RekapAbsensiGuru = lazy(() => import("./pages/guru/RekapAbsensiGuru"));
+const JadwalMengajarGuru = lazy(
+  () => import("./pages/guru/JadwalMengajarGuru"),
+);
+const PengumumanGuru = lazy(() => import("./pages/guru/PengumumanGuru"));
+const ProfilGuru = lazy(() => import("./pages/guru/ProfilGuru"));
+const LmsMateri = lazy(() => import("./pages/guru/lms/LmsMateri"));
+const LmsTugas = lazy(() => import("./pages/guru/lms/LmsTugas"));
+const LmsUjian = lazy(() => import("./pages/guru/lms/LmsUjian"));
+const InputNilaiPage = lazy(() => import("./pages/guru/InputNilaiPage"));
 
 // ── LAZY: Kepsek ──────────────────────────────────────────────────────────────
-const KepsekLayout          = lazy(() => import("./pages/kepsek/KepsekLayout"));
-const DashboardKepsek       = lazy(() => import("./pages/kepsek/DashboardKepsek"));
-const DataGuruKepsek        = lazy(() => import("./pages/kepsek/DataGuruKepsek"));
-const DetailGuruKepsek      = lazy(() => import("./pages/kepsek/DetailGuruKepsek"));
-const DataSiswaKepsek       = lazy(() => import("./pages/kepsek/DataSiswaKepsek"));
-const DetailSiswaKepsek     = lazy(() => import("./pages/kepsek/DetailSiswaKepsek"));
-const MonitoringAbsensi     = lazy(() => import("./pages/kepsek/MonitoringAbsensi"));
-const PengumumanKepsek      = lazy(() => import("./pages/kepsek/PengumumanKepsek"));
-const KalenderAkademik      = lazy(() => import("./pages/kepsek/KalenderAkademik"));
-const ProfilKepsek          = lazy(() => import("./pages/kepsek/ProfilKepsek"));
-const TahunAjaranKepsek     = lazy(() => import("./pages/kepsek/tahunAjaran/TahunAjaranKepsek"));
-const DetailTahunAjaranKepsek = lazy(() => import("./pages/kepsek/tahunAjaran/DetailTahunAjaran"));
-const DetailSemesterKepsek  = lazy(() => import("./pages/kepsek/tahunAjaran/DetailSemester"));
+const KepsekLayout = lazy(() => import("./pages/kepsek/KepsekLayout"));
+const DashboardKepsek = lazy(() => import("./pages/kepsek/DashboardKepsek"));
+const DataGuruKepsek = lazy(() => import("./pages/kepsek/DataGuruKepsek"));
+const DetailGuruKepsek = lazy(() => import("./pages/kepsek/DetailGuruKepsek"));
+const DataSiswaKepsek = lazy(() => import("./pages/kepsek/DataSiswaKepsek"));
+const DetailSiswaKepsek = lazy(
+  () => import("./pages/kepsek/DetailSiswaKepsek"),
+);
+const MonitoringAbsensi = lazy(
+  () => import("./pages/kepsek/MonitoringAbsensi"),
+);
+const PengumumanKepsek = lazy(() => import("./pages/kepsek/PengumumanKepsek"));
+const KalenderAkademik = lazy(() => import("./pages/kepsek/KalenderAkademik"));
+const ProfilKepsek = lazy(() => import("./pages/kepsek/ProfilKepsek"));
+const TahunAjaranKepsek = lazy(
+  () => import("./pages/kepsek/tahunAjaran/TahunAjaranKepsek"),
+);
+const DetailTahunAjaranKepsek = lazy(
+  () => import("./pages/kepsek/tahunAjaran/DetailTahunAjaran"),
+);
+const DetailSemesterKepsek = lazy(
+  () => import("./pages/kepsek/tahunAjaran/DetailSemester"),
+);
 
 // ── LAZY: Ortu ────────────────────────────────────────────────────────────────
-const OrtuLayout            = lazy(() => import("./pages/ortu/OrtuLayout"));
-const AbsensiAnak           = lazy(() => import("./pages/ortu/AbsensiAnak"));
-const RiwayatAbsensiAnak    = lazy(() => import("./pages/ortu/RiwayatAbsensiAnak"));
-const PengumumanOrtu        = lazy(() => import("./pages/ortu/PengumumanOrtu"));
-const ProfilOrtu            = lazy(() => import("./pages/ortu/ProfilOrtu"));
-const DataAnak              = lazy(() => import("./pages/ortu/DataAnak"));
-const TambahAnak            = lazy(() => import("./pages/ortu/TambahAnak"));
+const OrtuLayout = lazy(() => import("./pages/ortu/OrtuLayout"));
+const AbsensiAnak = lazy(() => import("./pages/ortu/AbsensiAnak"));
+const RiwayatAbsensiAnak = lazy(
+  () => import("./pages/ortu/RiwayatAbsensiAnak"),
+);
+const PengumumanOrtu = lazy(() => import("./pages/ortu/PengumumanOrtu"));
+const ProfilOrtu = lazy(() => import("./pages/ortu/ProfilOrtu"));
+const DataAnak = lazy(() => import("./pages/ortu/DataAnak"));
+const TambahAnak = lazy(() => import("./pages/ortu/TambahAnak"));
 
 // ── LAZY: Wali Kelas ──────────────────────────────────────────────────────────
-const WaliKelasLayout       = lazy(() => import("./pages/walikelas/WaliKelasLayout"));
-const DashboardWaliKelas    = lazy(() => import("./pages/walikelas/DashboardWaliKelas"));
-const RaporPage             = lazy(() => import("./pages/walikelas/RaporPage"));
-const DetailRaporPage       = lazy(() => import("./pages/walikelas/DetailRaporPage"));
+const WaliKelasLayout = lazy(() => import("./pages/walikelas/WaliKelasLayout"));
+const DashboardWaliKelas = lazy(
+  () => import("./pages/walikelas/DashboardWaliKelas"),
+);
+const RaporPage = lazy(() => import("./pages/walikelas/RaporPage"));
+const DetailRaporPage = lazy(() => import("./pages/walikelas/DetailRaporPage"));
 
 // ── LAZY: Bendahara ───────────────────────────────────────────────────────────
-const BendaharaLayout       = lazy(() => import("./pages/bendahara/BendaharaLayout"));
-const DashboardBendahara    = lazy(() => import("./pages/bendahara/DashboardBendahara"));
+const BendaharaLayout = lazy(() => import("./pages/bendahara/BendaharaLayout"));
+const DashboardBendahara = lazy(
+  () => import("./pages/bendahara/DashboardBendahara"),
+);
 
 // ── LAZY: Admin PPDB ──────────────────────────────────────────────────────────
-const AdminPpdbLayout       = lazy(() => import("./pages/adminppdb/AdminPpdbLayout"));
-const DashboardAdminPpdb    = lazy(() => import("./pages/adminppdb/DashboardAdminPpdb"));
+const AdminPpdbLayout = lazy(() => import("./pages/adminppdb/AdminPpdbLayout"));
+const DashboardAdminPpdb = lazy(
+  () => import("./pages/adminppdb/DashboardAdminPpdb"),
+);
 
 // ── LAZY: Super Admin ─────────────────────────────────────────────────────────
-const SuperAdminLayout      = lazy(() => import("./pages/superadmin/SuperAdminLayout"));
-const DashboardSuperAdmin   = lazy(() => import("./pages/superadmin/DashboardSuperAdmin"));
+const SuperAdminLayout = lazy(
+  () => import("./pages/superadmin/SuperAdminLayout"),
+);
+const DashboardSuperAdmin = lazy(
+  () => import("./pages/superadmin/DashboardSuperAdmin"),
+);
 
 // ── LAZY: Wakasek ─────────────────────────────────────────────────────────────
-const WakasekLayout         = lazy(() => import("./pages/wakasek/WakasekLayout"));
-const DashboardWakasek      = lazy(() => import("./pages/wakasek/DashboardWakasek"));
-const MasterKurikulum       = lazy(() => import("./pages/wakasek/akademik/kurikulum/MasterKurikulum"));
-const DetailImplementasiKurikulum = lazy(() => import("./shared/kurikulum/DetailImplementasiKurikulum"));
-const MasterProgramWakasek  = lazy(() => import("./pages/wakasek/akademik/program-pendidikan/MasterProgramWakasek"));
-const RecycleBinProgramWakasek = lazy(() => import("./pages/wakasek/akademik/program-pendidikan/RecycleBinProgramWakasek"));
-const MasterMapelWakasek    = lazy(() => import("./pages/wakasek/akademik/mapel/MasterMapelWakasek"));
-const MasterKelasWakasek    = lazy(() => import("./pages/wakasek/akademik/kelas/MasterKelasWakasek"));
-const DetailKelasWakasek    = lazy(() => import("./pages/wakasek/akademik/kelas/DetailKelasWakasek"));
-const DetailKelasPeriodeAkademikWakasek = lazy(() => import("./pages/wakasek/akademik/kelas/DetailKelasPeriodeAkademikWakasek"));
-const TahunAjaranSemesterWakasek = lazy(() => import("./shared/tahun-ajaran/TahunAjaranSemester"));
-const DetailTahunAjaranWakasek   = lazy(() => import("./shared/tahun-ajaran/DetailTahunAjaran"));
-const DetailSemesterWakasek      = lazy(() => import("./shared/tahun-ajaran/DetailSemester"));
-const RecycleBinTahunAjaranWakasek = lazy(() => import("./shared/tahun-ajaran/components/RecycleBinTahunAjaran"));
-const ArsipTahunAjaranWakasek    = lazy(() => import("./shared/tahun-ajaran/components/ArsipTahunAjaran"));
-const DetailArsipTahunAjaranWakasek = lazy(() => import("./shared/tahun-ajaran/DetailArsipTahunAjaran"));
-const DataGuruWakasek       = lazy(() => import("./pages/wakasek/DataGuruWakasek"));
-const DetailGuruWakasek     = lazy(() => import("./pages/wakasek/DetailGuruWakasek"));
-const DataSiswaWakasek      = lazy(() => import("./pages/wakasek/DataSiswaWakasek"));
-const DetailSiswaWakasek    = lazy(() => import("./pages/wakasek/DetailSiswaWakasek"));
-const MonitoringAbsensiWakasek = lazy(() => import("./pages/wakasek/MonitoringAbsensiWakasek"));
-const PengumumanWakasek     = lazy(() => import("./pages/wakasek/PengumumanWakasek"));
-const LaporanWakasek        = lazy(() => import("./pages/wakasek/LaporanWakasek"));
-const ProfilWakasek         = lazy(() => import("./pages/wakasek/ProfilWakasek"));
+const WakasekLayout = lazy(() => import("./pages/wakasek/WakasekLayout"));
+const DashboardWakasek = lazy(() => import("./pages/wakasek/DashboardWakasek"));
+const MasterKurikulum = lazy(
+  () => import("./pages/wakasek/akademik/kurikulum/MasterKurikulum"),
+);
+const DetailImplementasiKurikulum = lazy(
+  () => import("./shared/kurikulum/DetailImplementasiKurikulum"),
+);
+const KurikulumKepsek = lazy(
+  () => import("./pages/kepsek/kurikulum/KurikulumKepsek"),
+);
+const KurikulumSekolahList = lazy(
+  () => import("./pages/superadmin/kurikulum/KurikulumSekolahList"),
+);
+const KurikulumSekolah = lazy(
+  () => import("./pages/superadmin/kurikulum/KurikulumSekolah"),
+);
+const DetailImplementasiSuperAdmin = lazy(
+  () => import("./pages/superadmin/kurikulum/DetailImplementasiSuperAdmin"),
+);
+const MasterProgramWakasek = lazy(
+  () =>
+    import("./pages/wakasek/akademik/program-pendidikan/MasterProgramWakasek"),
+);
+const RecycleBinProgramWakasek = lazy(
+  () =>
+    import("./pages/wakasek/akademik/program-pendidikan/RecycleBinProgramWakasek"),
+);
+const MasterMapelWakasek = lazy(
+  () => import("./pages/wakasek/akademik/mapel/MasterMapelWakasek"),
+);
+const MasterKelasWakasek = lazy(
+  () => import("./pages/wakasek/akademik/kelas/MasterKelasWakasek"),
+);
+const DetailKelasWakasek = lazy(
+  () => import("./pages/wakasek/akademik/kelas/DetailKelasWakasek"),
+);
+const DetailKelasPeriodeAkademikWakasek = lazy(
+  () =>
+    import("./pages/wakasek/akademik/kelas/DetailKelasPeriodeAkademikWakasek"),
+);
+const TahunAjaranSemesterWakasek = lazy(
+  () => import("./shared/tahun-ajaran/TahunAjaranSemester"),
+);
+const DetailTahunAjaranWakasek = lazy(
+  () => import("./shared/tahun-ajaran/DetailTahunAjaran"),
+);
+const DetailSemesterWakasek = lazy(
+  () => import("./shared/tahun-ajaran/DetailSemester"),
+);
+const RecycleBinTahunAjaranWakasek = lazy(
+  () => import("./shared/tahun-ajaran/components/RecycleBinTahunAjaran"),
+);
+const ArsipTahunAjaranWakasek = lazy(
+  () => import("./shared/tahun-ajaran/components/ArsipTahunAjaran"),
+);
+const DetailArsipTahunAjaranWakasek = lazy(
+  () => import("./shared/tahun-ajaran/DetailArsipTahunAjaran"),
+);
+const DataGuruWakasek = lazy(() => import("./pages/wakasek/DataGuruWakasek"));
+const DetailGuruWakasek = lazy(
+  () => import("./pages/wakasek/DetailGuruWakasek"),
+);
+const DataSiswaWakasek = lazy(() => import("./pages/wakasek/DataSiswaWakasek"));
+const DetailSiswaWakasek = lazy(
+  () => import("./pages/wakasek/DetailSiswaWakasek"),
+);
+const MonitoringAbsensiWakasek = lazy(
+  () => import("./pages/wakasek/MonitoringAbsensiWakasek"),
+);
+const PengumumanWakasek = lazy(
+  () => import("./pages/wakasek/PengumumanWakasek"),
+);
+const LaporanWakasek = lazy(() => import("./pages/wakasek/LaporanWakasek"));
+const ProfilWakasek = lazy(() => import("./pages/wakasek/ProfilWakasek"));
 
 // ── LAZY: Guru BK ─────────────────────────────────────────────────────────────
-const GuruBkLayout          = lazy(() => import("./pages/guru-bk/GuruBkLayout"));
-const DashboardGuruBk       = lazy(() => import("./pages/guru-bk/DashboardGuruBk"));
-const KonselingPage         = lazy(() => import("./pages/guru-bk/KonselingPage"));
-const TambahKonselingPage   = lazy(() => import("./pages/guru-bk/TambahKonselingPage"));
-const CatatanBkPage         = lazy(() => import("./pages/guru-bk/CatatanBkPage"));
-const TambahCatatanBkPage   = lazy(() => import("./pages/guru-bk/TambahCatatanBkPage"));
+const GuruBkLayout = lazy(() => import("./pages/guru-bk/GuruBkLayout"));
+const DashboardGuruBk = lazy(() => import("./pages/guru-bk/DashboardGuruBk"));
+const KonselingPage = lazy(() => import("./pages/guru-bk/KonselingPage"));
+const TambahKonselingPage = lazy(
+  () => import("./pages/guru-bk/TambahKonselingPage"),
+);
+const CatatanBkPage = lazy(() => import("./pages/guru-bk/CatatanBkPage"));
+const TambahCatatanBkPage = lazy(
+  () => import("./pages/guru-bk/TambahCatatanBkPage"),
+);
 
 // ── LAZY: Pustakawan ──────────────────────────────────────────────────────────
-const PustakawanLayout      = lazy(() => import("./pages/pustakawan/PustakawanLayout"));
-const DashboardPustakawan   = lazy(() => import("./pages/pustakawan/DashboardPustakawan"));
-const KatalogBukuPage       = lazy(() => import("./pages/pustakawan/KatalogBukuPage"));
-const PeminjamanPage        = lazy(() => import("./pages/pustakawan/PeminjamanPage"));
-const TambahBukuPage        = lazy(() => import("./pages/pustakawan/TambahBukuPage"));
-const TambahPeminjamanPage  = lazy(() => import("./pages/pustakawan/TambahPeminjamanPage"));
+const PustakawanLayout = lazy(
+  () => import("./pages/pustakawan/PustakawanLayout"),
+);
+const DashboardPustakawan = lazy(
+  () => import("./pages/pustakawan/DashboardPustakawan"),
+);
+const KatalogBukuPage = lazy(
+  () => import("./pages/pustakawan/KatalogBukuPage"),
+);
+const PeminjamanPage = lazy(() => import("./pages/pustakawan/PeminjamanPage"));
+const TambahBukuPage = lazy(() => import("./pages/pustakawan/TambahBukuPage"));
+const TambahPeminjamanPage = lazy(
+  () => import("./pages/pustakawan/TambahPeminjamanPage"),
+);
 
 // ── LAZY: Tata Usaha ──────────────────────────────────────────────────────────
-const TataUsahaLayout       = lazy(() => import("./pages/tata-usaha/TataUsahaLayout"));
-const DashboardTataUsaha    = lazy(() => import("./pages/tata-usaha/DashboardTataUsaha"));
-const SuratPage             = lazy(() => import("./pages/tata-usaha/SuratPage"));
-const LegalisirPage         = lazy(() => import("./pages/tata-usaha/LegalisirPage"));
-const TambahSuratPage       = lazy(() => import("./pages/tata-usaha/TambahSuratPage"));
+const TataUsahaLayout = lazy(
+  () => import("./pages/tata-usaha/TataUsahaLayout"),
+);
+const DashboardTataUsaha = lazy(
+  () => import("./pages/tata-usaha/DashboardTataUsaha"),
+);
+const SuratPage = lazy(() => import("./pages/tata-usaha/SuratPage"));
+const LegalisirPage = lazy(() => import("./pages/tata-usaha/LegalisirPage"));
+const TambahSuratPage = lazy(
+  () => import("./pages/tata-usaha/TambahSuratPage"),
+);
 
 // ── LAZY: Admin Keuangan ──────────────────────────────────────────────────────
-const AdminKeuanganLayout   = lazy(() => import("./pages/admin-keuangan/AdminKeuanganLayout"));
-const DashboardAdminKeuangan = lazy(() => import("./pages/admin-keuangan/DashboardAdminKeuangan"));
+const AdminKeuanganLayout = lazy(
+  () => import("./pages/admin-keuangan/AdminKeuanganLayout"),
+);
+const DashboardAdminKeuangan = lazy(
+  () => import("./pages/admin-keuangan/DashboardAdminKeuangan"),
+);
 
 // ── LAZY: Siswa ───────────────────────────────────────────────────────────────
-const SiswaLayout           = lazy(() => import("./pages/siswa/SiswaLayout"));
-const DashboardSiswa        = lazy(() => import("./pages/siswa/DashboardSiswa"));
+const SiswaLayout = lazy(() => import("./pages/siswa/SiswaLayout"));
+const DashboardSiswa = lazy(() => import("./pages/siswa/DashboardSiswa"));
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -206,6 +359,12 @@ export default function App() {
           }
         >
           <Route index element={<DashboardSuperAdmin />} />
+          <Route path="kurikulum" element={<KurikulumSekolahList />} />
+          <Route path="kurikulum/:schoolUlid" element={<KurikulumSekolah />} />
+          <Route
+            path="kurikulum/:schoolUlid/implementasi/:ulid"
+            element={<DetailImplementasiSuperAdmin />}
+          />
         </Route>
 
         {/* Siswa */}
@@ -319,6 +478,7 @@ export default function App() {
           }
         >
           <Route index element={<DashboardKepsek />} />
+          <Route path="kurikulum" element={<KurikulumKepsek />} />
           <Route
             path="kurikulum/implementasi/:ulid"
             element={<DetailImplementasiKurikulum />}
@@ -330,7 +490,10 @@ export default function App() {
             path="tahun-ajaran/:taId/semester/:semesterNama"
             element={<DetailSemesterKepsek />}
           />
-          <Route path="tahun-ajaran/:id" element={<DetailTahunAjaranKepsek />} />
+          <Route
+            path="tahun-ajaran/:id"
+            element={<DetailTahunAjaranKepsek />}
+          />
           <Route path="guru" element={<DataGuruKepsek />} />
           <Route path="guru/:nuptk" element={<DetailGuruKepsek />} />
           <Route path="siswa" element={<DataSiswaKepsek />} />
@@ -434,7 +597,9 @@ export default function App() {
           />
           <Route
             path="tahun-ajaran/arsip"
-            element={<ArsipTahunAjaranWakasek basePath="/wakasek/tahun-ajaran" />}
+            element={
+              <ArsipTahunAjaranWakasek basePath="/wakasek/tahun-ajaran" />
+            }
           />
           <Route
             path="tahun-ajaran/arsip/:id"

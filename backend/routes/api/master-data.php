@@ -397,6 +397,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
                 ->name('master-data.kurikulum.dropdown');
             Route::get('/kurikulum/trash', [KurikulumController::class, 'trash'])
                 ->name('master-data.kurikulum.trash');
+            Route::get('/kurikulum/implementasi', [KurikulumWorkflowController::class, 'index'])
+                ->name('master-data.kurikulum.implementasi.index');
             Route::get('/kurikulum', [KurikulumController::class, 'index'])
                 ->name('master-data.kurikulum.index');
             Route::get('/kurikulum/{ulid}', [KurikulumController::class, 'show'])

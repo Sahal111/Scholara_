@@ -117,6 +117,55 @@ class KurikulumWorkflowService
         return $hasil;
     }
 
+        /**
+     * Daftar implementasi satu sekolah (lintas tahun ajaran), status
+     * under_review paling atas. Dipakai kepsek dan superadmin.
+     *
+     * shortcut: tanpa pagination (maks 200 baris), upgrade bila satu sekolah > 200 implementasi.
+     * Catatan: FIELD() khusus MySQL.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function daftar(int $schoolId): array
+    {
+        return DB::table('kurikulum_tahun_ajarans as kta')
+            ->join('kurikulums as k', 'k.id', '=', 'kta.kurikulum_id')
+            ->join('tahun_ajarans as ta', 'ta.id', '=', 'kta.tahun_ajaran_id')
+            ->where('kta.school_id', $schoolId)
+            ->where('kta.is_active', true)
+            ->orderByRaw("FIELD(kta.status, 'under_review', 'draft', 'approved', 'active', 'completed')")
+            ->orderByDesc('ta.tahun')
+            ->limit(200)
+            ->get([
+                'kta.ulid',
+                'kta.status',
+                'kta.tingkat_kelas',
+                'kta.reviewed_at',
+                'kta.updated_at',
+                'k.nama as kurikulum_nama',
+                'k.kode as kurikulum_kode',
+                'ta.ulid as tahun_ajaran_ulid',
+                'ta.tahun as tahun_ajaran',
+                DB::raw('(select count(*) from kurikulum_strukturs ks where ks.kurikulum_tahun_ajaran_id = kta.id) as jumlah_struktur'),
+            ])
+            ->map(function ($r) {
+                $status = Status::dari($r->status);
+
+                return [
+                    'ulid' => $r->ulid,
+                    'status' => $status->value,
+                    'status_label' => $status->label(),
+                    'kurikulum' => ['nama' => $r->kurikulum_nama, 'kode' => $r->kurikulum_kode],
+                    'tahun_ajaran' => ['ulid' => $r->tahun_ajaran_ulid, 'tahun' => $r->tahun_ajaran],
+                    'tingkat_kelas' => $this->tingkatDiizinkan($r),
+                    'jumlah_struktur' => (int) $r->jumlah_struktur,
+                    'reviewed_at' => $r->reviewed_at,
+                    'updated_at' => $r->updated_at,
+                ];
+            })
+            ->all();
+    }
+    
     // ── Transisi ─────────────────────────────────────────────────────────────
 
     public function ajukanReview(int $schoolId, string $ulid): array

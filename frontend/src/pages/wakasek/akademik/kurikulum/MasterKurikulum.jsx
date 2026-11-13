@@ -14,6 +14,7 @@ import {
 import DataTable from "@/components/ui/DataTable";
 import Confirm from "@/components/ui/Confirm";
 import ModalKurikulum from "@/pages/wakasek/akademik/kurikulum/components/ModalKurikulum";
+import DaftarImplementasiKurikulum from "@/shared/kurikulum/DaftarImplementasiKurikulum";
 
 // ── Badge status ──────────────────────────────────────────────────────────────
 function StatusBadge({ active }) {
@@ -88,7 +89,7 @@ export default function MasterKurikulum() {
     page,
   });
 
-  const [tab, setTab] = useState("aktif"); // "aktif" | "trash"
+  const [tab, setTab] = useState("aktif"); // "aktif" | "trash" | "implementasi"
 
   const hapus = useDeleteKurikulum();
   const nonaktifkan = useDeactivateKurikulum();
@@ -267,6 +268,16 @@ export default function MasterKurikulum() {
           }`}
         >
           Daftar Kurikulum
+        </button>
+        <button
+          onClick={() => setTab("implementasi")}
+          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+            tab === "implementasi"
+              ? "bg-[#006e2a] text-white"
+              : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+          }`}
+        >
+          Implementasi per Tahun Ajaran
         </button>
         {canManage && (
           <button
@@ -448,7 +459,7 @@ export default function MasterKurikulum() {
           )}
         </div>
       )}
-      
+
       {/* BUG 1 FIX: kirim detailResponse?.data (berisi komponen_nilais) ke modal */}
       <ModalKurikulum
         open={modalOpen}

@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'permission' => \App\Http\Middleware\PermissionMiddleware::class,
+            'school.from-route' => \App\Http\Middleware\UseSchoolFromRoute::class,
         ]);
 
         // Middleware yang dijalankan di semua API request — urutan penting:

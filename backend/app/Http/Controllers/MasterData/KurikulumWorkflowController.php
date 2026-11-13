@@ -23,6 +23,19 @@ class KurikulumWorkflowController extends Controller
         private readonly KurikulumWorkflowService $workflow
     ) {
     }
+    /**
+     * GET /v1/master-data/kurikulum/implementasi
+     * Daftar implementasi sekolah ini (lintas tahun ajaran).
+     */
+    public function index(): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        return $this->success($this->workflow->daftar($schoolId));
+    }
 
     /**
      * GET /v1/master-data/kurikulum/implementasi/{ulid}

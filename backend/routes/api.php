@@ -41,3 +41,4 @@ require __DIR__ . '/api/bk.php';
 require __DIR__ . '/api/perpustakaan.php';
 require __DIR__ . '/api/tata-usaha.php';
 require __DIR__ . '/api/penilaian.php';
+require __DIR__ . '/api/superadmin.php';

@@ -10,12 +10,14 @@ import {
   Megaphone,
   CalendarDays,
   UserCircle,
+  BookOpen,
 } from "lucide-react";
 import { Outlet } from "react-router-dom";
 
 const menus = [
   { path: "/kepsek", label: "Dashboard", icon: LayoutDashboard, end: true },
   { path: "/kepsek/tahun-ajaran", label: "Tahun Ajaran", icon: CalendarDays },
+  { path: "/kepsek/kurikulum", label: "Kurikulum", icon: BookOpen },
   {
     path: "/kepsek/monitoring-absensi",
     label: "Monitoring Absensi",
