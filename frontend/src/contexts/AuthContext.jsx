@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import api from "../lib/axios";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AuthContext = createContext(null);
 
@@ -45,9 +46,12 @@ export function AuthProvider({ children }) {
     setSchool((prev) => (prev ? { ...prev, ...updatedFields } : prev));
   };
 
+  const queryClient = useQueryClient();
+
   const logout = async () => {
     try {
       await api.post("/auth/logout");
+      queryClient.clear();
     } finally {
       // Cookie di-clear oleh backend. Cukup reset state.
       setUser(null);

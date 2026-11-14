@@ -298,93 +298,104 @@ export default function MasterKurikulum() {
           </button>
         )}
       </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          label="Total"
-          value={total}
-          icon={BookOpen}
-          color="bg-[#006e2a]/10 text-[#006e2a]"
-        />
-        <StatCard
-          label="Platform"
-          value={totalPlatform}
-          icon={Globe}
-          color="bg-blue-50 text-blue-600"
-        />
-        <StatCard
-          label="Custom"
-          value={totalCustom}
-          icon={School}
-          color="bg-amber-50 text-amber-600"
-        />
-        <StatCard
-          label="Aktif"
-          value={totalAktif}
-          icon={ToggleLeft}
-          color="bg-green-50 text-green-600"
-        />
-      </div>
-
-      {/* Toolbar */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Search */}
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="Cari nama atau kode kurikulum..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="w-full pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
+      {tab !== "implementasi" && (
+        <>
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <StatCard
+              label="Total"
+              value={total}
+              icon={BookOpen}
+              color="bg-[#006e2a]/10 text-[#006e2a]"
+            />
+            <StatCard
+              label="Platform"
+              value={totalPlatform}
+              icon={Globe}
+              color="bg-blue-50 text-blue-600"
+            />
+            <StatCard
+              label="Custom"
+              value={totalCustom}
+              icon={School}
+              color="bg-amber-50 text-amber-600"
+            />
+            <StatCard
+              label="Aktif"
+              value={totalAktif}
+              icon={ToggleLeft}
+              color="bg-green-50 text-green-600"
             />
           </div>
 
-          {/* Filter jenis — BUG 2 FIX: opsi disesuaikan dengan enum backend */}
-          <select
-            value={filterJenis}
-            onChange={(e) => {
-              setFilterJenis(e.target.value);
-              setPage(1);
-            }}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
-          >
-            <option value="">Semua Jenis</option>
-            <option value="nasional">Nasional</option>
-            <option value="internasional">Internasional</option>
-            <option value="khusus">Kurikulum Khusus</option>
-            <option value="custom">Kurikulum Mandiri</option>
-          </select>
+          {/* Toolbar */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Search */}
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Cari nama atau kode kurikulum..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
+                />
+              </div>
 
-          {/* Filter status */}
-          <select
-            value={filterStatus}
-            onChange={(e) => {
-              setFilterStatus(e.target.value);
-              setPage(1);
-            }}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
-          >
-            <option value="">Semua Status</option>
-            <option value="1">Aktif</option>
-            <option value="0">Nonaktif</option>
-          </select>
+              {/* Filter jenis — BUG 2 FIX: opsi disesuaikan dengan enum backend */}
+              <select
+                value={filterJenis}
+                onChange={(e) => {
+                  setFilterJenis(e.target.value);
+                  setPage(1);
+                }}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
+              >
+                <option value="">Semua Jenis</option>
+                <option value="nasional">Nasional</option>
+                <option value="internasional">Internasional</option>
+                <option value="khusus">Kurikulum Khusus</option>
+                <option value="custom">Kurikulum Mandiri</option>
+              </select>
 
-          {canManage && (
-            <button
-              onClick={openTambah}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#006e2a] text-white rounded-lg hover:bg-[#005a22] transition-colors whitespace-nowrap"
-            >
-              + Tambah Kurikulum
-            </button>
-          )}
-        </div>
-      </div>
+              {/* Filter status */}
+              <select
+                value={filterStatus}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setPage(1);
+                }}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
+              >
+                <option value="">Semua Status</option>
+                <option value="1">Aktif</option>
+                <option value="0">Nonaktif</option>
+              </select>
 
+              {canManage && (
+                <button
+                  onClick={openTambah}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#006e2a] text-white rounded-lg hover:bg-[#005a22] transition-colors whitespace-nowrap"
+                >
+                  + Tambah Kurikulum
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {tab === "implementasi" && (
+        <DaftarImplementasiKurikulum
+          detailPath="/wakasek/kurikulum/implementasi"
+          judul="Implementasi Kurikulum"
+          deskripsi="Kurikulum yang sudah didaftarkan ke tahun ajaran, beserta status review."
+        />
+      )}
+      
       {/* BUG 6 FIX: DataTable menggantikan raw <table> */}
       {tab === "aktif" && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
