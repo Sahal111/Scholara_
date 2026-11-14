@@ -12,6 +12,7 @@ import {
   Building2,
   Cpu,
   BookOpen,
+  Layers,
 } from "lucide-react";
 
 const navItems = [
@@ -31,6 +32,13 @@ const navItems = [
     icon: BookOpen,
     path: "/superadmin/kurikulum",
   },
+
+  {
+    label: "Kurikulum Platform",
+    icon: Layers,
+    path: "/superadmin/kurikulum-platform",
+  },
+
   { label: "Role & Permissions System", icon: Key, path: "/superadmin/rbac" },
   {
     label: "System Config & Gateways",

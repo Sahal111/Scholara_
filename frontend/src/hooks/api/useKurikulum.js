@@ -250,6 +250,7 @@ export function useDaftarkanKurikulumKeTahunAjaran() {
       api.post(`${BASE}/tahun-ajaran/daftarkan`, payload),
     onSuccess: (_, { tahun_ajaran_ulid }) => {
       qc.invalidateQueries({ queryKey: kurikulumKeys.tahunAjarans() });
+      qc.invalidateQueries({ queryKey: [...implementasiKeys.all, "list"] });
       // Invalidate detail tahun ajaran yang bersangkutan jika diketahui
       if (tahun_ajaran_ulid) {
         qc.invalidateQueries({

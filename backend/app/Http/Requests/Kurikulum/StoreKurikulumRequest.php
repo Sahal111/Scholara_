@@ -25,6 +25,12 @@ class StoreKurikulumRequest extends FormRequest
                 'alpha_dash',
                 // Kode unik per sekolah — platform defaults punya kode global
                 Rule::unique('kurikulums', 'kode')->where('school_id', $schoolId),
+                // Jangan kembar dengan kode kurikulum platform (dropdown jadi membingungkan)
+                function ($attribute, $value, $fail) {
+                    if (\App\Models\Kurikulum::platformDefaults()->where('kode', $value)->exists()) {
+                        $fail('Kode ini dipakai kurikulum platform. Gunakan kode lain.');
+                    }
+                },
             ],
             'tahun_berlaku' => ['required', 'integer', 'min:1900', 'max:2100'],
             'tahun_berakhir' => ['nullable', 'integer', 'min:1900', 'max:2100', 'gte:tahun_berlaku'],

@@ -122,6 +122,15 @@ class School extends Model
     protected $casts = [
         'trial_ends_at' => 'datetime',
     ];
+    /** Tingkat kelas yang ada di sekolah ini, menurut jenjang. */
+    public function tingkatKelas(): array
+    {
+        return match ($this->jenjang) {
+            'menengah_pertama' => [7, 8, 9],
+            'menengah_atas' => [10, 11, 12],
+            default => [1, 2, 3, 4, 5, 6],
+        };
+    }
 
     protected static function booted(): void
     {

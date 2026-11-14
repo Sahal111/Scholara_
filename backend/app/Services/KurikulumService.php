@@ -43,6 +43,11 @@ class KurikulumService
                 $filters['jenis'] ?? null,
                 fn($q, $j) => $q->where('jenis', $j)
             )
+            ->when($filters['sumber'] ?? null, function ($q, $s) use ($schoolId) {
+                return $s === 'platform'
+                    ? $q->whereNull('school_id')
+                    : ($s === 'sekolah' ? $q->where('school_id', $schoolId) : $q);
+            })
             ->with('komponenNilais')
             ->orderByRaw('school_id IS NULL DESC')
             ->orderBy('tahun_berlaku', 'desc')
@@ -339,15 +344,27 @@ class KurikulumService
             ->where('id', $data['tahun_ajaran_id'])
             ->firstOrFail();
 
+        // Kosong = semua tingkat SEKOLAH ini (bukan 1–12). Tingkat di luar jenjang ditolak.
+        $tingkatSekolah = \App\Models\School::findOrFail($schoolId)->tingkatKelas();
+        $tingkat = array_values(array_unique(array_map('intval', $data['tingkat_kelas'] ?? [])));
+        sort($tingkat);
+
+        if ($tingkat === []) {
+            $tingkat = $tingkatSekolah;
+        } elseif (($luar = array_diff($tingkat, $tingkatSekolah)) !== []) {
+            throw new \DomainException(
+                'Tingkat ' . implode(', ', $luar) . ' tidak sesuai jenjang sekolah ini (Kelas '
+                . min($tingkatSekolah) . '–' . max($tingkatSekolah) . ').'
+            );
+        }
+
         \DB::table('kurikulum_tahun_ajarans')->insertOrIgnore([
             'ulid' => (string) \Illuminate\Support\Str::ulid(),
             'school_id' => $schoolId,
             'kurikulum_id' => $kurikulum->id,
             'tahun_ajaran_id' => $tahunAjaran->id,
             'semester_id' => $data['semester_id'] ?? null,
-            'tingkat_kelas' => isset($data['tingkat_kelas'])
-                ? json_encode($data['tingkat_kelas'])
-                : null,
+            'tingkat_kelas' => json_encode($tingkat),
             'catatan' => $data['catatan'] ?? null,
             'is_active' => true,
             'created_by' => auth()->id(),
@@ -442,7 +459,107 @@ class KurikulumService
 
         return $id !== null ? (int) $id : null;
     }
-    
+    // ── Kurikulum Platform (school_id NULL) — hanya super admin ─────────────
+
+    public function listPlatform(array $filters = []): LengthAwarePaginator
+    {
+        return Kurikulum::platformDefaults()
+            ->when(
+                isset($filters['is_active']),
+                fn($q) => $q->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN))
+            )
+            ->when(
+                $filters['search'] ?? null,
+                fn($q, $s) => $q->where(
+                    fn($sub) => $sub
+                        ->where('nama', 'like', "%{$s}%")
+                        ->orWhere('kode', 'like', "%{$s}%")
+                )
+            )
+            ->when($filters['jenis'] ?? null, fn($q, $j) => $q->where('jenis', $j))
+            ->orderBy('tahun_berlaku', 'desc')
+            ->paginate($filters['per_page'] ?? 15);
+    }
+
+    public function createPlatform(array $data): Kurikulum
+    {
+        return DB::transaction(function () use ($data) {
+            $this->kosongkanDefaultLain($data);
+
+            return Kurikulum::create([...$data, 'school_id' => null]);
+        });
+    }
+
+    public function updatePlatform(string $ulid, array $data): Kurikulum
+    {
+        $kurikulum = Kurikulum::platformDefaults()->where('ulid', $ulid)->firstOrFail();
+
+        // Kode & jenis dikunci kalau sudah dipakai sekolah mana pun.
+        if ($this->jumlahPemakaianPlatform($kurikulum) > 0) {
+            foreach (['kode', 'jenis'] as $kolom) {
+                if (array_key_exists($kolom, $data) && $data[$kolom] != $kurikulum->{$kolom}) {
+                    throw new \DomainException(
+                        "Kurikulum \"{$kurikulum->nama}\" sudah dipakai sekolah, {$kolom} tidak bisa diubah."
+                    );
+                }
+            }
+        }
+
+        DB::transaction(function () use ($kurikulum, $data) {
+            $this->kosongkanDefaultLain($data, $kurikulum->id, $kurikulum->jenis);
+            $kurikulum->update($data);
+        });
+
+        return $kurikulum->fresh();
+    }
+
+    /** Nonaktif/aktif boleh walau sudah dipakai: sekolah yang sudah pakai tetap jalan. */
+    public function setAktifPlatform(string $ulid, bool $aktif): void
+    {
+        Kurikulum::platformDefaults()->where('ulid', $ulid)->firstOrFail()
+            ->update(['is_active' => $aktif]);
+    }
+
+    public function deletePlatform(string $ulid): void
+    {
+        $kurikulum = Kurikulum::platformDefaults()->where('ulid', $ulid)->firstOrFail();
+
+        $dipakai = $this->jumlahPemakaianPlatform($kurikulum);
+        if ($dipakai > 0) {
+            throw new \DomainException(
+                "Kurikulum \"{$kurikulum->nama}\" tidak bisa dihapus karena dipakai {$dipakai} data " .
+                "(kelas, mata pelajaran, atau tahun ajaran sekolah). Nonaktifkan saja."
+            );
+        }
+
+        DB::transaction(function () use ($kurikulum) {
+            $kurikulum->komponenNilais()->withoutGlobalScopes()->delete();
+            $kurikulum->delete();
+        });
+    }
+
+    /** Total pemakaian lintas SEMUA sekolah (scope tenant dimatikan). */
+    private function jumlahPemakaianPlatform(Kurikulum $kurikulum): int
+    {
+        return $kurikulum->kelas()->withoutGlobalScopes()->count()
+            + $kurikulum->mapels()->withoutGlobalScopes()->count()
+            + DB::table('kurikulum_tahun_ajarans')->where('kurikulum_id', $kurikulum->id)->count();
+    }
+
+    /** Hanya satu is_platform_default per jenis. */
+    private function kosongkanDefaultLain(array $data, ?int $kecualiId = null, ?string $jenisSekarang = null): void
+    {
+        if (empty($data['is_platform_default'])) {
+            return;
+        }
+
+        Kurikulum::platformDefaults()
+            ->where('jenis', $data['jenis'] ?? $jenisSekarang)
+            ->when($kecualiId, fn($q) => $q->where('id', '!=', $kecualiId))
+            ->update(['is_platform_default' => false]);
+    }
+
+
     // ── Helpers Private ──────────────────────────────────────────────────────
 
     private function syncKomponenNilais(Kurikulum $kurikulum, int $schoolId, array $komponens): void

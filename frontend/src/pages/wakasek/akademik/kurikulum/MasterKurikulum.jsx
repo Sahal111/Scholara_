@@ -15,6 +15,7 @@ import DataTable from "@/components/ui/DataTable";
 import Confirm from "@/components/ui/Confirm";
 import ModalKurikulum from "@/pages/wakasek/akademik/kurikulum/components/ModalKurikulum";
 import DaftarImplementasiKurikulum from "@/shared/kurikulum/DaftarImplementasiKurikulum";
+import { ModalDaftarkanKurikulum } from "@/shared/kurikulum/components/KurikulumTahunAjaranSection";
 
 // ── Badge status ──────────────────────────────────────────────────────────────
 function StatusBadge({ active }) {
@@ -32,12 +33,18 @@ function StatusBadge({ active }) {
 // ── Badge platform vs custom ──────────────────────────────────────────────────
 function SourceBadge({ isPlatform }) {
   return isPlatform ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100">
-      <Globe size={10} /> Platform
+    <span
+      title="Dikelola Scholara, tidak bisa diubah sekolah."
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100"
+    >
+      <Globe size={10} /> Bawaan Scholara
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-100">
-      <School size={10} /> Custom
+    <span
+      title="Dibuat dan dikelola oleh sekolah ini."
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-600 border border-amber-100"
+    >
+      <School size={10} /> Milik Sekolah
     </span>
   );
 }
@@ -67,6 +74,7 @@ export default function MasterKurikulum() {
   const [search, setSearch] = useState("");
   const [filterJenis, setFilterJenis] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [filterSumber, setFilterSumber] = useState("");
   const [page, setPage] = useState(1);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -86,10 +94,12 @@ export default function MasterKurikulum() {
     search,
     jenis: filterJenis,
     is_active: filterStatus,
+    sumber: filterSumber,
     page,
   });
 
   const [tab, setTab] = useState("aktif"); // "aktif" | "trash" | "implementasi"
+  const [modalDaftarkan, setModalDaftarkan] = useState(false);
 
   const hapus = useDeleteKurikulum();
   const nonaktifkan = useDeactivateKurikulum();
@@ -253,7 +263,8 @@ export default function MasterKurikulum() {
           Manajemen Kurikulum
         </h1>
         <p className="text-sm text-gray-500 mt-0.5">
-          Kelola kurikulum platform dan custom sekolah
+          Pakai kurikulum bawaan Scholara bila sesuai. Buat kurikulum sekolah
+          hanya jika sekolah punya kurikulum khusus.
         </p>
       </div>
 
@@ -309,13 +320,13 @@ export default function MasterKurikulum() {
               color="bg-[#006e2a]/10 text-[#006e2a]"
             />
             <StatCard
-              label="Platform"
+              label="Bawaan Scholara"
               value={totalPlatform}
               icon={Globe}
               color="bg-blue-50 text-blue-600"
             />
             <StatCard
-              label="Custom"
+              label="Milik Sekolah"
               value={totalCustom}
               icon={School}
               color="bg-amber-50 text-amber-600"
@@ -361,6 +372,20 @@ export default function MasterKurikulum() {
                 <option value="custom">Kurikulum Mandiri</option>
               </select>
 
+              {/* Filter sumber */}
+              <select
+                value={filterSumber}
+                onChange={(e) => {
+                  setFilterSumber(e.target.value);
+                  setPage(1);
+                }}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
+              >
+                <option value="">Semua Sumber</option>
+                <option value="platform">Bawaan Scholara</option>
+                <option value="sekolah">Milik Sekolah</option>
+              </select>
+
               {/* Filter status */}
               <select
                 value={filterStatus}
@@ -380,7 +405,7 @@ export default function MasterKurikulum() {
                   onClick={openTambah}
                   className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#006e2a] text-white rounded-lg hover:bg-[#005a22] transition-colors whitespace-nowrap"
                 >
-                  + Tambah Kurikulum
+                  + Buat Kurikulum Sekolah
                 </button>
               )}
             </div>
@@ -389,13 +414,30 @@ export default function MasterKurikulum() {
       )}
 
       {tab === "implementasi" && (
-        <DaftarImplementasiKurikulum
-          detailPath="/wakasek/kurikulum/implementasi"
-          judul="Implementasi Kurikulum"
-          deskripsi="Kurikulum yang sudah didaftarkan ke tahun ajaran, beserta status review."
-        />
+        <>
+          {canManage && (
+            <div className="flex justify-end mb-4">
+              <button
+                type="button"
+                onClick={() => setModalDaftarkan(true)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-[#006e2a] text-white rounded-lg hover:bg-[#005a22] transition-colors whitespace-nowrap"
+              >
+                + Daftarkan Kurikulum
+              </button>
+            </div>
+          )}
+          <DaftarImplementasiKurikulum
+            detailPath="/wakasek/kurikulum/implementasi"
+            judul="Implementasi Kurikulum"
+            deskripsi="Kurikulum yang sudah didaftarkan ke tahun ajaran, beserta status review."
+          />
+          <ModalDaftarkanKurikulum
+            isOpen={modalDaftarkan}
+            onClose={() => setModalDaftarkan(false)}
+          />
+        </>
       )}
-      
+
       {/* BUG 6 FIX: DataTable menggantikan raw <table> */}
       {tab === "aktif" && (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">

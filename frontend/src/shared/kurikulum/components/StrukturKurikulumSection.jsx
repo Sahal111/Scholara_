@@ -3,6 +3,7 @@ import Modal from "@/components/ui/Modal";
 import Confirm from "@/components/ui/Confirm";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMapelDropdown } from "@/hooks/api/useMapel";
+import { tingkatSekolah } from "../tingkatSekolah";
 import {
   useHapusStruktur,
   useStrukturKurikulum,
@@ -293,10 +294,11 @@ export default function StrukturKurikulumSection({ impl }) {
 
   const rows = useMemo(() => res?.data ?? [], [res]);
 
+  const { school } = useAuth();
   const tingkatTersedia = useMemo(() => {
     const izin = Array.isArray(impl.tingkat_kelas) ? impl.tingkat_kelas : [];
-    return izin.length > 0 ? izin : Array.from({ length: 12 }, (_, i) => i + 1);
-  }, [impl.tingkat_kelas]);
+    return izin.length > 0 ? izin : tingkatSekolah(school?.jenjang);
+  }, [impl.tingkat_kelas, school?.jenjang]);
 
   // Kelompokkan per tingkat
   const perTingkat = useMemo(() => {

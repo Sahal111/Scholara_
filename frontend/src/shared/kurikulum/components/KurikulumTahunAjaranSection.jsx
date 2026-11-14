@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTahunAjaranList } from "@/hooks/api/useTahunAjaran";
 import { BookOpen } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +10,7 @@ import {
   useKurikulumUntukTahunAjaran,
 } from "@/hooks/api/useKurikulum";
 import ImplementasiStatusBadge from "./ImplementasiStatusBadge";
+import { tingkatSekolah } from "../tingkatSekolah";
 
 const TINGKAT_JENJANG = {
   dasar: [1, 2, 3, 4, 5, 6],
@@ -34,11 +36,11 @@ function labelTingkat(tingkat) {
  */
 function FormDaftarkan({ tahunAjaranUlid, sudahTerdaftar, onClose }) {
   const { data: res, isLoading } = useKurikulumDropdown();
-  const daftarkan = useDaftarkanKurikulumKeTahunAjaran();
+    const daftarkan = useDaftarkanKurikulumKeTahunAjaran();
+  const { school } = useAuth();
+  const TINGKAT = tingkatSekolah(school?.jenjang);
   const { user } = useAuth();
-  const TINGKAT = TINGKAT_JENJANG[user?.school?.jenjang] ?? [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12,
-  ];
+  // const TINGKAT = Array.from({ length: 12 }, (_, i) => i + 1);
 
   const [kurikulumUlid, setKurikulumUlid] = useState("");
   const [tingkat, setTingkat] = useState([]);
@@ -76,15 +78,27 @@ function FormDaftarkan({ tahunAjaranUlid, sudahTerdaftar, onClose }) {
           <option value="">
             {isLoading ? "Memuat..." : "Pilih kurikulum"}
           </option>
-          {pilihan.map((k) => (
-            <option key={k.ulid} value={k.ulid}>
-              {k.nama} ({k.kode})
-            </option>
-          ))}
+          {[
+            ["Bawaan Scholara", pilihan.filter((k) => k.is_platform)],
+            ["Milik Sekolah", pilihan.filter((k) => !k.is_platform)],
+          ].map(
+            ([judul, daftar]) =>
+              daftar.length > 0 && (
+                <optgroup key={judul} label={judul}>
+                  {daftar.map((k) => (
+                    <option key={k.ulid} value={k.ulid}>
+                      {k.nama} ({k.kode}) · {k.tahun_berlaku}
+                    </option>
+                  ))}
+                </optgroup>
+              ),
+          )}
         </select>
         {!isLoading && pilihan.length === 0 && (
           <p className="text-xs text-gray-400">
-            Semua kurikulum yang tersedia sudah terdaftar di tahun ajaran ini.
+            {(res?.data ?? []).length === 0
+              ? "Belum ada kurikulum aktif. Hubungi admin platform, atau buat kurikulum sekolah di menu Kurikulum."
+              : "Semua kurikulum yang tersedia sudah terdaftar di tahun ajaran ini."}
           </p>
         )}
       </div>
@@ -113,7 +127,8 @@ function FormDaftarkan({ tahunAjaranUlid, sudahTerdaftar, onClose }) {
           })}
         </div>
         <p className="text-xs text-gray-400">
-          Kosongkan untuk memberlakukan ke semua tingkat.
+          Kosongkan untuk memberlakukan ke semua tingkat sekolah (Kelas{" "}
+          {TINGKAT[0]}–{TINGKAT[TINGKAT.length - 1]}).
         </p>
       </div>
 
@@ -136,6 +151,57 @@ function FormDaftarkan({ tahunAjaranUlid, sudahTerdaftar, onClose }) {
         </button>
       </div>
     </div>
+  );
+}
+
+/**
+ * Modal "Daftarkan Kurikulum" yang memilih tahun ajaran sendiri.
+ * Dipakai di halaman Kurikulum (tab Implementasi); halaman detail tahun ajaran
+ * tetap memakai FormDaftarkan langsung dengan tahun ajaran yang sudah pasti.
+ */
+export function ModalDaftarkanKurikulum({ isOpen, onClose }) {
+  const { data: taRes } = useTahunAjaranList();
+  const tahunList = taRes?.data ?? [];
+  const [tahunUlid, setTahunUlid] = useState("");
+  const { data: terdaftarRes } = useKurikulumUntukTahunAjaran(tahunUlid);
+  const sudahTerdaftar = new Set((terdaftarRes?.data ?? []).map((r) => r.ulid));
+
+  const tutup = () => {
+    setTahunUlid("");
+    onClose();
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={tutup} title="Daftarkan Kurikulum" size="md">
+      <div className="space-y-5">
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-gray-700">
+            Tahun ajaran
+          </label>
+          <select
+            value={tahunUlid}
+            onChange={(e) => setTahunUlid(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/30"
+          >
+            <option value="">Pilih tahun ajaran</option>
+            {tahunList.map((t) => (
+              <option key={t.ulid} value={t.ulid}>
+                {t.tahun}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {tahunUlid && (
+          <FormDaftarkan
+            key={tahunUlid}
+            tahunAjaranUlid={tahunUlid}
+            sudahTerdaftar={sudahTerdaftar}
+            onClose={tutup}
+          />
+        )}
+      </div>
+    </Modal>
   );
 }
 

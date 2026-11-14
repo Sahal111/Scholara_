@@ -20,6 +20,7 @@ class KurikulumResource extends JsonResource
             'penerbit' => $this->penerbit,
             'deskripsi' => $this->deskripsi,
             'is_active' => (bool) $this->is_active,
+            'is_platform_default' => (bool) $this->is_platform_default,
             'is_platform' => $this->is_platform,
             'is_masih_berlaku' => $this->is_masih_berlaku,
             'created_at' => $this->created_at?->toIso8601String(),

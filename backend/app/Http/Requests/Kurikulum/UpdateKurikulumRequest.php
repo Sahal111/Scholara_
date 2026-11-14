@@ -30,6 +30,11 @@ class UpdateKurikulumRequest extends FormRequest
                 Rule::unique('kurikulums', 'kode')
                     ->where('school_id', $schoolId)
                     ->ignore($currentId),
+                function ($attribute, $value, $fail) {
+                    if (\App\Models\Kurikulum::platformDefaults()->where('kode', $value)->exists()) {
+                        $fail('Kode ini dipakai kurikulum platform. Gunakan kode lain.');
+                    }
+                },
             ],
             'tahun_berlaku' => ['sometimes', 'integer', 'min:1900', 'max:2100'],
             'tahun_berakhir' => ['nullable', 'integer', 'min:1900', 'max:2100', 'gte:tahun_berlaku'],

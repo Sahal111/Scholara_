@@ -197,6 +197,9 @@ const SuperAdminLayout = lazy(
 const DashboardSuperAdmin = lazy(
   () => import("./pages/superadmin/DashboardSuperAdmin"),
 );
+const KurikulumPlatform = lazy(
+  () => import("./pages/superadmin/kurikulum/KurikulumPlatform"),
+);
 
 // ── LAZY: Wakasek ─────────────────────────────────────────────────────────────
 const WakasekLayout = lazy(() => import("./pages/wakasek/WakasekLayout"));
@@ -356,11 +359,12 @@ export default function App() {
             <ProtectedRoute roles={["super_admin"]}>
               <SuperAdminLayout />
             </ProtectedRoute>
-          }
+          }    
         >
           <Route index element={<DashboardSuperAdmin />} />
           <Route path="kurikulum" element={<KurikulumSekolahList />} />
           <Route path="kurikulum/:schoolUlid" element={<KurikulumSekolah />} />
+          <Route path="kurikulum-platform" element={<KurikulumPlatform />} />
           <Route
             path="kurikulum/:schoolUlid/implementasi/:ulid"
             element={<DetailImplementasiSuperAdmin />}
