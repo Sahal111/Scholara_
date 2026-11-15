@@ -172,7 +172,12 @@ export function ModalDaftarkanKurikulum({ isOpen, onClose }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={tutup} title="Daftarkan Kurikulum" size="md">
+    <Modal
+      isOpen={isOpen}
+      onClose={tutup}
+      title="Daftarkan Kurikulum"
+      size="md"
+    >
       <div className="space-y-5">
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-gray-700">
@@ -187,6 +192,7 @@ export function ModalDaftarkanKurikulum({ isOpen, onClose }) {
             {tahunList.map((t) => (
               <option key={t.ulid} value={t.ulid}>
                 {t.tahun}
+                {t.status === "active" ? "  ● Aktif" : ""}
               </option>
             ))}
           </select>
