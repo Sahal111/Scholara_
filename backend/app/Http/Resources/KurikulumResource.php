@@ -21,6 +21,7 @@ class KurikulumResource extends JsonResource
             'deskripsi' => $this->deskripsi,
             'is_active' => (bool) $this->is_active,
             'is_platform_default' => (bool) $this->is_platform_default,
+            'dipakai_sekolah' => $this->when(isset($this->dipakai_sekolah), fn() => $this->dipakai_sekolah),
             'is_platform' => $this->is_platform,
             'is_masih_berlaku' => $this->is_masih_berlaku,
             'created_at' => $this->created_at?->toIso8601String(),

@@ -80,4 +80,32 @@ class KurikulumPlatformTest extends TestCase
             'jenis' => 'custom',
         ], $school->id)->assertStatus(422)->assertJsonValidationErrors('kode');
     }
+    public function test_wakasek_salin_kurikulum_platform_jadi_milik_sekolah(): void
+    {
+        $school = $this->createSchool();
+        $user = $this->createUserWithRole($school->id, 'wakasek');
+        $role = \App\Models\Role::withoutGlobalScopes()
+            ->where('school_id', $school->id)->where('slug', 'wakasek')->first();
+        $this->grantPermissions($school->id, $role, ['master_data.kurikulum.view', 'master_data.kurikulum.manage']);
+
+        $platform = \App\Models\Kurikulum::create([
+            'school_id' => null,
+            'nama' => 'Platform Uji',
+            'kode' => 'PLAT-UJI',
+            'tahun_berlaku' => 2025,
+            'jenis' => 'nasional',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user, 'sanctum');
+        $this->setTenant($school->id);
+
+        $url = "/api/operator/master-data/kurikulum/{$platform->ulid}/salin";
+        $this->jsonWithTenant('POST', $url, [])->assertCreated();
+        $this->jsonWithTenant('POST', $url, [])->assertCreated(); // salin kedua: kode bertambah -2
+
+        $this->assertDatabaseHas('kurikulums', ['school_id' => $school->id, 'kode' => 'PLAT-UJI-SEK']);
+        $this->assertDatabaseHas('kurikulums', ['school_id' => $school->id, 'kode' => 'PLAT-UJI-SEK-2']);
+        $this->assertDatabaseHas('kurikulums', ['school_id' => $school->id, 'kode' => 'PLAT-UJI-SEK', 'is_active' => true]);
+    }
 }

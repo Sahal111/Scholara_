@@ -410,6 +410,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
         Route::middleware('permission:master_data.kurikulum.manage')->group(function () {
             Route::post('/kurikulum', [KurikulumController::class, 'store'])
                 ->name('master-data.kurikulum.store');
+            Route::post('/kurikulum/{ulid}/salin', [KurikulumController::class, 'salin'])
+                ->name('master-data.kurikulum.salin');
             Route::put('/kurikulum/{ulid}', [KurikulumController::class, 'update'])
                 ->name('master-data.kurikulum.update');
             Route::patch('/kurikulum/{ulid}/deactivate', [KurikulumController::class, 'deactivate'])

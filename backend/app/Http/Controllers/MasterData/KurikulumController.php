@@ -98,6 +98,25 @@ class KurikulumController extends Controller
     }
 
     /**
+     * POST /v1/master-data/kurikulum/{ulid}/salin
+     * Salin kurikulum platform jadi kurikulum milik sekolah ini.
+     */
+    public function salin(string $ulid): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $kurikulum = $this->kurikulumService->salinDariPlatform($ulid, $schoolId);
+
+        return $this->created(
+            new KurikulumDetailResource($kurikulum),
+            'Disalin jadi kurikulum sekolah. Silakan ubah sesuai kebutuhan.'
+        );
+    }
+    
+    /**
      * PUT /v1/master-data/kurikulum/{ulid}
      * Update kurikulum custom milik sekolah.
      * Kurikulum platform (school_id NULL) tidak bisa diupdate dari sini.
@@ -226,7 +245,7 @@ class KurikulumController extends Controller
                 ->value('id');
         }
 
-        $this->kurikulumService->daftarkanKeTahunAjaran($schoolId, [
+        $peringatan = $this->kurikulumService->daftarkanKeTahunAjaran($schoolId, [
             'kurikulum_id' => $kurikulum->id,
             'tahun_ajaran_id' => $tahunAjaran->id,
             'semester_id' => $semesterId,
@@ -234,7 +253,10 @@ class KurikulumController extends Controller
             'catatan' => $validated['catatan'] ?? null,
         ]);
 
-        return $this->success(message: 'Kurikulum berhasil didaftarkan ke tahun ajaran.');
+        return $this->success(
+            ['peringatan' => $peringatan],
+            'Kurikulum berhasil didaftarkan ke tahun ajaran.'
+        );
     }
 
     /**

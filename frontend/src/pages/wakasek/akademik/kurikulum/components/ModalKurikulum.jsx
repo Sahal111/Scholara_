@@ -114,15 +114,139 @@ function KomponenRow({ komponen, index, onChange, onRemove, canRemove }) {
   );
 }
 
+function Info({ label, children }) {
+  return (
+    <div>
+      <dt className="text-xs text-gray-400">{label}</dt>
+      <dd className="text-sm text-gray-800">{children || "-"}</dd>
+    </div>
+  );
+}
+
+// Tampilan baca-saja untuk kurikulum bawaan Scholara (is_platform).
+function DetailKurikulumPlatform({ data, onClose, platform }) {
+  const komponen = data.komponen_nilais ?? [];
+  const totalBobot = komponen.reduce(
+    (s, k) => s + Number(k.bobot_persen ?? 0),
+    0,
+  );
+  const status = !data.is_active
+    ? "Nonaktif"
+    : data.is_masih_berlaku
+      ? "Aktif"
+      : "Aktif, tapi masa berlaku habis (tidak muncul di pilihan)";
+
+  return (
+    <div className="space-y-5 pb-2">
+      {platform && (
+        <div className="rounded-lg bg-blue-50 text-blue-700 text-xs px-3 py-2">
+          Kurikulum bawaan Scholara, tidak bisa diubah. Mau menyesuaikan? Tutup
+          lalu klik "Salin jadi milik sekolah".
+        </div>
+      )}
+
+      <dl className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <Info label="Nama">{data.nama}</Info>
+        <Info label="Kode">
+          <span className="font-mono text-xs">{data.kode}</span>
+        </Info>
+        <Info label="Jenis">{data.jenis_label}</Info>
+        <Info label="Masa berlaku">
+          {data.tahun_berlaku} – {data.tahun_berakhir ?? "sekarang"}
+        </Info>
+        <Info label="Penerbit">{data.penerbit}</Info>
+        <Info label="Status">{status}</Info>
+      </dl>
+
+      <div>
+        <p className="text-xs text-gray-400 mb-1">Deskripsi</p>
+        <p className="text-sm text-gray-700">{data.deskripsi || "-"}</p>
+      </div>
+
+      <div>
+        <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">
+          Komponen Nilai ({komponen.length})
+        </p>
+        {komponen.length === 0 ? (
+          <p className="text-xs text-gray-400 italic">
+            Belum ada komponen nilai.
+          </p>
+        ) : (
+          <div className="border border-gray-100 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-left text-xs text-gray-500">
+                <tr>
+                  <th className="px-3 py-2">#</th>
+                  <th className="px-3 py-2">Nama</th>
+                  <th className="px-3 py-2">Kode</th>
+                  <th className="px-3 py-2">Kategori</th>
+                  <th className="px-3 py-2 text-right">Bobot</th>
+                  <th className="px-3 py-2 text-center">Wajib</th>
+                </tr>
+              </thead>
+              <tbody>
+                {komponen.map((k, i) => (
+                  <tr key={i} className="border-t border-gray-50">
+                    <td className="px-3 py-2 text-gray-400">{k.urutan}</td>
+                    <td className="px-3 py-2 font-medium text-gray-800">
+                      {k.nama}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs text-gray-500">
+                      {k.kode ?? "-"}
+                    </td>
+                    <td className="px-3 py-2 text-gray-600">
+                      {k.kategori_label ?? k.kategori}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {k.bobot_persen != null ? `${k.bobot_persen}%` : "-"}
+                    </td>
+                    <td className="px-3 py-2 text-center">
+                      {k.is_wajib ? "Ya" : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              {totalBobot > 0 && (
+                <tfoot className="border-t border-gray-100 bg-gray-50 text-xs">
+                  <tr>
+                    <td colSpan={4} className="px-3 py-2 text-gray-500">
+                      Total bobot
+                    </td>
+                    <td className="px-3 py-2 text-right font-medium">
+                      {totalBobot}%
+                    </td>
+                    <td />
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end pt-2 border-t border-gray-100">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Tutup
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // BUG 1 FIX: tambah prop loadingDetail untuk handle state loading detail
 export default function ModalKurikulum({
   open,
   onClose,
   editData,
   loadingDetail = false,
+  readOnly = false,
 }) {
   const isEdit = !!editData;
-  const isReadOnly = editData?.is_platform ?? false;
+  const isReadOnly = (editData?.is_platform ?? false) || readOnly;
   const [form, setForm] = useState(EMPTY_FORM);
 
   const create = useCreateKurikulum();
@@ -215,7 +339,13 @@ export default function ModalKurikulum({
     <Modal
       isOpen={open}
       onClose={onClose}
-      title={isEdit ? "Edit Kurikulum" : "Tambah Kurikulum"}
+      title={
+        isReadOnly
+          ? "Detail Kurikulum"
+          : isEdit
+            ? "Edit Kurikulum"
+            : "Tambah Kurikulum"
+      }
       size="xl"
     >
       {/* Loading state saat fetch detail */}
@@ -223,6 +353,12 @@ export default function ModalKurikulum({
         <div className="flex items-center justify-center h-48 text-sm text-gray-400">
           Memuat data kurikulum...
         </div>
+      ) : isReadOnly ? (
+        <DetailKurikulumPlatform
+          data={editData}
+          onClose={onClose}
+          platform={!!editData?.is_platform}
+        />
       ) : (
         <form onSubmit={handleSubmit} className="space-y-5 pb-2">
           {/* Nama + Kode */}

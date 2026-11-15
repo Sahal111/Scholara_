@@ -6,6 +6,7 @@ use App\Models\Kurikulum;
 use App\Models\KurikulumKomponenNilai;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -109,6 +110,43 @@ class KurikulumService
         });
     }
 
+    /**
+     * Salin kurikulum platform jadi kurikulum milik sekolah (bisa diubah bebas).
+     * Komponen nilai ikut disalin; struktur mapel tidak.
+     */
+    public function salinDariPlatform(string $ulid, int $schoolId): Kurikulum
+    {
+        $sumber = Kurikulum::platformDefaults()
+            ->where('ulid', $ulid)
+            ->with('komponenNilais')
+            ->firstOrFail();
+
+        // Maks 30 karakter di kolom kode: 22 + "-SEK" + "-99" masih muat.
+        $dasar = Str::limit($sumber->kode, 22, '') . '-SEK';
+        $kode = $dasar;
+        $i = 2;
+        while (Kurikulum::forSchool($schoolId)->withTrashed()->where('kode', $kode)->exists()) {
+            $kode = $dasar . '-' . $i++;
+        }
+
+        return $this->createForSchool($schoolId, [
+            'nama' => Str::limit($sumber->nama, 88, '') . ' (Salinan)',
+            'kode' => $kode,
+            'tahun_berlaku' => $sumber->tahun_berlaku,
+            'tahun_berakhir' => $sumber->tahun_berakhir,
+            'jenis' => $sumber->jenis,
+            'penerbit' => $sumber->penerbit,
+            'deskripsi' => $sumber->deskripsi,
+            'metadata' => $sumber->metadata,
+            'is_active' => true,
+            'komponen_nilais' => $sumber->komponenNilais
+                ->where('is_active', true)
+                ->map(fn($k) => $k->only(['nama', 'kode', 'kategori', 'bobot_persen', 'urutan', 'is_wajib']))
+                ->values()
+                ->all(),
+        ]);
+    }
+    
     /**
      * Update kurikulum custom milik sekolah.
      * Hanya bisa update kurikulum milik sekolah sendiri (bukan platform defaults).
@@ -334,7 +372,7 @@ class KurikulumService
      * Daftarkan kurikulum ke tahun ajaran sekolah.
      * Dipanggil dari KurikulumController::daftarkanKeTahunAjaran().
      */
-    public function daftarkanKeTahunAjaran(int $schoolId, array $data): void
+    public function daftarkanKeTahunAjaran(int $schoolId, array $data): array
     {
         $kurikulum = Kurikulum::availableForSchool($schoolId)
             ->where('id', $data['kurikulum_id'])
@@ -371,6 +409,38 @@ class KurikulumService
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        return $this->peringatanBentrokTingkat($schoolId, $tahunAjaran->id, $kurikulum->id, $tingkat);
+    }
+
+    /**
+     * Peringatan (bukan blokir): tingkat yang sama sudah terdaftar di kurikulum lain
+     * pada tahun ajaran ini. Penolakan tegas tetap terjadi saat AKTIVASI.
+     *
+     * @return string[]
+     */
+    private function peringatanBentrokTingkat(int $schoolId, int $tahunAjaranId, int $kurikulumId, array $tingkat): array
+    {
+        $lain = \DB::table('kurikulum_tahun_ajarans as kta')
+            ->join('kurikulums as k', 'k.id', '=', 'kta.kurikulum_id')
+            ->where('kta.school_id', $schoolId)
+            ->where('kta.tahun_ajaran_id', $tahunAjaranId)
+            ->where('kta.kurikulum_id', '!=', $kurikulumId)
+            ->whereIn('kta.status', ['draft', 'under_review', 'approved', 'active'])
+            ->get(['k.nama', 'kta.status', 'kta.tingkat_kelas']);
+
+        $pesan = [];
+        foreach ($lain as $o) {
+            $tingkatLain = $o->tingkat_kelas ? json_decode($o->tingkat_kelas, true) : null;
+            $sama = $tingkatLain ? array_values(array_intersect($tingkat, $tingkatLain)) : $tingkat;
+
+            if ($sama !== []) {
+                $pesan[] = 'Tingkat ' . implode(', ', $sama) . " juga terdaftar di \"{$o->nama}\" ({$o->status}). "
+                    . 'Satu tingkat hanya boleh punya satu kurikulum aktif.';
+            }
+        }
+
+        return $pesan;
     }
 
     /**
@@ -463,7 +533,7 @@ class KurikulumService
 
     public function listPlatform(array $filters = []): LengthAwarePaginator
     {
-        return Kurikulum::platformDefaults()
+        $page = Kurikulum::platformDefaults()
             ->when(
                 isset($filters['is_active']),
                 fn($q) => $q->where('is_active', filter_var($filters['is_active'], FILTER_VALIDATE_BOOLEAN))
@@ -479,6 +549,19 @@ class KurikulumService
             ->when($filters['jenis'] ?? null, fn($q, $j) => $q->where('jenis', $j))
             ->orderBy('tahun_berlaku', 'desc')
             ->paginate($filters['per_page'] ?? 15);
+
+        // Jumlah sekolah berbeda yang sudah mendaftarkan kurikulum ini ke tahun ajaran.
+        $pakai = DB::table('kurikulum_tahun_ajarans')
+            ->whereIn('kurikulum_id', $page->getCollection()->pluck('id'))
+            ->selectRaw('kurikulum_id, COUNT(DISTINCT school_id) AS n')
+            ->groupBy('kurikulum_id')
+            ->pluck('n', 'kurikulum_id');
+
+        $page->getCollection()->each(
+            fn($k) => $k->dipakai_sekolah = (int) ($pakai[$k->id] ?? 0)
+        );
+
+        return $page;
     }
 
     public function createPlatform(array $data): Kurikulum

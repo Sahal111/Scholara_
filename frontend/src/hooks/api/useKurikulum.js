@@ -156,6 +156,21 @@ export function useCreateKurikulum() {
   });
 }
 
+export function useSalinKurikulumPlatform() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ulid) => api.post(`${BASE}/${ulid}/salin`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: kurikulumKeys.all });
+      toast.success(
+        "Disalin jadi kurikulum sekolah. Silakan ubah sesuai kebutuhan.",
+      );
+    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message ?? "Gagal menyalin kurikulum."),
+  });
+}
+
 export function useUpdateKurikulum() {
   const qc = useQueryClient();
   return useMutation({
@@ -248,7 +263,7 @@ export function useDaftarkanKurikulumKeTahunAjaran() {
   return useMutation({
     mutationFn: (payload) =>
       api.post(`${BASE}/tahun-ajaran/daftarkan`, payload),
-    onSuccess: (_, { tahun_ajaran_ulid }) => {
+    onSuccess: (res, { tahun_ajaran_ulid }) => {
       qc.invalidateQueries({ queryKey: kurikulumKeys.tahunAjarans() });
       qc.invalidateQueries({ queryKey: [...implementasiKeys.all, "list"] });
       // Invalidate detail tahun ajaran yang bersangkutan jika diketahui
@@ -258,6 +273,9 @@ export function useDaftarkanKurikulumKeTahunAjaran() {
         });
       }
       toast.success("Kurikulum berhasil didaftarkan ke tahun ajaran.");
+      (res.data?.data?.peringatan ?? []).forEach((p) =>
+        toast(p, { icon: "⚠️", duration: 8000 }),
+      );
     },
     onError: (err) => {
       const msg =

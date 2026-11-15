@@ -10,6 +10,7 @@ import {
   useActivateKurikulum,
   useKurikulumTrash,
   useRestoreKurikulum,
+  useSalinKurikulumPlatform,
 } from "@/hooks/api/useKurikulum";
 import DataTable from "@/components/ui/DataTable";
 import Confirm from "@/components/ui/Confirm";
@@ -79,6 +80,7 @@ export default function MasterKurikulum() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editUlid, setEditUlid] = useState(null);
+  const [viewOnly, setViewOnly] = useState(false);
 
   // BUG 1 FIX: ambil detail (termasuk komponen_nilais) dan teruskan ke modal
   const { data: detailResponse, isLoading: detailLoading } =
@@ -105,6 +107,7 @@ export default function MasterKurikulum() {
   const nonaktifkan = useDeactivateKurikulum();
   const aktifkan = useActivateKurikulum();
   const restore = useRestoreKurikulum();
+  const salin = useSalinKurikulumPlatform();
 
   const { data: trashData, isLoading: trashLoading } = useKurikulumTrash();
   const trashList = trashData?.data ?? [];
@@ -130,6 +133,7 @@ export default function MasterKurikulum() {
   const handleCloseModal = () => {
     setModalOpen(false);
     setEditUlid(null);
+    setViewOnly(false);
   };
 
   const handleConfirm = async () => {
@@ -139,6 +143,8 @@ export default function MasterKurikulum() {
       await nonaktifkan.mutateAsync(confirm.target.ulid);
     } else if (confirm.type === "aktif") {
       await aktifkan.mutateAsync(confirm.target.ulid);
+    } else if (confirm.type === "salin") {
+      await salin.mutateAsync(confirm.target.ulid);
     }
     setConfirm({ open: false, type: null, target: null });
   };
@@ -207,11 +213,31 @@ export default function MasterKurikulum() {
               >
                 Lihat Detail
               </button>
+              {canManage && (
+                <button
+                  onClick={() =>
+                    setConfirm({ open: true, type: "salin", target: k })
+                  }
+                  className="text-xs px-3 py-1 rounded-lg border border-[#006e2a]/30 text-[#006e2a] hover:bg-green-50 transition-colors"
+                >
+                  Salin jadi milik sekolah
+                </button>
+              )}
             </div>
           );
         }
         return (
           <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={() => {
+                setViewOnly(true);
+                setEditUlid(k.ulid);
+                setModalOpen(true);
+              }}
+              className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Detail
+            </button>
             {canManage && (
               <button
                 onClick={() => openEdit(k)}
@@ -519,6 +545,7 @@ export default function MasterKurikulum() {
         onClose={handleCloseModal}
         editData={editUlid ? (detailResponse?.data ?? null) : null}
         loadingDetail={detailLoading && !!editUlid}
+        readOnly={viewOnly}
       />
 
       {/* BUG 7 FIX: pakai shared <Confirm> bukan custom ConfirmDialog */}
@@ -531,14 +558,18 @@ export default function MasterKurikulum() {
             ? "Hapus Kurikulum"
             : confirm.type === "nonaktif"
               ? "Nonaktifkan Kurikulum"
-              : "Aktifkan Kurikulum"
+              : confirm.type === "salin"
+                ? "Salin Kurikulum Bawaan"
+                : "Aktifkan Kurikulum"
         }
         message={
           confirm.type === "hapus"
             ? `Hapus kurikulum "${confirm.target?.nama}"? Pastikan tidak ada kelas yang masih menggunakannya.`
             : confirm.type === "nonaktif"
               ? `Nonaktifkan kurikulum "${confirm.target?.nama}"? Kurikulum tidak akan bisa dipilih untuk kelas baru.`
-              : `Aktifkan kembali kurikulum "${confirm.target?.nama}"?`
+              : confirm.type === "salin"
+                ? `Salin "${confirm.target?.nama}" jadi kurikulum milik sekolah? Salinan bisa kamu ubah bebas. Struktur mapel tidak ikut disalin.`
+                : `Aktifkan kembali kurikulum "${confirm.target?.nama}"?`
         }
         variant={confirm.type === "hapus" ? "danger" : "warning"}
         confirmLabel={
@@ -546,10 +577,15 @@ export default function MasterKurikulum() {
             ? "Ya, Hapus"
             : confirm.type === "nonaktif"
               ? "Ya, Nonaktifkan"
-              : "Ya, Aktifkan"
+              : confirm.type === "salin"
+                ? "Ya, Salin"
+                : "Ya, Aktifkan"
         }
         isLoading={
-          hapus.isPending || nonaktifkan.isPending || aktifkan.isPending
+          hapus.isPending ||
+          nonaktifkan.isPending ||
+          aktifkan.isPending ||
+          salin.isPending
         }
       />
     </div>

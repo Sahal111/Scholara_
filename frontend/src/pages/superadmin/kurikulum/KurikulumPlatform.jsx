@@ -222,6 +222,7 @@ export default function KurikulumPlatform() {
               <th className="p-3">Kode</th>
               <th className="p-3">Jenis</th>
               <th className="p-3">Tahun</th>
+              <th className="p-3">Dipakai</th>
               <th className="p-3">Status</th>
               <th className="p-3 text-right">Aksi</th>
             </tr>
@@ -229,14 +230,14 @@ export default function KurikulumPlatform() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={6} className="p-4 text-gray-400">
+                <td colSpan={7} className="p-4 text-gray-400">
                   Memuat...
                 </td>
               </tr>
             )}
             {!isLoading && rows.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-4 text-gray-400">
+                <td colSpan={7} className="p-4 text-gray-400">
                   Belum ada kurikulum platform.
                 </td>
               </tr>
@@ -259,6 +260,9 @@ export default function KurikulumPlatform() {
                 <td className="p-3">
                   {k.tahun_berlaku}
                   {k.tahun_berakhir ? `–${k.tahun_berakhir}` : ""}
+                </td>
+                <td className="p-3 text-gray-600">
+                  {k.dipakai_sekolah ?? 0} sekolah
                 </td>
                 <td className="p-3">
                   <span
