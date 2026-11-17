@@ -454,6 +454,7 @@ export default function MasterKurikulum() {
           )}
           <DaftarImplementasiKurikulum
             detailPath="/wakasek/kurikulum/implementasi"
+            kelola={canManage}
             judul="Implementasi Kurikulum"
             deskripsi="Kurikulum yang sudah didaftarkan ke tahun ajaran, beserta status review."
           />

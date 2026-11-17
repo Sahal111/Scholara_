@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, Power } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Confirm from "@/components/ui/Confirm";
+import Pagination from "@/components/ui/Pagination";
 import {
   useKurikulumPlatformList,
   useBuatKurikulumPlatform,
@@ -178,10 +179,11 @@ function FormKurikulum({ awal, onClose }) {
 
 export default function KurikulumPlatform() {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [form, setForm] = useState(null); // null | "baru" | objek kurikulum
   const [hapus, setHapus] = useState(null);
 
-  const { data, isLoading } = useKurikulumPlatformList({ search });
+  const { data, isLoading } = useKurikulumPlatformList({ search, page });
   const aktifkan = useAktifkanKurikulumPlatform();
   const nonaktifkan = useNonaktifkanKurikulumPlatform();
   const hapusMut = useHapusKurikulumPlatform();
@@ -209,7 +211,10 @@ export default function KurikulumPlatform() {
 
       <input
         value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setPage(1);
+        }}
         placeholder="Cari nama atau kode..."
         className={`${INPUT} max-w-sm bg-white`}
       />
@@ -303,6 +308,8 @@ export default function KurikulumPlatform() {
           </tbody>
         </table>
       </div>
+
+      <Pagination meta={data?.meta} onPageChange={setPage} />
 
       <Modal
         isOpen={!!form}

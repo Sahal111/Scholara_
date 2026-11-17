@@ -4,6 +4,7 @@ namespace App\Http\Controllers\MasterData;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Kurikulum\DaftarkanKurikulumRequest;
+use App\Http\Requests\Kurikulum\UbahImplementasiRequest;
 use App\Http\Requests\Kurikulum\StoreKurikulumRequest;
 use App\Http\Requests\Kurikulum\UpdateKurikulumRequest;
 use App\Http\Resources\KurikulumDetailResource;
@@ -257,6 +258,38 @@ class KurikulumController extends Controller
             ['peringatan' => $peringatan],
             'Kurikulum berhasil didaftarkan ke tahun ajaran.'
         );
+    }
+
+    /**
+     * PUT /v1/master-data/kurikulum/implementasi/{ulid}
+     * Ubah tingkat & catatan implementasi berstatus DRAFT.
+     */
+    public function ubahImplementasi(UbahImplementasiRequest $request, string $ulid): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $peringatan = $this->kurikulumService->ubahImplementasi($schoolId, $ulid, $request->validated());
+
+        return $this->success(['peringatan' => $peringatan], 'Implementasi kurikulum diperbarui.');
+    }
+
+    /**
+     * DELETE /v1/master-data/kurikulum/implementasi/{ulid}
+     * Hapus implementasi berstatus DRAFT (struktur mapelnya ikut terhapus).
+     */
+    public function hapusImplementasi(string $ulid): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $this->kurikulumService->hapusImplementasi($schoolId, $ulid);
+
+        return $this->success(message: 'Implementasi kurikulum dihapus.');
     }
 
     /**

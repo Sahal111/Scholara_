@@ -298,6 +298,36 @@ export const implementasiKeys = {
   detail: (ulid) => [...implementasiKeys.all, "detail", ulid],
 };
 
+// ── Ubah / hapus implementasi (hanya DRAFT, wakasek) ─────────────────────────
+function useAksiImplementasi(fn, pesan) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: implementasiKeys.all });
+      qc.invalidateQueries({ queryKey: kurikulumKeys.tahunAjarans() });
+      toast.success(pesan);
+      (res.data?.data?.peringatan ?? []).forEach((p) =>
+        toast(p, { icon: "⚠️", duration: 8000 }),
+      );
+    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message ?? "Aksi gagal."),
+  });
+}
+
+export const useUbahImplementasi = () =>
+  useAksiImplementasi(
+    ({ ulid, ...payload }) => api.put(`${BASE}/implementasi/${ulid}`, payload),
+    "Implementasi kurikulum diperbarui.",
+  );
+
+export const useHapusImplementasi = () =>
+  useAksiImplementasi(
+    (ulid) => api.delete(`${BASE}/implementasi/${ulid}`),
+    "Implementasi kurikulum dihapus.",
+  );
+  
 /** Detail implementasi + status + aksi_tersedia (sudah difilter permission). */
 export function useImplementasiKurikulum(ulid) {
   const base = useContext(BaseCtx);

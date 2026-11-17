@@ -8,6 +8,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use App\Models\ActivityLog;
 
 /**
  * Service untuk manajemen Kurikulum.
@@ -382,19 +383,7 @@ class KurikulumService
             ->where('id', $data['tahun_ajaran_id'])
             ->firstOrFail();
 
-        // Kosong = semua tingkat SEKOLAH ini (bukan 1–12). Tingkat di luar jenjang ditolak.
-        $tingkatSekolah = \App\Models\School::findOrFail($schoolId)->tingkatKelas();
-        $tingkat = array_values(array_unique(array_map('intval', $data['tingkat_kelas'] ?? [])));
-        sort($tingkat);
-
-        if ($tingkat === []) {
-            $tingkat = $tingkatSekolah;
-        } elseif (($luar = array_diff($tingkat, $tingkatSekolah)) !== []) {
-            throw new \DomainException(
-                'Tingkat ' . implode(', ', $luar) . ' tidak sesuai jenjang sekolah ini (Kelas '
-                . min($tingkatSekolah) . '–' . max($tingkatSekolah) . ').'
-            );
-        }
+        $tingkat = $this->normalisasiTingkat($schoolId, $data['tingkat_kelas'] ?? []);
 
         \DB::table('kurikulum_tahun_ajarans')->insertOrIgnore([
             'ulid' => (string) \Illuminate\Support\Str::ulid(),
@@ -443,6 +432,106 @@ class KurikulumService
         return $pesan;
     }
 
+    /** Kosong = semua tingkat SEKOLAH ini (bukan 1–12). Tingkat di luar jenjang ditolak. */
+    private function normalisasiTingkat(int $schoolId, array $input): array
+    {
+        $tingkatSekolah = \App\Models\School::findOrFail($schoolId)->tingkatKelas();
+        $tingkat = array_values(array_unique(array_map('intval', $input)));
+        sort($tingkat);
+
+        if ($tingkat === []) {
+            return $tingkatSekolah;
+        }
+
+        if (($luar = array_diff($tingkat, $tingkatSekolah)) !== []) {
+            throw new \DomainException(
+                'Tingkat ' . implode(', ', $luar) . ' tidak sesuai jenjang sekolah ini (Kelas '
+                . min($tingkatSekolah) . '–' . max($tingkatSekolah) . ').'
+            );
+        }
+
+        return $tingkat;
+    }
+
+    /** Kunci baris implementasi; hanya DRAFT yang boleh diubah/dihapus. */
+    private function implementasiDraft(int $schoolId, string $ulid, string $aksi): object
+    {
+        $impl = DB::table('kurikulum_tahun_ajarans')
+            ->where('school_id', $schoolId)
+            ->where('ulid', $ulid)
+            ->lockForUpdate()
+            ->first();
+
+        if (!$impl) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException('Implementasi kurikulum tidak ditemukan.');
+        }
+
+        if ($impl->status !== 'draft') {
+            throw new \DomainException("Hanya implementasi berstatus Draft yang bisa {$aksi}.");
+        }
+
+        return $impl;
+    }
+
+    /**
+     * Ubah tingkat & catatan implementasi (DRAFT saja).
+     *
+     * @return string[] peringatan bentrok tingkat
+     */
+    public function ubahImplementasi(int $schoolId, string $ulid, array $data): array
+    {
+        return DB::transaction(function () use ($schoolId, $ulid, $data) {
+            $impl = $this->implementasiDraft($schoolId, $ulid, 'diubah');
+            $tingkat = $this->normalisasiTingkat($schoolId, $data['tingkat_kelas'] ?? []);
+
+            $terpakai = DB::table('kurikulum_strukturs')
+                ->where('kurikulum_tahun_ajaran_id', $impl->id)
+                ->whereNotIn('tingkat', $tingkat)
+                ->distinct()
+                ->pluck('tingkat')
+                ->all();
+
+            if ($terpakai !== []) {
+                throw new \DomainException(
+                    'Tingkat ' . implode(', ', $terpakai) . ' sudah punya struktur mapel. '
+                    . 'Hapus strukturnya dulu sebelum mengeluarkan tingkat ini.'
+                );
+            }
+
+            DB::table('kurikulum_tahun_ajarans')->where('id', $impl->id)->update([
+                'tingkat_kelas' => json_encode($tingkat),
+                'catatan' => $data['catatan'] ?? null,
+                'updated_at' => now(),
+            ]);
+
+            ActivityLog::log('update', 'kurikulum_implementasi', (int) $impl->id, 'Tingkat/catatan implementasi kurikulum diubah.');
+
+            return $this->peringatanBentrokTingkat($schoolId, (int) $impl->tahun_ajaran_id, (int) $impl->kurikulum_id, $tingkat);
+        });
+    }
+
+    /** Hapus implementasi DRAFT yang strukturnya sudah kosong. */
+    public function hapusImplementasi(int $schoolId, string $ulid): void
+    {
+        DB::transaction(function () use ($schoolId, $ulid) {
+            $impl = $this->implementasiDraft($schoolId, $ulid, 'dihapus');
+
+            $jumlah = DB::table('kurikulum_strukturs')
+                ->where('kurikulum_tahun_ajaran_id', $impl->id)
+                ->count();
+
+            if ($jumlah > 0) {
+                throw new \DomainException(
+                    "Implementasi ini masih punya {$jumlah} baris struktur mapel. Hapus struktur mapelnya dulu."
+                );
+            }
+
+            DB::table('kurikulum_tahun_ajarans')->where('id', $impl->id)->delete();
+
+            ActivityLog::log('delete', 'kurikulum_implementasi', (int) $impl->id, 'Implementasi kurikulum draft dihapus.');
+        });
+    }
+    
     /**
      * Daftar kurikulum yang berlaku di tahun ajaran tertentu.
      * Dipakai saat operator buka form buat kelas.

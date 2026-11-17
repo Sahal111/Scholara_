@@ -32,6 +32,7 @@ class KurikulumWorkflowTest extends TestCase
     private const P_APPROVE = 'master_data.kurikulum.approve';
     private const P_ACTIVATE = 'master_data.kurikulum.activate';
     private const P_COMPLETE = 'master_data.kurikulum.complete';
+    private const P_MANAGE = 'master_data.kurikulum.manage';
 
     private School $schoolA;
     private School $schoolB;
@@ -308,6 +309,170 @@ class KurikulumWorkflowTest extends TestCase
         $this->patchJson(self::BASE . "/{$implB['ulid']}/setujui")->assertNotFound();
 
         $this->assertDatabaseHas('kurikulum_tahun_ajarans', ['id' => $implB['id'], 'status' => 'under_review']);
+    }
+
+    // ── ubah & hapus implementasi (hanya DRAFT) ──────────────────────────────
+
+    public function test_wakasek_ubah_tingkat_dan_catatan_implementasi_draft(): void
+    {
+        DB::table('schools')->where('id', $this->schoolA->id)->update(['jenjang' => 'menengah_pertama']);
+        $impl = $this->implementasi('draft', [7, 8, 9]);
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $this->putJson(self::BASE . "/{$impl['ulid']}", ['tingkat_kelas' => [7, 8], 'catatan' => 'Fase A'])
+            ->assertOk();
+
+        $row = DB::table('kurikulum_tahun_ajarans')->where('id', $impl['id'])->first();
+        $this->assertSame([7, 8], json_decode($row->tingkat_kelas, true));
+        $this->assertSame('Fase A', $row->catatan);
+    }
+
+    public function test_ubah_implementasi_ditolak_jika_bukan_draft(): void
+    {
+        DB::table('schools')->where('id', $this->schoolA->id)->update(['jenjang' => 'menengah_pertama']);
+        $impl = $this->implementasi('under_review', [7]);
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $this->putJson(self::BASE . "/{$impl['ulid']}", ['tingkat_kelas' => [8]])->assertStatus(422);
+    }
+
+    public function test_ubah_gagal_jika_tingkat_yang_dibuang_sudah_punya_struktur(): void
+    {
+        DB::table('schools')->where('id', $this->schoolA->id)->update(['jenjang' => 'menengah_pertama']);
+        $impl = $this->implementasi('draft', [7, 8]);
+        $this->tambahStruktur($impl, 8);
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $res = $this->putJson(self::BASE . "/{$impl['ulid']}", ['tingkat_kelas' => [7]]);
+
+        $res->assertStatus(422);
+        $this->assertStringContainsString('struktur', (string) $res->json('message'));
+    }
+
+    public function test_ubah_gagal_jika_tingkat_di_luar_jenjang(): void
+    {
+        DB::table('schools')->where('id', $this->schoolA->id)->update(['jenjang' => 'menengah_pertama']);
+        $impl = $this->implementasi('draft', [7]);
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $res = $this->putJson(self::BASE . "/{$impl['ulid']}", ['tingkat_kelas' => [1]]);
+
+        $res->assertStatus(422);
+        $this->assertStringContainsString('jenjang', (string) $res->json('message'));
+    }
+
+    public function test_hapus_implementasi_draft_tanpa_struktur(): void
+    {
+        $impl = $this->implementasi('draft', [7]);
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $this->deleteJson(self::BASE . "/{$impl['ulid']}")->assertOk();
+
+        $this->assertDatabaseMissing('kurikulum_tahun_ajarans', ['id' => $impl['id']]);
+    }
+
+    public function test_hapus_implementasi_ditolak_jika_masih_punya_struktur(): void
+    {
+        $impl = $this->implementasi('draft', [7]);
+        $this->tambahStruktur($impl, 7);
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $res = $this->deleteJson(self::BASE . "/{$impl['ulid']}");
+
+        $res->assertStatus(422);
+        $this->assertStringContainsString('struktur', (string) $res->json('message'));
+        $this->assertDatabaseHas('kurikulum_tahun_ajarans', ['id' => $impl['id']]);
+    }
+
+    public function test_hapus_implementasi_aktif_ditolak(): void
+    {
+        $impl = $this->implementasi('active', [7]);
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $this->deleteJson(self::BASE . "/{$impl['ulid']}")->assertStatus(422);
+
+        $this->assertDatabaseHas('kurikulum_tahun_ajarans', ['id' => $impl['id']]);
+    }
+
+    public function test_hapus_implementasi_sekolah_lain_mengembalikan_404(): void
+    {
+        $implB = $this->implementasi('draft', [7], $this->schoolB);
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $this->deleteJson(self::BASE . "/{$implB['ulid']}")->assertNotFound();
+    }
+
+    // ── daftarkan: range tingkat & peringatan bentrok ────────────────────────
+
+    private function daftarkan(int $kurikulumId, int $tahunAjaranId, array $tingkat = []): \Illuminate\Testing\TestResponse
+    {
+        return $this->postJson('/api/operator/master-data/kurikulum/tahun-ajaran/daftarkan', array_filter([
+            'kurikulum_ulid' => DB::table('kurikulums')->where('id', $kurikulumId)->value('ulid'),
+            'tahun_ajaran_ulid' => DB::table('tahun_ajarans')->where('id', $tahunAjaranId)->value('ulid'),
+            'tingkat_kelas' => $tingkat ?: null,
+        ]));
+    }
+
+    public function test_daftarkan_tanpa_tingkat_memakai_semua_tingkat_jenjang_sekolah(): void
+    {
+        DB::table('schools')->where('id', $this->schoolA->id)->update(['jenjang' => 'menengah_pertama']);
+        $taId = $this->tahunAjaran($this->schoolA);
+        $kId = $this->kurikulum($this->schoolA->id, 'KUR_SMP');
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $this->daftarkan($kId, $taId)->assertOk();
+
+        $row = DB::table('kurikulum_tahun_ajarans')->where('kurikulum_id', $kId)->first();
+        $this->assertSame([7, 8, 9], json_decode($row->tingkat_kelas, true));
+    }
+
+    public function test_daftarkan_ditolak_jika_tingkat_di_luar_jenjang(): void
+    {
+        DB::table('schools')->where('id', $this->schoolA->id)->update(['jenjang' => 'menengah_pertama']);
+        $taId = $this->tahunAjaran($this->schoolA);
+        $kId = $this->kurikulum($this->schoolA->id, 'KUR_SMP');
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $res = $this->daftarkan($kId, $taId, [1, 2]);
+
+        $res->assertStatus(422);
+        $this->assertStringContainsString('jenjang', (string) $res->json('message'));
+        $this->assertDatabaseMissing('kurikulum_tahun_ajarans', ['kurikulum_id' => $kId]);
+    }
+
+    public function test_daftarkan_memberi_peringatan_jika_tingkat_beririsan_dengan_kurikulum_lain(): void
+    {
+        DB::table('schools')->where('id', $this->schoolA->id)->update(['jenjang' => 'menengah_pertama']);
+        $taId = $this->tahunAjaran($this->schoolA);
+        $this->implementasi('draft', [7, 8], $this->schoolA, $taId, 'KUR_LAMA');
+        $kBaru = $this->kurikulum($this->schoolA->id, 'KUR_BARU');
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $res = $this->daftarkan($kBaru, $taId, [8, 9])->assertOk();
+
+        $peringatan = $res->json('data.peringatan');
+        $this->assertCount(1, $peringatan);
+        $this->assertStringContainsString('Tingkat 8 juga terdaftar', $peringatan[0]);
+        // peringatan tidak memblokir: pendaftaran tetap tersimpan
+        $this->assertDatabaseHas('kurikulum_tahun_ajarans', ['kurikulum_id' => $kBaru]);
+    }
+
+    public function test_daftarkan_tanpa_peringatan_jika_tidak_beririsan_selesai_atau_beda_tahun_ajaran(): void
+    {
+        DB::table('schools')->where('id', $this->schoolA->id)->update(['jenjang' => 'menengah_pertama']);
+        $taId = $this->tahunAjaran($this->schoolA);
+        $taLain = $this->tahunAjaran($this->schoolA, '2026/2027');
+
+        $this->implementasi('draft', [7], $this->schoolA, $taId, 'KUR_A');       // tingkat tidak beririsan
+        $this->implementasi('completed', [8], $this->schoolA, $taId, 'KUR_B');   // beririsan tapi sudah selesai
+        $this->implementasi('draft', [9], $this->schoolA, $taLain, 'KUR_C');     // beririsan tapi beda tahun ajaran
+
+        $kBaru = $this->kurikulum($this->schoolA->id, 'KUR_BARU');
+        $this->loginSebagai('wakasek', [self::P_VIEW, self::P_MANAGE]);
+
+        $res = $this->daftarkan($kBaru, $taId, [8, 9])->assertOk();
+
+        $this->assertSame([], $res->json('data.peringatan'));
     }
 
     // ── alur penuh ────────────────────────────────────────────────────────────

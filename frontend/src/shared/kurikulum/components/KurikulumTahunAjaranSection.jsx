@@ -162,14 +162,16 @@ function FormDaftarkan({ tahunAjaranUlid, sudahTerdaftar, onClose }) {
 export function ModalDaftarkanKurikulum({ isOpen, onClose }) {
   const { data: taRes } = useTahunAjaranList();
   const tahunList = taRes?.data ?? [];
-  const [tahunUlid, setTahunUlid] = useState("");
-  const { data: terdaftarRes } = useKurikulumUntukTahunAjaran(tahunUlid);
+    const [tahunUlid, setTahunUlid] = useState(null); // null = belum memilih → pakai tahun ajaran aktif
+    const aktifUlid = tahunList.find((t) => t.status === "active")?.ulid ?? "";
+    const tahunPilih = tahunUlid ?? aktifUlid;
+    const { data: terdaftarRes } = useKurikulumUntukTahunAjaran(tahunPilih);
   const sudahTerdaftar = new Set((terdaftarRes?.data ?? []).map((r) => r.ulid));
 
-  const tutup = () => {
-    setTahunUlid("");
-    onClose();
-  };
+    const tutup = () => {
+      setTahunUlid(null);
+      onClose();
+    };
 
   return (
     <Modal
@@ -184,7 +186,7 @@ export function ModalDaftarkanKurikulum({ isOpen, onClose }) {
             Tahun ajaran
           </label>
           <select
-            value={tahunUlid}
+            value={tahunPilih}
             onChange={(e) => setTahunUlid(e.target.value)}
             className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600/30"
           >
@@ -198,10 +200,10 @@ export function ModalDaftarkanKurikulum({ isOpen, onClose }) {
           </select>
         </div>
 
-        {tahunUlid && (
+        {tahunPilih && (
           <FormDaftarkan
-            key={tahunUlid}
-            tahunAjaranUlid={tahunUlid}
+            key={tahunPilih}
+            tahunAjaranUlid={tahunPilih}
             sudahTerdaftar={sudahTerdaftar}
             onClose={tutup}
           />

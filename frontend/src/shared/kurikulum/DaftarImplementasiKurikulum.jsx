@@ -1,8 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, BookOpen } from "lucide-react";
+import { AlertCircle, BookOpen, Pencil, Trash2 } from "lucide-react";
 import SectionCard from "@/components/ui/SectionCard";
-import { useDaftarImplementasi } from "@/hooks/api/useKurikulum";
+import Confirm from "@/components/ui/Confirm";
+import {
+  useDaftarImplementasi,
+  useHapusImplementasi,
+} from "@/hooks/api/useKurikulum";
+import ModalUbahImplementasi from "./components/ModalUbahImplementasi";
 import ImplementasiStatusBadge from "./components/ImplementasiStatusBadge";
 import {
   IMPLEMENTASI_LANGKAH,
@@ -21,9 +26,13 @@ export default function DaftarImplementasiKurikulum({
   detailPath,
   judul = "Kurikulum",
   deskripsi,
+  kelola = false, // true hanya untuk wakasek: tampilkan Ubah/Hapus pada baris Draft
 }) {
   const navigate = useNavigate();
   const [filter, setFilter] = useState("");
+  const [ubah, setUbah] = useState(null);
+  const [hapus, setHapus] = useState(null);
+  const hapusMut = useHapusImplementasi();
   const { data: res, isLoading, isError, error } = useDaftarImplementasi();
 
   const rows = useMemo(() => res?.data ?? [], [res]);
@@ -97,6 +106,7 @@ export default function DaftarImplementasiKurikulum({
                   <th className="py-2 pr-4 font-medium">Tingkat</th>
                   <th className="py-2 pr-4 font-medium">Struktur</th>
                   <th className="py-2 font-medium">Status</th>
+                  {kelola && <th className="py-2 w-24" />}
                 </tr>
               </thead>
               <tbody>
@@ -128,6 +138,41 @@ export default function DaftarImplementasiKurikulum({
                     <td className="py-3">
                       <ImplementasiStatusBadge status={r.status} />
                     </td>
+                    {kelola && (
+                      <td className="py-3 pl-4">
+                        {r.status === "draft" && (
+                          <div className="flex justify-end gap-1">
+                            <button
+                              type="button"
+                              title="Ubah"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setUbah(r);
+                              }}
+                              className="p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            <button
+                              type="button"
+                              title={
+                                r.jumlah_struktur > 0
+                                  ? "Hapus struktur mapel dulu"
+                                  : "Hapus"
+                              }
+                              disabled={r.jumlah_struktur > 0}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setHapus(r);
+                              }}
+                              className="p-2 rounded-lg hover:bg-red-50 text-red-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -135,6 +180,21 @@ export default function DaftarImplementasiKurikulum({
           </div>
         )}
       </SectionCard>
+
+      <ModalUbahImplementasi impl={ubah} onClose={() => setUbah(null)} />
+
+      <Confirm
+        isOpen={!!hapus}
+        onClose={() => setHapus(null)}
+        onConfirm={() =>
+          hapusMut.mutate(hapus.ulid, { onSettled: () => setHapus(null) })
+        }
+        isLoading={hapusMut.isPending}
+        title="Hapus Implementasi"
+        message={`Hapus "${hapus?.kurikulum?.nama}" dari tahun ajaran ${hapus?.tahun_ajaran?.tahun}?`}
+        variant="danger"
+        confirmLabel="Ya, Hapus"
+      />
     </div>
   );
 }
