@@ -159,8 +159,56 @@ Diseed otomatis di `2026_09_03_000001_create_kurikulums_table.php`:
 |---|---|
 | `master_data.kurikulum.view` | operator, kepsek, wakasek, guru, wali_kelas |
 | `master_data.kurikulum.manage` | operator, wakasek |
+| `master_data.kurikulum.review` | wakasek (ajukan review) |
+| `master_data.kurikulum.complete` | wakasek (selesaikan) |
+| `master_data.kurikulum.approve` | kepsek (setujui / tolak) |
+| `master_data.kurikulum.activate` | kepsek (aktifkan) |
 
 > Kurikulum **platform** (school_id NULL) hanya bisa dikelola oleh super admin via panel platform — bukan lewat endpoint ini.
+
+---
+## Kurikulum Bawaan vs Milik Sekolah
+
+| | Bawaan Scholara | Milik Sekolah |
+|---|---|---|
+| `school_id` | NULL | id sekolah |
+| Dikelola oleh | Super admin (`/api/superadmin/kurikulum-platform`) | Wakasek / operator (`/kurikulum`) |
+| Muncul di dropdown | Ya, bila aktif dan masih berlaku | Ya, bila aktif dan masih berlaku |
+
+- Kode kurikulum sekolah tidak boleh sama dengan kode kurikulum bawaan (supaya dropdown tidak ambigu).
+- Satu `is_platform_default` per jenis. Menjadikan satu kurikulum default melepas default lain pada jenis yang sama.
+- Kode dan jenis kurikulum bawaan terkunci setelah dipakai sekolah mana pun. Menghapusnya ditolak bila sudah dipakai; nonaktif tetap boleh dan sekolah yang sudah memakainya tidak terganggu.
+- **Salin jadi milik sekolah** (`POST /kurikulum/{ulid}/salin`): menyalin kurikulum bawaan beserta komponen nilainya. Kode menjadi `<KODE>-SEK` (`-2`, `-3`, … bila bentrok, termasuk dengan baris yang sudah dihapus), nama diberi akhiran "(Salinan)", status selalu Aktif. Struktur mapel tidak ikut disalin karena milik implementasi, bukan kurikulum.
+
+---
+
+## Implementasi per Tahun Ajaran (`kurikulum_tahun_ajarans`)
+
+Status: `draft → under_review → approved → active → completed`. Penolakan: `under_review → draft` dengan catatan.
+
+| Aksi | Siapa | Prasyarat |
+|---|---|---|
+| Ajukan review | Wakasek | Struktur terisi untuk setiap tingkat yang diizinkan |
+| Setujui / Tolak | Kepsek | Tolak wajib menyertakan catatan |
+| Aktifkan | Kepsek | Tidak ada kurikulum aktif lain pada tingkat yang sama di tahun ajaran yang sama; tahun ajaran belum selesai |
+| Selesaikan | Wakasek | Status aktif |
+
+Aturan pendaftaran:
+- Tingkat kosong = semua tingkat jenjang sekolah (`dasar` 1–6, `menengah_pertama` 7–9, `menengah_atas` 10–12). Tingkat di luar jenjang ditolak.
+- Bentrok tingkat saat mendaftarkan hanya **peringatan** (respons `data.peringatan`), dihitung terhadap implementasi lain berstatus draft / under_review / approved / active pada tahun ajaran yang sama. Penolakan tegas baru terjadi saat **aktivasi**.
+- Hanya satu implementasi aktif per tingkat per tahun ajaran.
+
+Ubah dan hapus (`PUT` / `DELETE /kurikulum/implementasi/{ulid}`, permission `manage`):
+- Hanya status **draft**.
+- Ubah hanya tingkat dan catatan. Mengeluarkan tingkat yang sudah punya struktur mapel ditolak.
+- Hapus ditolak selama masih ada baris struktur mapel.
+
+---
+
+## Pemantauan
+
+- Kepsek: antrian implementasi sekolahnya (`GET /kurikulum/implementasi`).
+- Super admin: read-only per sekolah lewat `/api/superadmin/sekolah/{school}/kurikulum/...`; hanya route GET yang dibuka.
 
 ---
 

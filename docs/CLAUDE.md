@@ -90,6 +90,15 @@
 - [x] Pengumuman Kepsek; `PengumumanKepsek.jsx`
 - [x] Kalender Akademik — CRUD event; `KalenderAkademik.jsx`, `KalenderAkademikController.php`
 - [x] Profil Kepsek; `ProfilKepsek.jsx`
+- [x] Kurikulum — antrian review implementasi (setujui / tolak / aktifkan); `KurikulumKepsek.jsx`, `DaftarImplementasiKurikulum.jsx`, `DetailImplementasiKurikulum.jsx`, `KurikulumWorkflowController.php`
+
+### Wakasek
+- [x] Master Kurikulum — daftar kurikulum bawaan Scholara + milik sekolah, filter sumber, detail read-only, CRUD kurikulum sekolah, salin kurikulum bawaan jadi milik sekolah, recycle bin; `MasterKurikulum.jsx`, `ModalKurikulum.jsx`, `KurikulumController.php`
+- [x] Implementasi Kurikulum per Tahun Ajaran — daftarkan (tingkat sesuai jenjang, peringatan bentrok tingkat), ubah/hapus saat Draft, workflow ajukan-review → selesaikan, struktur mapel per tingkat; `KurikulumTahunAjaranSection.jsx`, `ModalUbahImplementasi.jsx`, `StrukturKurikulumSection.jsx`, `KurikulumService.php`, `KurikulumWorkflowService.php`, `KurikulumStrukturService.php`
+
+### Super Admin
+- [x] Kurikulum Platform — CRUD kurikulum bawaan (satu default per jenis, aktif/nonaktif, hapus hanya bila belum dipakai, kolom "Dipakai X sekolah", pagination); `KurikulumPlatform.jsx`, `KurikulumPlatformController.php`
+- [x] Pantau Kurikulum per Sekolah (read-only); `KurikulumSekolahList.jsx`, `KurikulumSekolah.jsx`, `DetailImplementasiSuperAdmin.jsx`, `UseSchoolFromRoute.php`
 
 ### Ortu
 - [x] Absensi Anak; `AbsensiAnak.jsx`
@@ -154,6 +163,9 @@
 
 ### Backend
 - `backend/app/Http/Controllers/MasterData/TahunAjaranController.php`
+- `backend/app/Services/KurikulumService.php`
+- `backend/app/Services/KurikulumWorkflowService.php`
+- `backend/app/Services/KurikulumStrukturService.php`
 
 ---
 
