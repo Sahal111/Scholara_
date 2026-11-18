@@ -13,7 +13,7 @@ use App\Models\User;
  *    ditemukan pasti milik school_id yang sama dengan user.
  *  - Policy ini menjadi LAPISAN KEDUA: mencegah privilege escalation
  *    kalau SchoolScope di-bypass atau ada bug di resolver.
- *  - Route middleware sudah cek permission (master_data.kelas.view/manage).
+ *  - Route middleware sudah cek permission (master_data.program.view/manage).
  *    Policy hanya cek kepemilikan tenant — tidak duplikasi role check.
  */
 class ProgramPendidikanPolicy
@@ -31,12 +31,12 @@ class ProgramPendidikanPolicy
     }
 
     /**
-     * Tambah program baru — wakasek (pemilik kebijakan akademik) atau operator.
-     * Permission middleware sudah menjaga akses; policy ini hanya cek role.
+     * Tambah program baru — ikut permission master_data.program.manage
+     * (sumber kebenaran: RbacCatalog, sama dengan route middleware).
      */
     public function create(User $user): bool
     {
-        return $user->hasRole('operator') || $user->hasRole('wakasek');
+        return $user->hasPermission('master_data.program.manage');
     }
 
     /** Edit program — harus sekolah yang sama. Operator pun harus pass cek ini. */
@@ -57,10 +57,10 @@ class ProgramPendidikanPolicy
         return $this->sameSchool($user, $program);
     }
 
-    /** Hapus permanen — operator atau wakasek (pemilik kebijakan akademik), harus sekolah yang sama. */
+    /** Hapus permanen — butuh permission manage, dan harus sekolah yang sama. */
     public function forceDelete(User $user, ProgramPendidikan $program): bool
     {
-        return ($user->hasRole('operator') || $user->hasRole('wakasek'))
+        return $user->hasPermission('master_data.program.manage')
             && $this->sameSchool($user, $program);
     }
 

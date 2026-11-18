@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ProgramPendidikan\StoreProgramPendidikanRequest;
 use App\Http\Requests\ProgramPendidikan\UpdateProgramPendidikanRequest;
 use App\Http\Resources\ProgramPendidikanResource;
+use App\Models\ActivityLog;
 use App\Models\ProgramPendidikan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,8 @@ class ProgramPendidikanController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', ProgramPendidikan::class);
+
         $data = ProgramPendidikan::query()
             ->with('parent:id,ulid,nama,kode,jenis')
             ->when(
@@ -61,6 +64,8 @@ class ProgramPendidikanController extends Controller
      */
     public function tree(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', ProgramPendidikan::class);
+
         $filterActive = $request->is_active !== null && $request->is_active !== ''
             ? filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN)
             : null;
@@ -98,6 +103,8 @@ class ProgramPendidikanController extends Controller
 
     public function store(StoreProgramPendidikanRequest $request): JsonResponse
     {
+        $this->authorize('create', ProgramPendidikan::class);
+
         $validated = $request->validated();
 
         // parent_id dikirim sebagai ULID dari frontend — resolve ke integer PK
@@ -115,6 +122,13 @@ class ProgramPendidikanController extends Controller
             'deskripsi' => $validated['deskripsi'] ?? null,
             'is_active' => true,
         ]);
+
+        ActivityLog::log(
+            'create',
+            'program_pendidikan',
+            $program->id,
+            "Menambahkan program pendidikan {$program->nama}."
+        );
 
         return $this->created(
             new ProgramPendidikanResource($program->load('parent:id,ulid,nama,kode,jenis')),
@@ -166,6 +180,8 @@ class ProgramPendidikanController extends Controller
             }
         }
 
+        $old = $program->only(['parent_id', 'nama', 'kode', 'jenis', 'jenjang_sasaran', 'deskripsi', 'is_active']);
+
         $program->update([
             'parent_id' => $parentId,
             'nama' => $validated['nama'],
@@ -175,6 +191,17 @@ class ProgramPendidikanController extends Controller
             'deskripsi' => $validated['deskripsi'] ?? $program->deskripsi,
             'is_active' => $validated['is_active'] ?? $program->is_active,
         ]);
+
+        ActivityLog::log(
+            'update',
+            'program_pendidikan',
+            $program->id,
+            "Memperbarui program pendidikan {$program->nama}.",
+            [
+                'old' => $old,
+                'new' => $program->only(['parent_id', 'nama', 'kode', 'jenis', 'jenjang_sasaran', 'deskripsi', 'is_active']),
+            ]
+        );
 
         return $this->success(
             new ProgramPendidikanResource($program->fresh(['parent:id,ulid,nama,kode,jenis'])),
@@ -186,7 +213,7 @@ class ProgramPendidikanController extends Controller
 
     public function destroy(string $ulid): JsonResponse
     {
-        $program = ProgramPendidikan::withCount(['kelas', 'children'])
+        $program = ProgramPendidikan::withCount(['kelas', 'children', 'mapels'])
             ->where('ulid', $ulid)
             ->firstOrFail();
 
@@ -208,7 +235,22 @@ class ProgramPendidikanController extends Controller
             );
         }
 
+        if ($program->mapels_count > 0) {
+            return $this->error(
+                "Program masih digunakan oleh {$program->mapels_count} mata pelajaran. Lepaskan program dari mata pelajaran terlebih dahulu.",
+                'PROGRAM_HAS_MAPEL',
+                422
+            );
+        }
+
         $program->delete();
+
+        ActivityLog::log(
+            'delete',
+            'program_pendidikan',
+            $program->id,
+            "Menghapus program pendidikan {$program->nama} ke recycle bin."
+        );
 
         return $this->success(null, 'Program pendidikan berhasil dihapus.');
     }
@@ -229,6 +271,13 @@ class ProgramPendidikanController extends Controller
 
         $status = $program->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
+        ActivityLog::log(
+            'toggle_active',
+            'program_pendidikan',
+            $program->id,
+            "Program pendidikan {$program->nama} {$status}."
+        );
+
         return $this->success(
             new ProgramPendidikanResource($program),
             "Program pendidikan berhasil {$status}."
@@ -243,6 +292,8 @@ class ProgramPendidikanController extends Controller
      */
     public function dropdown(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', ProgramPendidikan::class);
+
         $data = ProgramPendidikan::aktif()
             ->when($request->jenis, fn($q) => $q->where('jenis', $request->jenis))
             ->when(
@@ -278,10 +329,13 @@ class ProgramPendidikanController extends Controller
      */
     public function trash(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', ProgramPendidikan::class);
+
         $data = ProgramPendidikan::onlyTrashed()
             ->with('parent')
             ->withCount(['kelas', 'children'])
             ->orderByDesc('deleted_at')
+            ->limit(200) // batas aman; pagination penuh menyusul bersama frontend
             ->get();
 
         return $this->success(ProgramPendidikanResource::collection($data));
@@ -315,6 +369,13 @@ class ProgramPendidikanController extends Controller
         }
 
         $program->restore();
+
+        ActivityLog::log(
+            'restore',
+            'program_pendidikan',
+            $program->id,
+            "Memulihkan program pendidikan {$program->nama} dari recycle bin."
+        );
 
         return $this->success(
             new ProgramPendidikanResource($program->fresh('parent')),
@@ -360,7 +421,17 @@ class ProgramPendidikanController extends Controller
             );
         }
 
+        $programId = $program->id;
+        $programNama = $program->nama;
+
         $program->forceDelete();
+
+        ActivityLog::log(
+            'force_delete',
+            'program_pendidikan',
+            $programId,
+            "Menghapus permanen program pendidikan {$programNama}."
+        );
 
         return $this->success(null, 'Program pendidikan dihapus secara permanen.');
     }
