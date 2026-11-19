@@ -131,7 +131,9 @@ export default function ModalProgram({
   schoolJenis,
 }) {
   const isEdit = !!editData;
-  const isJenisLocked = !isEdit && !!defaultJenis && defaultJenis !== "semua";
+  // Jenis menentukan posisi hierarki, jadi dikunci saat edit.
+  // Saat tambah, tetap dikunci hanya jika dibuka dari tab jenis tertentu.
+  const isJenisLocked = isEdit || (!!defaultJenis && defaultJenis !== "semua");
   const isParentLocked = !isEdit && !!defaultParentId;
 
   const resolveJenis = () =>

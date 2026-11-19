@@ -52,8 +52,34 @@ class ProgramPendidikan extends Model
         'is_active' => 'boolean',
     ];
 
-    // ── Konstanta ────────────────────────────────────────────────
+    // Audit columns TIDAK di $fillable — diisi otomatis lewat booted()
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $model) {
+            $model->created_by = auth()->id();
+            $model->updated_by = auth()->id();
+        });
+
+        static::updating(function (self $model) {
+            $model->updated_by = auth()->id();
+        });
+
+        static::deleting(function (self $model) {
+            // Soft delete saja; force delete menghapus barisnya, jadi tak perlu dicatat.
+            if (!$model->isForceDeleting()) {
+                $model->deleted_by = auth()->id();
+                $model->saveQuietly();
+            }
+        });
+
+        static::restoring(function (self $model) {
+            $model->deleted_by = null;
+        });
+    }
+
+    // ── Konstanta ────────────────────────────────────────────────
+    
     /** Jenis program mengikuti nomenklatur Kemdikbud */
     const JENIS = [
         'bidang_keahlian',        // SMK/MAK level-1

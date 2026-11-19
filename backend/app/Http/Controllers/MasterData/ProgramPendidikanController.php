@@ -10,6 +10,7 @@ use App\Models\ActivityLog;
 use App\Models\ProgramPendidikan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProgramPendidikanController extends Controller
 {
@@ -38,8 +39,8 @@ class ProgramPendidikanController extends Controller
             ->when(
                 $request->parent_id !== null && $request->parent_id !== '',
                 fn($q) => $request->parent_id === 'null'
-                ? $q->whereNull('parent_id')
-                : $q->where('parent_id', $request->parent_id)
+                    ? $q->whereNull('parent_id')
+                    : $q->where('parent_id', $request->parent_id)
             )
             ->when(
                 $request->is_active !== null && $request->is_active !== '',
@@ -112,23 +113,27 @@ class ProgramPendidikanController extends Controller
         if (!empty($validated['parent_id'])) {
             $parentId = ProgramPendidikan::where('ulid', $validated['parent_id'])->value('id');
         }
+        $program = DB::transaction(function () use ($parentId, $validated) {
 
-        $program = ProgramPendidikan::create([
-            'parent_id' => $parentId,
-            'nama' => $validated['nama'],
-            'kode' => isset($validated['kode']) ? strtoupper($validated['kode']) : null,
-            'jenis' => $validated['jenis'],
-            'jenjang_sasaran' => $validated['jenjang_sasaran'],
-            'deskripsi' => $validated['deskripsi'] ?? null,
-            'is_active' => true,
-        ]);
+            $program = ProgramPendidikan::create([
+                'parent_id' => $parentId,
+                'nama' => $validated['nama'],
+                'kode' => isset($validated['kode']) ? strtoupper($validated['kode']) : null,
+                'jenis' => $validated['jenis'],
+                'jenjang_sasaran' => $validated['jenjang_sasaran'],
+                'deskripsi' => $validated['deskripsi'] ?? null,
+                'is_active' => true,
+            ]);
 
-        ActivityLog::log(
-            'create',
-            'program_pendidikan',
-            $program->id,
-            "Menambahkan program pendidikan {$program->nama}."
-        );
+            ActivityLog::log(
+                'create',
+                'program_pendidikan',
+                $program->id,
+                "Menambahkan program pendidikan {$program->nama}."
+            );
+
+            return $program;
+        });
 
         return $this->created(
             new ProgramPendidikanResource($program->load('parent:id,ulid,nama,kode,jenis')),
@@ -163,6 +168,15 @@ class ProgramPendidikanController extends Controller
         $this->authorize('update', $program);
         $validated = $request->validated();
 
+        // Jenis menentukan posisi hierarki; tidak boleh diubah setelah dibuat.
+        if ($validated['jenis'] !== $program->jenis) {
+            return $this->error(
+                'Jenis program tidak dapat diubah. Hapus dan buat ulang program jika jenisnya salah.',
+                'JENIS_IMMUTABLE',
+                422
+            );
+        }
+
         // parent_id dikirim sebagai ULID dari frontend — resolve ke integer PK
         $parentId = null;
         if (!empty($validated['parent_id'])) {
@@ -181,27 +195,30 @@ class ProgramPendidikanController extends Controller
         }
 
         $old = $program->only(['parent_id', 'nama', 'kode', 'jenis', 'jenjang_sasaran', 'deskripsi', 'is_active']);
+        DB::transaction(function () use ($program, $parentId, $validated, $old) {
 
-        $program->update([
-            'parent_id' => $parentId,
-            'nama' => $validated['nama'],
-            'kode' => isset($validated['kode']) ? strtoupper($validated['kode']) : null,
-            'jenis' => $validated['jenis'],
-            'jenjang_sasaran' => $validated['jenjang_sasaran'],
-            'deskripsi' => $validated['deskripsi'] ?? $program->deskripsi,
-            'is_active' => $validated['is_active'] ?? $program->is_active,
-        ]);
+            $program->update([
+                'parent_id' => $parentId,
+                'nama' => $validated['nama'],
+                'kode' => isset($validated['kode']) ? strtoupper($validated['kode']) : null,
+                'jenis' => $validated['jenis'],
+                'jenjang_sasaran' => $validated['jenjang_sasaran'],
+                'deskripsi' => $validated['deskripsi'] ?? $program->deskripsi,
+                'is_active' => $validated['is_active'] ?? $program->is_active,
+            ]);
 
-        ActivityLog::log(
-            'update',
-            'program_pendidikan',
-            $program->id,
-            "Memperbarui program pendidikan {$program->nama}.",
-            [
-                'old' => $old,
-                'new' => $program->only(['parent_id', 'nama', 'kode', 'jenis', 'jenjang_sasaran', 'deskripsi', 'is_active']),
-            ]
-        );
+            ActivityLog::log(
+                'update',
+                'program_pendidikan',
+                $program->id,
+                "Memperbarui program pendidikan {$program->nama}.",
+                [
+                    'old' => $old,
+                    'new' => $program->only(['parent_id', 'nama', 'kode', 'jenis', 'jenjang_sasaran', 'deskripsi', 'is_active']),
+                ]
+            );
+        });
+
 
         return $this->success(
             new ProgramPendidikanResource($program->fresh(['parent:id,ulid,nama,kode,jenis'])),
@@ -243,14 +260,16 @@ class ProgramPendidikanController extends Controller
             );
         }
 
-        $program->delete();
+        DB::transaction(function () use ($program) {
+            $program->delete();
 
-        ActivityLog::log(
-            'delete',
-            'program_pendidikan',
-            $program->id,
-            "Menghapus program pendidikan {$program->nama} ke recycle bin."
-        );
+            ActivityLog::log(
+                'delete',
+                'program_pendidikan',
+                $program->id,
+                "Menghapus program pendidikan {$program->nama}."
+            );
+        });
 
         return $this->success(null, 'Program pendidikan berhasil dihapus.');
     }
@@ -267,16 +286,20 @@ class ProgramPendidikanController extends Controller
 
         $this->authorize('update', $program);
 
-        $program->update(['is_active' => !$program->is_active]);
+        $status = null;
 
-        $status = $program->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        DB::transaction(function () use ($program, &$status) {
+            $program->update(['is_active' => !$program->is_active]);
 
-        ActivityLog::log(
-            'toggle_active',
-            'program_pendidikan',
-            $program->id,
-            "Program pendidikan {$program->nama} {$status}."
-        );
+            $status = $program->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+            ActivityLog::log(
+                'toggle_active',
+                'program_pendidikan',
+                $program->id,
+                "Program pendidikan {$program->nama} {$status}."
+            );
+        });
 
         return $this->success(
             new ProgramPendidikanResource($program),
@@ -367,16 +390,18 @@ class ProgramPendidikanController extends Controller
                 );
             }
         }
+        DB::transaction(function () use ($program) {
 
-        $program->restore();
 
-        ActivityLog::log(
-            'restore',
-            'program_pendidikan',
-            $program->id,
-            "Memulihkan program pendidikan {$program->nama} dari recycle bin."
-        );
+            $program->restore();
 
+            ActivityLog::log(
+                'restore',
+                'program_pendidikan',
+                $program->id,
+                "Memulihkan program pendidikan {$program->nama} dari recycle bin."
+            );
+        });
         return $this->success(
             new ProgramPendidikanResource($program->fresh('parent')),
             'Program pendidikan berhasil dipulihkan.'
@@ -424,14 +449,17 @@ class ProgramPendidikanController extends Controller
         $programId = $program->id;
         $programNama = $program->nama;
 
-        $program->forceDelete();
+        DB::transaction(function () use ($program, $programId, $programNama) {
 
-        ActivityLog::log(
-            'force_delete',
-            'program_pendidikan',
-            $programId,
-            "Menghapus permanen program pendidikan {$programNama}."
-        );
+            $program->forceDelete();
+
+            ActivityLog::log(
+                'force_delete',
+                'program_pendidikan',
+                $programId,
+                "Menghapus permanen program pendidikan {$programNama}."
+            );
+        });
 
         return $this->success(null, 'Program pendidikan dihapus secara permanen.');
     }
@@ -442,22 +470,29 @@ class ProgramPendidikanController extends Controller
      * Cek apakah $candidateParentId adalah descendant dari $programId.
      * Digunakan untuk cegah circular reference saat update parent.
      *
-     * Load semua parent_id sekolah dalam 1 query, traverse in-memory
-     * untuk menghindari N+1 (sebelumnya: 1 query per node).
+     * Telusuri rantai induk ke atas, 1 query kecil per level (hierarki maksimal
+     * 3 level). Tidak memuat seluruh tabel. SchoolScope membatasi penelusuran
+     * ke sekolah aktif; $visited mencegah loop tak terbatas pada data berputar.
      */
     private function isDescendantOf(int $candidateParentId, int $programId): bool
     {
-        // 1 query — ambil map id → parent_id untuk seluruh sekolah
-        /** @var array<int, int|null> $parentMap */
-        $parentMap = ProgramPendidikan::pluck('parent_id', 'id')->all();
-
         $current = $candidateParentId;
+        $visited = [];
 
         while ($current !== null) {
             if ($current === $programId) {
                 return true;
             }
-            $current = $parentMap[$current] ?? null;
+
+            // Pengaman: kalau data lama sudah terlanjur berputar, jangan loop selamanya.
+            if (isset($visited[$current])) {
+                return false;
+            }
+            $visited[$current] = true;
+
+            // SchoolScope tetap berlaku, jadi penelusuran tidak keluar dari sekolah ini.
+            $parent = ProgramPendidikan::whereKey($current)->value('parent_id');
+            $current = $parent !== null ? (int) $parent : null;
         }
 
         return false;
