@@ -318,4 +318,36 @@ class ProgramPendidikanTest extends TestCase
 
         return ProgramPendidikan::withoutGlobalScopes()->withTrashed()->where('ulid', $ulid)->firstOrFail();
     }
+
+    public function test_trash_is_paginated_filtered_and_tenant_scoped(): void
+    {
+        $this->loginAsWakasek();
+
+        foreach ([1, 2, 3] as $i) {
+            $p = $this->createProgram($this->schoolA->id, "Sampah {$i}", "SMP{$i}");
+            \DB::table('program_pendidikans')->where('id', $p->id)->update(['deleted_at' => now()]);
+        }
+        $foreign = $this->createProgram($this->schoolB->id, 'Sampah B', 'SMPB');
+        \DB::table('program_pendidikans')->where('id', $foreign->id)->update(['deleted_at' => now()]);
+
+        $page1 = $this->getJson(self::BASE_URL . '/trash?per_page=2')->assertOk();
+        $this->assertCount(2, $page1->json('data'));
+        $this->assertSame(3, $page1->json('meta.total'));   // milik sekolah B tidak ikut
+        $this->assertSame(2, $page1->json('meta.last_page'));
+
+        $found = $this->getJson(self::BASE_URL . '/trash?search=Sampah 2')->assertOk();
+        $this->assertSame(1, $found->json('meta.total'));
+    }
+
+    public function test_index_search_does_not_bypass_other_filters(): void
+    {
+        $this->loginAsWakasek();
+        $this->createProgram($this->schoolA->id, 'Alpha Umum', 'ALU');
+        $pem = $this->createProgram($this->schoolA->id, 'Alpha Peminatan', 'ALP');
+        \DB::table('program_pendidikans')->where('id', $pem->id)->update(['jenis' => 'peminatan']);
+
+        $res = $this->getJson(self::BASE_URL . '?search=Alpha&jenis=peminatan')->assertOk();
+
+        $this->assertSame(['ALP'], collect($res->json('data'))->pluck('kode')->all());
+    }
 }

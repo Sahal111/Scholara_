@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
@@ -7,6 +7,8 @@ import {
   useForceDeleteProgram,
 } from "../../../../hooks/api/useProgramPendidikan";
 import { JENIS_ICON } from "./components/ProgramTable";
+import Pagination from "../../../../components/ui/Pagination";
+import useDebounce from "../../../../hooks/useDebounce";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -28,6 +30,9 @@ const JENIS_LABEL = {
   keagamaan: "Keagamaan",
   umum: "Umum",
 };
+
+const PAGE_SIZE = 15;
+const JENIS_OPTIONS = Object.keys(JENIS_LABEL);
 
 // ── Confirm Dialog ────────────────────────────────────────────────────────────
 function ConfirmDialog({
@@ -213,33 +218,49 @@ function TrashCard({ item, onRestore, onForceDelete }) {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function RecycleBinProgram() {
-  const { data: trashData, isLoading, isError } = useTrashProgram();
   const restoreMut = useRestoreProgram();
   const forceDeleteMut = useForceDeleteProgram();
 
   const [search, setSearch] = useState("");
   const [filterJenis, setFilterJenis] = useState("");
+  const [page, setPage] = useState(1);
   const [confirmRestore, setConfirmRestore] = useState(null);
   const [confirmForceDelete, setConfirmForceDelete] = useState(null);
 
-  const rawItems = trashData ?? [];
+  const debouncedSearch = useDebounce(search, 400);
 
-  const items = useMemo(() => {
-    return rawItems.filter((item) => {
-      const q = search.toLowerCase();
-      const matchSearch =
-        q === "" ||
-        item.nama?.toLowerCase().includes(q) ||
-        item.kode?.toLowerCase().includes(q) ||
-        item.parent?.nama?.toLowerCase().includes(q);
-      const matchJenis = filterJenis === "" || item.jenis === filterJenis;
-      return matchSearch && matchJenis;
-    });
-  }, [rawItems, search, filterJenis]);
+  const {
+    data: trashData,
+    isLoading,
+    isError,
+  } = useTrashProgram({
+    page,
+    per_page: PAGE_SIZE,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(filterJenis ? { jenis: filterJenis } : {}),
+  });
+
+  const items = trashData?.data ?? [];
+  const meta = trashData?.meta;
+  const total = meta?.total ?? 0;
+  const hasFilter = debouncedSearch !== "" || filterJenis !== "";
+
+  // Pencarian baru → kembali ke halaman 1
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, filterJenis]);
+
+  // Jika halaman terakhir jadi kosong (mis. item terakhir dipulihkan), mundur satu halaman
+  useEffect(() => {
+    if (meta && page > meta.last_page && meta.last_page >= 1) {
+      setPage(meta.last_page);
+    }
+  }, [meta, page]);
 
   const handleReset = () => {
     setSearch("");
     setFilterJenis("");
+    setPage(1);
   };
 
   const handleRestoreConfirm = () => {
@@ -271,12 +292,6 @@ export default function RecycleBinProgram() {
   };
 
   // Jenis unik dari data trash untuk dropdown filter
-  const jenisOptions = useMemo(() => {
-    const seen = new Set();
-    rawItems.forEach((i) => seen.add(i.jenis));
-    return [...seen].filter(Boolean).sort();
-  }, [rawItems]);
-
   return (
     <div className="min-h-screen bg-[#f8faf9] relative overflow-x-hidden">
       {/* Atmospheric blobs */}
@@ -365,7 +380,7 @@ export default function RecycleBinProgram() {
                 className="w-full bg-[#f2f4f3]/60 border border-[#bfc9c4]/20 rounded-xl py-3.5 pl-4 pr-10 text-[#191c1c] font-bold text-xs uppercase tracking-wider focus:ring-2 focus:ring-[#006e2a]/20 focus:border-[#006e2a] appearance-none cursor-pointer transition-all outline-none"
               >
                 <option value="">Semua Jenis</option>
-                {jenisOptions.map((j) => (
+                {JENIS_OPTIONS.map((j) => (
                   <option key={j} value={j}>
                     {JENIS_LABEL[j] ?? j}
                   </option>
@@ -397,9 +412,9 @@ export default function RecycleBinProgram() {
             <span className="text-xs font-black text-[#707975] tracking-widest uppercase">
               Riwayat Penghapusan
             </span>
-            {!isLoading && rawItems.length > 0 && (
+            {!isLoading && total > 0 && (
               <span className="text-xs font-black text-[#bfc9c4] ml-1">
-                · {rawItems.length} item
+                · {total} item
               </span>
             )}
           </div>
@@ -433,7 +448,7 @@ export default function RecycleBinProgram() {
             )}
 
             {/* Empty state */}
-            {!isLoading && !isError && rawItems.length === 0 && (
+            {!isLoading && !isError && total === 0 && !hasFilter && (
               <div className="text-center py-24 px-6">
                 <div className="w-20 h-20 rounded-full bg-[#f2f4f3] border border-[#bfc9c4]/30 flex items-center justify-center mx-auto mb-5">
                   <span className="material-symbols-outlined text-[#bfc9c4] text-4xl">
@@ -450,25 +465,22 @@ export default function RecycleBinProgram() {
             )}
 
             {/* No results after filter */}
-            {!isLoading &&
-              !isError &&
-              rawItems.length > 0 &&
-              items.length === 0 && (
-                <div className="text-center py-20 px-6">
-                  <span className="material-symbols-outlined text-[#bfc9c4] text-5xl mb-4 block">
-                    search_off
-                  </span>
-                  <p className="text-sm font-bold text-[#3f4945]">
-                    Tidak ditemukan data yang cocok.
-                  </p>
-                  <button
-                    onClick={handleReset}
-                    className="mt-3 text-xs text-[#006e2a] font-bold underline hover:no-underline"
-                  >
-                    Reset filter
-                  </button>
-                </div>
-              )}
+            {!isLoading && !isError && total === 0 && hasFilter && (
+              <div className="text-center py-20 px-6">
+                <span className="material-symbols-outlined text-[#bfc9c4] text-5xl mb-4 block">
+                  search_off
+                </span>
+                <p className="text-sm font-bold text-[#3f4945]">
+                  Tidak ditemukan data yang cocok.
+                </p>
+                <button
+                  onClick={handleReset}
+                  className="mt-3 text-xs text-[#006e2a] font-bold underline hover:no-underline"
+                >
+                  Reset filter
+                </button>
+              </div>
+            )}
 
             {/* Table — md+ */}
             {!isLoading && !isError && items.length > 0 && (
@@ -501,7 +513,7 @@ export default function RecycleBinProgram() {
                         <TrashRow
                           key={item.ulid}
                           item={item}
-                          index={idx}
+                          index={(meta?.from ?? 1) - 1 + idx}
                           onRestore={setConfirmRestore}
                           onForceDelete={setConfirmForceDelete}
                         />
@@ -523,11 +535,8 @@ export default function RecycleBinProgram() {
                 </div>
 
                 {/* Footer count */}
-                <div className="border-t border-[#bfc9c4]/10 px-6 py-4 flex items-center justify-between text-sm text-[#3f4945]">
-                  <span className="font-medium opacity-70">
-                    Menampilkan {items.length} dari {rawItems.length} item
-                    terhapus
-                  </span>
+                <div className="border-t border-[#bfc9c4]/10 px-6 py-4">
+                  <Pagination meta={meta} onPageChange={setPage} />
                 </div>
               </>
             )}

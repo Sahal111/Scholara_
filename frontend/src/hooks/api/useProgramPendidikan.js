@@ -16,7 +16,11 @@ export const programKeys = {
   // dropdowns() = prefix untuk invalidate semua varian dropdown
   dropdowns: () => [...programKeys.all, "dropdown"],
   dropdown: (params) => [...programKeys.dropdowns(), params],
-  trash: () => [...programKeys.all, "trash"],
+  // Tanpa params = key dasar (dipakai invalidateQueries); dengan params = key query.
+  trash: (params) =>
+    params
+      ? [...programKeys.all, "trash", params]
+      : [...programKeys.all, "trash"],
 };
 
 export function useProgramList(params = {}) {
@@ -141,13 +145,14 @@ export function useDeleteProgram() {
 
 // ── Recycle Bin ───────────────────────────────────────────────────────────────
 
-export function useTrashProgram() {
+export function useTrashProgram(params = {}) {
   return useQuery({
-    queryKey: programKeys.trash(),
+    queryKey: programKeys.trash(params),
     queryFn: async () => {
-      const { data } = await api.get(`${BASE}/trash`);
-      return data.data ?? [];
+      const { data } = await api.get(`${BASE}/trash`, { params });
+      return data; // { data: [...], meta: {...} }
     },
+    placeholderData: (prev) => prev,
     staleTime: 30_000,
   });
 }

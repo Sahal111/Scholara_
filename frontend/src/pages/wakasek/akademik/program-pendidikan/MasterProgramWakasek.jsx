@@ -14,6 +14,7 @@ import {
 // Reuse komponen UI dari operator — tidak duplikasi
 import ModalProgram from "./components/ModalProgram";
 import ModalHapus from "./components/ModalHapus";
+import ModalToggleStatus from "./components/ModalToggleStatus";
 import FilterToolbar from "./components/FilterToolbar";
 import ProgramTable from "./components/ProgramTable";
 
@@ -140,6 +141,7 @@ export default function MasterProgramWakasek() {
   const [modalDefaultParentId, setModalDefaultParentId] = useState(null);
   const [modalDefaultParentLabel, setModalDefaultParentLabel] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
+  const [toggleItem, setToggleItem] = useState(null);
 
   /* data */
   const { data: treeData, isLoading } = useProgramTree(
@@ -215,13 +217,21 @@ export default function MasterProgramWakasek() {
   const handleDelete = (item) => setDeleteItem(item);
   const handleConfirmDelete = () =>
     deleteMut.mutate(deleteItem.ulid, { onSuccess: () => setDeleteItem(null) });
-  const handleToggleStatus = (item) =>
+  // Klik di tabel hanya membuka dialog; perubahan terjadi setelah dikonfirmasi.
+  const handleToggleStatus = (item) => setToggleItem(item);
+
+  const handleConfirmToggle = () => {
+    const item = toggleItem;
     toggleMut.mutate(item.ulid, {
-      onSuccess: () =>
+      onSuccess: () => {
         toast.success(
           `Program berhasil ${item.is_active ? "dinonaktifkan" : "diaktifkan"}.`,
-        ),
+        );
+        setToggleItem(null);
+      },
+      onError: () => setToggleItem(null),
     });
+  };
 
   const handleTambah = () => {
     setEditData(null);
@@ -278,7 +288,12 @@ export default function MasterProgramWakasek() {
         onConfirm={handleConfirmDelete}
         isPending={deleteMut.isPending}
       />
-
+      <ModalToggleStatus
+        item={toggleItem}
+        onClose={() => setToggleItem(null)}
+        onConfirm={handleConfirmToggle}
+        isPending={toggleMut.isPending}
+      />
       {/* ── Header ── */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 mb-12 relative">
         <div className="relative flex-1">

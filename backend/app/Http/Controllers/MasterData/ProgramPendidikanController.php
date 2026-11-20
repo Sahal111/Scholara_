@@ -24,9 +24,10 @@ class ProgramPendidikanController extends Controller
             ->with('parent:id,ulid,nama,kode,jenis')
             ->when(
                 $request->search,
-                fn($q) => $q
-                    ->where('nama', 'like', "%{$request->search}%")
-                    ->orWhere('kode', 'like', "%{$request->search}%")
+                fn($q) => $q->where(function ($q) use ($request) {
+                    $q->where('nama', 'like', "%{$request->search}%")
+                        ->orWhere('kode', 'like', "%{$request->search}%");
+                })
             )
             ->when(
                 $request->jenis,
@@ -354,12 +355,22 @@ class ProgramPendidikanController extends Controller
     {
         $this->authorize('viewAny', ProgramPendidikan::class);
 
+        $perPage = min(max((int) ($request->per_page ?? 15), 1), 100);
+
         $data = ProgramPendidikan::onlyTrashed()
             ->with('parent')
+            ->when(
+                $request->search,
+                fn($q) => $q->where(function ($q) use ($request) {
+                    $q->where('nama', 'like', "%{$request->search}%")
+                        ->orWhere('kode', 'like', "%{$request->search}%")
+                        ->orWhereHas('parent', fn($p) => $p->where('nama', 'like', "%{$request->search}%"));
+                })
+            )
+            ->when($request->jenis, fn($q) => $q->where('jenis', $request->jenis))
             ->withCount(['kelas', 'children'])
             ->orderByDesc('deleted_at')
-            ->limit(200) // batas aman; pagination penuh menyusul bersama frontend
-            ->get();
+            ->paginate($perPage);
 
         return $this->success(ProgramPendidikanResource::collection($data));
     }
@@ -433,8 +444,10 @@ class ProgramPendidikanController extends Controller
             );
         }
 
-        // Cek apakah masih dipakai kelas (termasuk yang soft-deleted)
-        $kelasCount = \App\Models\Kelas::withoutGlobalScope(\App\Models\Scopes\SchoolScope::class)
+        // Cek apakah masih dipakai kelas (termasuk yang soft-deleted).
+        // withTrashed() wajib: FK nullOnDelete akan mengosongkan program di kelas
+        // yang ada di recycle bin. Scope tenant dibiarkan aktif.
+        $kelasCount = \App\Models\Kelas::withTrashed()
             ->where('program_pendidikan_id', $program->id)
             ->count();
 
