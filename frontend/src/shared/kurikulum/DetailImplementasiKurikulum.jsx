@@ -106,7 +106,7 @@ export default function DetailImplementasiKurikulum() {
   const waktu = [
     ["Diajukan review", impl.reviewed_at],
     ["Disetujui", impl.approved_at],
-    ["Diaktifkan", impl.activated_at],
+    ["Mulai berlaku", impl.activated_at],
     ["Diselesaikan", impl.completed_at],
   ].filter(([, v]) => fmtWaktu(v));
 
@@ -131,7 +131,7 @@ export default function DetailImplementasiKurikulum() {
 
       <SectionCard
         title="Status & Persetujuan"
-        description="Alur: Draft → Menunggu Review → Disetujui → Aktif → Selesai"
+        description="Alur: Draft → Menunggu Review → Disetujui → Berlaku → Selesai"
       >
         <div className="space-y-5">
           <Stepper status={impl.status} />

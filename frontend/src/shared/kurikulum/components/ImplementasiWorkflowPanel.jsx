@@ -40,7 +40,7 @@ const AKSI = {
     tone: "primary",
     confirm: {
       title: "Setujui struktur kurikulum?",
-      message: "Struktur ini akan berstatus Disetujui dan siap diaktifkan.",
+      message: "Struktur ini akan berstatus Disetujui dan siap diberlakukan.",
       confirmLabel: "Ya, Setujui",
       variant: "info",
     },
@@ -52,14 +52,14 @@ const AKSI = {
     // memakai modal catatan, bukan Confirm
   },
   aktifkan: {
-    label: "Aktifkan",
+    label: "Berlakukan",
     icon: CheckCircle,
     tone: "primary",
     confirm: {
-      title: "Aktifkan kurikulum ini?",
+      title: "Berlakukan kurikulum ini?",
       message:
-        "Kurikulum akan berlaku untuk tingkat yang terdaftar. Tidak boleh ada kurikulum aktif lain di tingkat yang sama.",
-      confirmLabel: "Ya, Aktifkan",
+        "Kurikulum akan berlaku untuk tingkat yang terdaftar. Tidak boleh ada kurikulum lain yang berlaku di tingkat yang sama.",
+      confirmLabel: "Ya, Berlakukan",
       variant: "warning",
     },
   },

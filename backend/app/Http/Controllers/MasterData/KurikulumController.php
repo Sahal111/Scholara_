@@ -330,7 +330,7 @@ class KurikulumController extends Controller
 
         $kurikulum = $this->kurikulumService->findByUlid($ulid, $schoolId);
 
-        return $this->success($this->kurikulumService->aturanProgram($kurikulum));
+        return $this->success($this->kurikulumService->aturanProgram($kurikulum, \App\Models\School::find($schoolId)));
     }
 
     /** PUT /kurikulum/{ulid}/aturan-program — hanya kurikulum milik sekolah. */
@@ -366,8 +366,7 @@ class KurikulumController extends Controller
         );
 
         return $this->success(
-            $this->kurikulumService->aturanProgram($kurikulum),
-            'Aturan program kurikulum disimpan.'
+            $this->kurikulumService->aturanProgram($kurikulum, \App\Models\School::find($schoolId))
         );
     }
     

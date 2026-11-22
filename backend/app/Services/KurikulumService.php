@@ -28,7 +28,7 @@ class KurikulumService
      */
     public function availableForSchool(int $schoolId, array $filters = []): LengthAwarePaginator
     {
-        return Kurikulum::availableForSchool($schoolId)
+        $paginator = Kurikulum::availableForSchool($schoolId)
             ->when(
                 isset($filters['is_active']),
                 fn($q) => $q->where('is_active', (bool) $filters['is_active'])
@@ -54,6 +54,27 @@ class KurikulumService
             ->orderByRaw('school_id IS NULL DESC')
             ->orderBy('tahun_berlaku', 'desc')
             ->paginate($filters['per_page'] ?? 15);
+
+        // Status pemakaian tiap kurikulum di tahun ajaran aktif sekolah ini.
+        $urut = ['active' => 5, 'approved' => 4, 'under_review' => 3, 'draft' => 2, 'completed' => 1];
+
+        $statusMap = DB::table('kurikulum_tahun_ajarans as kta')
+            ->join('tahun_ajarans as ta', 'ta.id', '=', 'kta.tahun_ajaran_id')
+            ->where('kta.school_id', $schoolId)
+            ->where('ta.is_active', true)
+            ->whereIn('kta.kurikulum_id', $paginator->getCollection()->pluck('id'))
+            ->get(['kta.kurikulum_id', 'kta.status'])
+            ->groupBy('kurikulum_id');
+
+        $paginator->getCollection()->transform(function ($k) use ($statusMap, $urut) {
+            $rows = $statusMap->get($k->id);
+            $k->implementasi_status = $rows
+                ? $rows->sortByDesc(fn($r) => $urut[$r->status] ?? 0)->first()->status
+                : null;
+            return $k;
+        });
+
+        return $paginator;
     }
 
     /**
@@ -597,29 +618,7 @@ class KurikulumService
                 return $row;
             });
     }
-
-    // ── Manajemen Pivot Program Pendidikan ───────────────────────────────────
-
-    /**
-     * Tambah kompatibilitas kurikulum ↔ program pendidikan (custom per sekolah).
-     */
-    public function tambahKompatibilitasProgram(
-        int $schoolId,
-        int $kurikulumId,
-        int $programPendidikanId,
-        ?string $catatan = null
-    ): void {
-        \DB::table('kurikulum_program_pendidikans')->insertOrIgnore([
-            'school_id' => $schoolId,
-            'kurikulum_id' => $kurikulumId,
-            'program_pendidikan_id' => $programPendidikanId,
-            'catatan' => $catatan,
-            'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-    }
-
+    
     /**
      * Jenis program yang boleh dipakai sekolah = jenjang ∩ kurikulum aktif.
      * Kurikulum aktif = yang terdaftar di tahun ajaran aktif sekolah (bisa >1).
@@ -632,13 +631,18 @@ class KurikulumService
             return ['kurikulum' => [], 'jenis' => []];
         }
 
-        $kurikulumIds = DB::table('kurikulum_tahun_ajarans as kta')
+        $implementasi = DB::table('kurikulum_tahun_ajarans as kta')
             ->join('tahun_ajarans as ta', 'ta.id', '=', 'kta.tahun_ajaran_id')
             ->where('kta.school_id', $school->id)
             ->where('ta.is_active', true)
-            ->pluck('kta.kurikulum_id')
-            ->unique()->values()->all();
+            ->get(['kta.kurikulum_id', 'kta.status']);
 
+        // Utamakan implementasi yang benar-benar AKTIF. Jika belum ada satu pun yang
+        // diaktifkan (masih draft/review), pakai yang terdaftar supaya halaman tidak kosong.
+        $aktif = $implementasi->where('status', 'active');
+        $kurikulumIds = ($aktif->isNotEmpty() ? $aktif : $implementasi->where('status', '!=', 'completed'))
+            ->pluck('kurikulum_id')->unique()->values()->all();
+            
         if (empty($kurikulumIds)) {
             $legacy = $this->resolveIdDariLegacy($school->kurikulum);
             $kurikulumIds = $legacy ? [$legacy] : [];
@@ -678,12 +682,14 @@ class KurikulumService
     }
 
     /** Aturan jenis program sebuah kurikulum, untuk layar pengaturan. */
-    public function aturanProgram(Kurikulum $kurikulum): array
+    public function aturanProgram(Kurikulum $kurikulum, ?\App\Models\School $school = null): array
     {
         $dipilih = DB::table('kurikulum_jenis_programs')
             ->where('kurikulum_id', $kurikulum->id)
             ->where('is_active', true)
             ->pluck('jenis_program')->all();
+
+        $jenjang = $school?->jenisProgramJenjang();
 
         return [
             'dibatasi' => !empty($dipilih),          // false = bebas (tanpa aturan)
@@ -692,6 +698,8 @@ class KurikulumService
                 'value' => $j,
                 'label' => \App\Models\ProgramPendidikan::JENIS_LABEL[$j] ?? $j,
                 'diizinkan' => in_array($j, $dipilih, true),
+                // false = jenis ini tidak dipakai di jenjang sekolah (mis. Umum di SMA)
+                'berlaku_di_sekolah' => $jenjang === null ? true : in_array($j, $jenjang, true),
             ], \App\Models\ProgramPendidikan::JENIS),
         ];
     }

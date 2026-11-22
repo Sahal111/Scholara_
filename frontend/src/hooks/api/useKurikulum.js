@@ -224,7 +224,7 @@ export function useDeactivateKurikulum() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: kurikulumKeys.lists() });
       qc.invalidateQueries({ queryKey: kurikulumKeys.dropdowns() });
-      toast.success("Kurikulum berhasil dinonaktifkan.");
+      toast.success("Kurikulum disembunyikan dari pilihan sekolah.");
     },
     onError: (err) => {
       const msg =
@@ -242,7 +242,7 @@ export function useActivateKurikulum() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: kurikulumKeys.lists() });
       qc.invalidateQueries({ queryKey: kurikulumKeys.dropdowns() });
-      toast.success("Kurikulum berhasil diaktifkan kembali.");
+      toast.success("Kurikulum ditampilkan kembali di pilihan sekolah.");
     },
     onError: (err) => {
       const msg =

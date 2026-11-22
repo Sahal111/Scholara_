@@ -24,7 +24,7 @@ function fmt(iso) {
 const JENIS_LABEL = {
   bidang_keahlian: "Bidang Keahlian",
   program_keahlian: "Program Keahlian",
-  konsentrasi_keahlian: "Konsentrasi Keahlian",
+  konsentrasi_keahlian: "Konsentrasi / Paket Keahlian",
   peminatan: "Peminatan",
   mata_pelajaran_pilihan: "Mata Pelajaran Pilihan",
   keagamaan: "Keagamaan",

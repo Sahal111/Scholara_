@@ -33,8 +33,8 @@ class ProgramPendidikanTest extends TestCase
     {
         parent::setUp();
 
-        $this->schoolA = $this->createSchool(['nama' => 'SMK A', 'npsn' => '31111111']);
-        $this->schoolB = $this->createSchool(['nama' => 'SMK B', 'npsn' => '32222222']);
+        $this->schoolA = $this->createSchool(['nama' => 'SMK A', 'npsn' => '31111111', 'jenis' => 'SMK']);
+        $this->schoolB = $this->createSchool(['nama' => 'SMK B', 'npsn' => '32222222', 'jenis' => 'SMK']);
     }
 
     // ── RBAC ──────────────────────────────────────────────────────────────────
@@ -63,6 +63,17 @@ class ProgramPendidikanTest extends TestCase
         $this->setTenant($this->schoolA->id);
 
         $this->postJson(self::BASE_URL, $this->payload())->assertForbidden();
+    }
+
+    public function test_store_rejects_jenis_not_available_for_school_jenjang(): void
+    {
+        $this->loginAsWakasek();
+
+        // Sekolah SMK tidak mengenal peminatan.
+        $this->postJson(self::BASE_URL, $this->payload(['kode' => 'PMN', 'jenis' => 'peminatan']))
+            ->assertStatus(422);
+
+        $this->assertDatabaseMissing('program_pendidikans', ['kode' => 'PMN']);
     }
 
     public function test_index_kepsek_view_only_can_read_but_not_write(): void
@@ -144,7 +155,7 @@ class ProgramPendidikanTest extends TestCase
 
         $this->assertDatabaseMissing('program_pendidikans', ['kode' => 'SPF', 'created_by' => 999999]);
     }
-    
+
     // ── Guard destroy ─────────────────────────────────────────────────────────
 
     public function test_destroy_blocked_when_program_has_children(): void
@@ -246,7 +257,7 @@ class ProgramPendidikanTest extends TestCase
             'parent_id' => $program->ulid,
         ]))->assertStatus(422);
     }
-    
+
     // ── Tenant isolation ──────────────────────────────────────────────────────
 
     public function test_wakasek_cannot_modify_program_of_other_school(): void
@@ -294,8 +305,8 @@ class ProgramPendidikanTest extends TestCase
         return array_merge([
             'nama' => 'Program Uji',
             'kode' => null,
-            'jenis' => 'umum',
-            'jenjang_sasaran' => 'semua',
+            'jenis' => 'bidang_keahlian',
+            'jenjang_sasaran' => 'SMK',
         ], $overrides);
     }
 

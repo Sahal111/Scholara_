@@ -95,7 +95,7 @@ class ProgramPendidikan extends Model
     const JENIS_LABEL = [
         'bidang_keahlian' => 'Bidang Keahlian',
         'program_keahlian' => 'Program Keahlian',
-        'konsentrasi_keahlian' => 'Konsentrasi Keahlian',
+        'konsentrasi_keahlian' => 'Konsentrasi / Paket Keahlian',
         'peminatan' => 'Peminatan',
         'mata_pelajaran_pilihan' => 'Mata Pelajaran Pilihan',
         'keagamaan' => 'Keagamaan',
@@ -166,23 +166,6 @@ class ProgramPendidikan extends Model
     public function mapels(): HasMany
     {
         return $this->hasMany(MataPelajaran::class, 'program_pendidikan_id');
-    }
-
-    /**
-     * Kurikulum yang kompatibel dengan program pendidikan ini.
-     * Many-to-many via pivot kurikulum_program_pendidikans.
-     * Dipakai untuk validasi saat operator pilih program+kurikulum di form kelas.
-     */
-    public function kurikulums(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            Kurikulum::class,
-            'kurikulum_program_pendidikans',
-            'program_pendidikan_id',
-            'kurikulum_id'
-        )->withPivot(['catatan', 'is_active'])
-            ->withTimestamps()
-            ->wherePivot('is_active', true);
     }
 
     /**

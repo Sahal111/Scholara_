@@ -18,16 +18,17 @@ import ModalKurikulum from "@/pages/wakasek/akademik/kurikulum/components/ModalK
 import ModalAturanProgram from "@/pages/wakasek/akademik/kurikulum/components/ModalAturanProgram";
 import DaftarImplementasiKurikulum from "@/shared/kurikulum/DaftarImplementasiKurikulum";
 import { ModalDaftarkanKurikulum } from "@/shared/kurikulum/components/KurikulumTahunAjaranSection";
+import ImplementasiStatusBadge from "@/shared/kurikulum/components/ImplementasiStatusBadge";
 
 // ── Badge status ──────────────────────────────────────────────────────────────
 function StatusBadge({ active }) {
   return active ? (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
-      Aktif
+      Tersedia
     </span>
   ) : (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500 border border-gray-200">
-      Nonaktif
+      Disembunyikan
     </span>
   );
 }
@@ -180,7 +181,7 @@ export default function MasterKurikulum() {
     },
     {
       accessorKey: "tahun_berlaku",
-      header: "Tahun",
+      header: "Berlaku Nasional",
       cell: ({ row }) => (
         <span className="text-gray-600">
           {row.original.tahun_berlaku}
@@ -195,8 +196,18 @@ export default function MasterKurikulum() {
     },
     {
       id: "status",
-      header: "Status",
+      header: "Ketersediaan",
       cell: ({ row }) => <StatusBadge active={row.original.is_active} />,
+    },
+    {
+      id: "tahun_ajaran_ini",
+      header: "Tahun Ajaran Ini",
+      cell: ({ row }) =>
+        row.original.implementasi_status ? (
+          <ImplementasiStatusBadge status={row.original.implementasi_status} />
+        ) : (
+          <span className="text-xs text-gray-400">Belum dipakai</span>
+        ),
     },
     {
       id: "aksi",
@@ -268,7 +279,7 @@ export default function MasterKurikulum() {
                   }
                   className="text-xs px-3 py-1 rounded-lg border border-amber-200 text-amber-600 hover:bg-amber-50 transition-colors"
                 >
-                  Nonaktifkan
+                  Sembunyikan
                 </button>
               ) : (
                 <button
@@ -372,7 +383,7 @@ export default function MasterKurikulum() {
               color="bg-amber-50 text-amber-600"
             />
             <StatCard
-              label="Aktif"
+              label="Tersedia"
               value={totalAktif}
               icon={ToggleLeft}
               color="bg-green-50 text-green-600"
@@ -435,9 +446,9 @@ export default function MasterKurikulum() {
                 }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#006e2a]/30"
               >
-                <option value="">Semua Status</option>
-                <option value="1">Aktif</option>
-                <option value="0">Nonaktif</option>
+                <option value="">Semua Ketersediaan</option>
+                <option value="1">Tersedia</option>
+                <option value="0">Disembunyikan</option>
               </select>
 
               {canManage && (
@@ -558,7 +569,7 @@ export default function MasterKurikulum() {
         kurikulum={aturanTarget}
         onClose={() => setAturanTarget(null)}
       />
-      
+
       {/* BUG 1 FIX: kirim detailResponse?.data (berisi komponen_nilais) ke modal */}
       <ModalKurikulum
         open={modalOpen}
@@ -577,29 +588,29 @@ export default function MasterKurikulum() {
           confirm.type === "hapus"
             ? "Hapus Kurikulum"
             : confirm.type === "nonaktif"
-              ? "Nonaktifkan Kurikulum"
+              ? "Sembunyikan Kurikulum"
               : confirm.type === "salin"
                 ? "Salin Kurikulum Bawaan"
-                : "Aktifkan Kurikulum"
+                : "Tampilkan Kurikulum"
         }
         message={
           confirm.type === "hapus"
             ? `Hapus kurikulum "${confirm.target?.nama}"? Pastikan tidak ada kelas yang masih menggunakannya.`
             : confirm.type === "nonaktif"
-              ? `Nonaktifkan kurikulum "${confirm.target?.nama}"? Kurikulum tidak akan bisa dipilih untuk kelas baru.`
+              ? `Sembunyikan kurikulum "${confirm.target?.nama}"? Kurikulum tidak akan muncul di pilihan kelas baru. Implementasi yang sudah berjalan tidak terpengaruh.`
               : confirm.type === "salin"
                 ? `Salin "${confirm.target?.nama}" jadi kurikulum milik sekolah? Salinan bisa kamu ubah bebas. Struktur mapel tidak ikut disalin.`
-                : `Aktifkan kembali kurikulum "${confirm.target?.nama}"?`
+                : `Tampilkan kembali kurikulum "${confirm.target?.nama}"di pilihan sekolah?`
         }
         variant={confirm.type === "hapus" ? "danger" : "warning"}
         confirmLabel={
           confirm.type === "hapus"
             ? "Ya, Hapus"
             : confirm.type === "nonaktif"
-              ? "Ya, Nonaktifkan"
+              ? "Ya, Sembunyikan"
               : confirm.type === "salin"
                 ? "Ya, Salin"
-                : "Ya, Aktifkan"
+                : "Ya, Tampilkan"
         }
         isLoading={
           hapus.isPending ||

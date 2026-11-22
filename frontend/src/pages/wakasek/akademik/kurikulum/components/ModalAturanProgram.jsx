@@ -23,6 +23,10 @@ export default function ModalAturanProgram({ kurikulum, onClose }) {
   const toggle = (v) =>
     setPilih((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]));
 
+  const pilihBerlaku = (aturan?.jenis ?? [])
+    .filter((j) => j.berlaku_di_sekolah && pilih.includes(j.value))
+    .map((j) => j.value);
+
   const handleSimpan = () =>
     simpan.mutate(
       { ulid: kurikulum.ulid, jenis: dibatasi ? pilih : [] },
@@ -69,20 +73,25 @@ export default function ModalAturanProgram({ kurikulum, onClose }) {
                 <label
                   key={j.value}
                   className={`flex items-center gap-2 text-sm ${
-                    dibatasi ? "" : "opacity-40"
+                    dibatasi && j.berlaku_di_sekolah ? "" : "opacity-40"
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={pilih.includes(j.value)}
-                    disabled={readOnly || !dibatasi}
+                    disabled={readOnly || !dibatasi || !j.berlaku_di_sekolah}
                     onChange={() => toggle(j.value)}
                   />
                   {j.label}
+                  {!j.berlaku_di_sekolah && (
+                    <span className="text-xs text-gray-400">
+                      (tidak dipakai di jenjang sekolah ini)
+                    </span>
+                  )}
                 </label>
               ))}
             </div>
-            {dibatasi && pilih.length === 0 && (
+            {dibatasi && pilihBerlaku.length === 0 && (
               <p className="text-xs text-red-500">Pilih minimal satu jenis.</p>
             )}
           </>
@@ -101,7 +110,9 @@ export default function ModalAturanProgram({ kurikulum, onClose }) {
           <button
             type="button"
             onClick={handleSimpan}
-            disabled={simpan.isPending || (dibatasi && pilih.length === 0)}
+            disabled={
+              simpan.isPending || (dibatasi && pilihBerlaku.length === 0)
+            }
             className="px-5 py-2 rounded-xl text-sm font-semibold bg-[#006e2a] text-white hover:bg-[#005a22] disabled:opacity-50"
           >
             {simpan.isPending ? "Menyimpan…" : "Simpan"}

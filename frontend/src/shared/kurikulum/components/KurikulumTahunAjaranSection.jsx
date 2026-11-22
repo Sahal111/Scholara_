@@ -194,7 +194,7 @@ export function ModalDaftarkanKurikulum({ isOpen, onClose }) {
             {tahunList.map((t) => (
               <option key={t.ulid} value={t.ulid}>
                 {t.tahun}
-                {t.status === "active" ? "  ● Aktif" : ""}
+                {t.status === "active" ? " ● Tahun ajaran aktif" : ""}
               </option>
             ))}
           </select>

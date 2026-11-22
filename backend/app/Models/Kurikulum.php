@@ -165,22 +165,6 @@ class Kurikulum extends Model
     }
 
     /**
-     * Program pendidikan yang kompatibel dengan kurikulum ini.
-     * Many-to-many via pivot kurikulum_program_pendidikans.
-     */
-    public function programPendidikans(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            ProgramPendidikan::class,
-            'kurikulum_program_pendidikans',
-            'kurikulum_id',
-            'program_pendidikan_id'
-        )->withPivot(['catatan', 'is_active'])
-            ->withTimestamps()
-            ->wherePivot('is_active', true);
-    }
-
-    /**
      * Tahun ajaran yang menggunakan kurikulum ini.
      * Many-to-many via pivot kurikulum_tahun_ajarans.
      */

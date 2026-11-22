@@ -22,7 +22,7 @@ export const IMPLEMENTASI_STATUS = {
     dot: "bg-blue-500",
   },
   active: {
-    label: "Aktif",
+    label: "Berlaku",
     cls: "bg-green-100 text-green-700 border-green-200",
     dot: "bg-green-500",
   },
@@ -47,7 +47,7 @@ export const PETUNJUK_STATUS = {
   draft:
     "Struktur masih bisa diedit. Wakasek mengajukan review setelah struktur lengkap.",
   under_review: "Menunggu keputusan kepala sekolah.",
-  approved: "Sudah disetujui. Menunggu kepala sekolah mengaktifkan.",
+  approved: "Sudah disetujui. Menunggu kepala sekolah memberlakukan.",
   active:
     "Kurikulum ini sedang berlaku. Wakasek dapat menyelesaikannya di akhir periode.",
   completed: "Siklus selesai. Struktur ini hanya bisa dilihat.",
