@@ -15,6 +15,7 @@ import {
 import DataTable from "@/components/ui/DataTable";
 import Confirm from "@/components/ui/Confirm";
 import ModalKurikulum from "@/pages/wakasek/akademik/kurikulum/components/ModalKurikulum";
+import ModalAturanProgram from "@/pages/wakasek/akademik/kurikulum/components/ModalAturanProgram";
 import DaftarImplementasiKurikulum from "@/shared/kurikulum/DaftarImplementasiKurikulum";
 import { ModalDaftarkanKurikulum } from "@/shared/kurikulum/components/KurikulumTahunAjaranSection";
 
@@ -81,6 +82,7 @@ export default function MasterKurikulum() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editUlid, setEditUlid] = useState(null);
   const [viewOnly, setViewOnly] = useState(false);
+  const [aturanTarget, setAturanTarget] = useState(null);
 
   // BUG 1 FIX: ambil detail (termasuk komponen_nilais) dan teruskan ke modal
   const { data: detailResponse, isLoading: detailLoading } =
@@ -213,6 +215,12 @@ export default function MasterKurikulum() {
               >
                 Lihat Detail
               </button>
+              <button
+                onClick={() => setAturanTarget(k)}
+                className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Aturan Program
+              </button>
               {canManage && (
                 <button
                   onClick={() =>
@@ -237,6 +245,12 @@ export default function MasterKurikulum() {
               className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
             >
               Detail
+            </button>
+            <button
+              onClick={() => setAturanTarget(k)}
+              className="text-xs px-3 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+            >
+              Aturan Program
             </button>
             {canManage && (
               <button
@@ -540,6 +554,11 @@ export default function MasterKurikulum() {
         </div>
       )}
 
+      <ModalAturanProgram
+        kurikulum={aturanTarget}
+        onClose={() => setAturanTarget(null)}
+      />
+      
       {/* BUG 1 FIX: kirim detailResponse?.data (berisi komponen_nilais) ke modal */}
       <ModalKurikulum
         open={modalOpen}

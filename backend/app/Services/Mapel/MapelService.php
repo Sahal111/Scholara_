@@ -93,11 +93,12 @@ class MapelService
             return MataPelajaran::create([
                 'kode' => strtoupper($validated['kode']),
                 'nama_mapel' => $validated['nama_mapel'],
-                'kelompok' => $validated['kelompok'],
+                'kelompok' => $this->normalizeKelompok($validated['kelompok']),
                 'tingkat' => $this->parseTingkat($validated['tingkat'] ?? null),
                 'program_pendidikan_id' => $validated['program_pendidikan_id'] ?? null,
                 'jam_per_minggu' => (int) $validated['jam_per_minggu'],
                 'kurikulum' => $validated['kurikulum'],
+                'kurikulum_id' => $this->resolveKurikulumId($validated['kurikulum']),
                 'is_active' => true,
             ]);
         });
@@ -112,13 +113,14 @@ class MapelService
             $mapel->update([
                 'kode' => strtoupper($validated['kode']),
                 'nama_mapel' => $validated['nama_mapel'],
-                'kelompok' => $validated['kelompok'],
+                'kelompok' => $this->normalizeKelompok($validated['kelompok']),
                 'tingkat' => $this->parseTingkat($validated['tingkat'] ?? null),
                 'program_pendidikan_id' => array_key_exists('program_pendidikan_id', $validated)
                     ? $validated['program_pendidikan_id']
                     : $mapel->program_pendidikan_id,
                 'jam_per_minggu' => (int) $validated['jam_per_minggu'],
                 'kurikulum' => $validated['kurikulum'],
+                'kurikulum_id' => $this->resolveKurikulumId($validated['kurikulum']),
                 'is_active' => $isActive ?? $mapel->is_active,
             ]);
 
@@ -135,6 +137,69 @@ class MapelService
         return $mapel->fresh();
     }
 
+    /**
+     * Terjemahkan nilai legacy mapels.kurikulum → kurikulums.id (kurikulum platform).
+     * 'Keduanya' atau nilai tak dikenal → NULL (= berlaku semua kurikulum).
+     */
+    public function resolveKurikulumId(?string $legacy): ?int
+    {
+        $kode = match ($legacy) {
+            'K13', 'Kurikulum 2013' => 'K13',
+            'Merdeka', 'Kurikulum Merdeka' => 'MERDEKA',
+            default => null,
+        };
+
+        if ($kode === null) {
+            return null;
+        }
+
+        $id = DB::table('kurikulums')
+            ->whereNull('school_id')
+            ->whereNull('deleted_at')
+            ->where('kode', $kode)
+            ->value('id');
+
+        return $id !== null ? (int) $id : null;
+    }
+
+    /**
+     * Kelompok yang pernah dipakai SEKOLAH INI (saran & filter).
+     * Eksplisit per school_id, tidak bergantung pada global scope.
+     */
+    public function kelompokList(): array
+    {
+        return DB::table('mapels')
+            ->where('school_id', app('current_school_id'))
+            ->whereNull('deleted_at')
+            ->whereNotNull('kelompok')
+            ->where('kelompok', '!=', '')
+            ->distinct()
+            ->orderBy('kelompok')
+            ->pluck('kelompok')
+            ->all();
+    }
+
+    /**
+     * Rapikan input bebas: rapatkan spasi, lalu samakan penulisan dengan
+     * kelompok yang SUDAH ada di sekolah (tanpa peduli huruf besar/kecil),
+     * supaya "seni budaya" tidak menjadi grup baru di samping "Seni Budaya".
+     */
+    public function normalizeKelompok(string $value, ?int $schoolId = null): string
+    {
+        $value = trim(preg_replace('/\s+/u', ' ', $value) ?? '');
+        if ($value === '') {
+            return $value;
+        }
+
+        $existing = DB::table('mapels')
+            ->where('school_id', $schoolId ?? app('current_school_id'))
+            ->whereNull('deleted_at')
+            ->where('kelompok', $value) // collation MySQL _ci: tidak peka huruf besar/kecil
+            ->value('kelompok');
+
+        return $existing ?? $value;
+    }
+    
     /**
      * Soft-delete mapel.
      */

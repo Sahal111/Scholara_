@@ -320,6 +320,57 @@ class KurikulumController extends Controller
         return $this->success($data);
     }
 
+    /** GET /kurikulum/{ulid}/aturan-program */
+    public function aturanProgram(string $ulid): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $kurikulum = $this->kurikulumService->findByUlid($ulid, $schoolId);
+
+        return $this->success($this->kurikulumService->aturanProgram($kurikulum));
+    }
+
+    /** PUT /kurikulum/{ulid}/aturan-program — hanya kurikulum milik sekolah. */
+    public function simpanAturanProgram(Request $request, string $ulid): JsonResponse
+    {
+        $schoolId = $this->resolveSchoolId();
+        if ($schoolId === null) {
+            return $this->error('Sekolah tidak teridentifikasi.', 'SCHOOL_NOT_FOUND', 400);
+        }
+
+        $data = $request->validate([
+            'jenis' => ['present', 'array'],
+            'jenis.*' => ['string', \Illuminate\Validation\Rule::in(\App\Models\ProgramPendidikan::JENIS)],
+        ]);
+
+        $kurikulum = $this->kurikulumService->findByUlid($ulid, $schoolId);
+
+        if ($kurikulum->school_id === null || (int) $kurikulum->school_id !== (int) $schoolId) {
+            return $this->error(
+                'Aturan kurikulum bawaan Scholara tidak bisa diubah sekolah. Salin dulu jadi kurikulum milik sekolah.',
+                'KURIKULUM_PLATFORM',
+                403
+            );
+        }
+
+        $this->kurikulumService->simpanAturanProgram($kurikulum, $data['jenis']);
+
+        \App\Models\ActivityLog::log(
+            'update',
+            'kurikulum',
+            $kurikulum->id,
+            "Memperbarui aturan jenis program kurikulum {$kurikulum->nama}."
+        );
+
+        return $this->success(
+            $this->kurikulumService->aturanProgram($kurikulum),
+            'Aturan program kurikulum disimpan.'
+        );
+    }
+    
     private function resolveSchoolId(): ?int
     {
         return app()->bound('current_school_id') ? app('current_school_id') : null;

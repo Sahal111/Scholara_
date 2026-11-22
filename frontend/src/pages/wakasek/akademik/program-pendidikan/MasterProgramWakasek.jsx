@@ -5,11 +5,12 @@ import {
   useProgramTree,
   useDeleteProgram,
   useToggleProgramStatus,
+  useProgramJenisTersedia,
 } from "../../../../hooks/api/useProgramPendidikan";
 import { useAuth } from "../../../../contexts/AuthContext";
 import {
   getProgramConfig,
-  getProgramJenisOptions,
+  buildProgramConfig,
 } from "../../../../config/programConfig";
 // Reuse komponen UI dari operator — tidak duplikasi
 import ModalProgram from "./components/ModalProgram";
@@ -104,16 +105,14 @@ export default function MasterProgramWakasek() {
   const { school, hasPermission } = useAuth();
   const canManage = hasPermission("master_data.program.manage");
 
-  const programConfig = getProgramConfig(
-    school?.jenis,
-    school?.kurikulum,
-    school?.subtipe,
-  );
-  const jenisOptions = getProgramJenisOptions(
-    school?.jenis,
-    school?.kurikulum,
-    school?.subtipe,
-  );
+  const { data: jenisData } = useProgramJenisTersedia(Boolean(school?.jenis));
+  // SuperAdmin (tanpa sekolah) tetap pakai config lintas jenis.
+  const programConfig = school?.jenis
+    ? buildProgramConfig(jenisData?.data?.jenis)
+    : getProgramConfig(null);
+  const jenisOptions = (programConfig.tabs ?? [])
+    .filter((t) => t.value !== "semua")
+    .map((t) => ({ value: t.value, label: t.label }));
 
   /* filter state */
   const [search, setSearch] = useState("");

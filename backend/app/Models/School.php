@@ -119,6 +119,25 @@ class School extends Model
             || $this->isManPlusVokasi();
     }
 
+    /**
+     * Jenis program yang relevan untuk JENJANG sekolah ini.
+     * Aturan KURIKULUM tidak di sini — ada di tabel kurikulum_jenis_programs.
+     */
+    public function jenisProgramJenjang(): array
+    {
+        $vokasi = ['bidang_keahlian', 'program_keahlian', 'konsentrasi_keahlian'];
+
+        return match (true) {
+            in_array($this->jenis, self::JENIS_DENGAN_PROGRAM_HIERARKI, true) => $vokasi,
+            $this->jenis === 'SMA' => ['peminatan', 'mata_pelajaran_pilihan'],
+            $this->jenis === 'MA' => array_merge(
+                ['peminatan', 'mata_pelajaran_pilihan', 'keagamaan'],
+                $this->isManPlusVokasi() ? $vokasi : []
+            ),
+            default => [], // SD, MI, SMP, MTs, LB: tanpa program
+        };
+    }
+
     protected $casts = [
         'trial_ends_at' => 'datetime',
     ];

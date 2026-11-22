@@ -15,6 +15,7 @@ export const programKeys = {
   detail: (id) => [...programKeys.details(), id],
   // dropdowns() = prefix untuk invalidate semua varian dropdown
   dropdowns: () => [...programKeys.all, "dropdown"],
+  jenisTersedia: () => [...programKeys.all, "jenis-tersedia"],
   dropdown: (params) => [...programKeys.dropdowns(), params],
   // Tanpa params = key dasar (dipakai invalidateQueries); dengan params = key query.
   trash: (params) =>
@@ -67,6 +68,18 @@ export function useProgramDropdown(params = {}) {
       return data;
     },
     staleTime: 120_000,
+  });
+}
+
+export function useProgramJenisTersedia(enabled = true) {
+  return useQuery({
+    queryKey: programKeys.jenisTersedia(),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/jenis-tersedia`);
+      return data;
+    },
+    enabled,
+    staleTime: 60_000,
   });
 }
 

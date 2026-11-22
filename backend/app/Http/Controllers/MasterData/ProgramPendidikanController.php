@@ -11,11 +11,35 @@ use App\Models\ProgramPendidikan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\KurikulumService;
+
 
 class ProgramPendidikanController extends Controller
 {
-    // ── Index — daftar flat dengan pagination ─────────────────────
+    public function __construct(
+        private readonly KurikulumService $kurikulumService
+    ) {
+    }
 
+    private function currentSchool(): ?\App\Models\School
+    {
+        $schoolId = app()->bound('current_school_id') ? app('current_school_id') : null;
+        $schoolId ??= auth('sanctum')->user()?->school_id;
+
+        return $schoolId ? \App\Models\School::find($schoolId) : null;
+    }
+
+    public function jenisTersedia(): JsonResponse
+    {
+        $this->authorize('viewAny', ProgramPendidikan::class);
+
+        $school = $this->currentSchool();
+        abort_if(!$school, 404, 'Sekolah tidak ditemukan.');
+
+        return $this->success($this->kurikulumService->jenisProgramTersedia($school));
+    }
+
+    // ── Index — daftar flat dengan pagination ─────────────────────
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', ProgramPendidikan::class);
@@ -108,6 +132,21 @@ class ProgramPendidikanController extends Controller
         $this->authorize('create', ProgramPendidikan::class);
 
         $validated = $request->validated();
+
+        $school = $this->currentSchool();
+        if ($school) {
+            $boleh = array_column(
+                $this->kurikulumService->jenisProgramTersedia($school)['jenis'],
+                'value'
+            );
+            if (!in_array($validated['jenis'], $boleh, true)) {
+                return $this->error(
+                    'Jenis program ini tidak tersedia untuk kurikulum yang aktif di sekolah ini.',
+                    'JENIS_TIDAK_TERSEDIA',
+                    422
+                );
+            }
+        }
 
         // parent_id dikirim sebagai ULID dari frontend — resolve ke integer PK
         $parentId = null;
@@ -318,7 +357,29 @@ class ProgramPendidikanController extends Controller
     {
         $this->authorize('viewAny', ProgramPendidikan::class);
 
+        // Filter per kurikulum: hanya jenis program yang diizinkan matriks kurikulum_jenis_programs.
+        // Menerima `kurikulum_id` (id) atau `kurikulum` (nilai legacy: "K13"/"Kurikulum Merdeka").
+        $kurikulumId = $request->filled('kurikulum_id')
+            ? (int) $request->kurikulum_id
+            : ($request->filled('kurikulum')
+                ? $this->kurikulumService->resolveIdDariLegacy($request->kurikulum)
+                : null);
+
+        $jenisBoleh = $kurikulumId
+            ? DB::table('kurikulum_jenis_programs')
+                ->where('kurikulum_id', $kurikulumId)
+                ->where('is_active', true)
+                ->pluck('jenis_program')
+                ->all()
+            : null;
+
+        // Kurikulum tanpa aturan (custom sekolah) → jangan dibatasi.
+        if ($jenisBoleh === []) {
+            $jenisBoleh = null;
+        }
+
         $data = ProgramPendidikan::aktif()
+            ->when($jenisBoleh !== null, fn($q) => $q->whereIn('jenis', $jenisBoleh))
             ->when($request->jenis, fn($q) => $q->where('jenis', $request->jenis))
             ->when(
                 $request->jenjang_sasaran,

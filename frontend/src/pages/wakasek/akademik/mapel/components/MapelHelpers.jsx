@@ -1,9 +1,9 @@
 import { BookOpen, Search, X } from "lucide-react";
 import {
   KELOMPOK_BADGE_CLASSES,
-  KELOMPOK_OPTIONS,
   TINGKAT_OPTIONS,
 } from "../../../../../constants/mapel";
+import { useMapelKelompok } from "../../../../../hooks/api/useMapel";
 
 /* ── Helper render tingkat ─────────────────────────────────── */
 export function renderTingkat(tingkat) {
@@ -165,6 +165,7 @@ export function MapelToolbar({
   setFilterStatus,
   onReset,
 }) {
+  const { data: kelompokOptions = [] } = useMapelKelompok();
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-4 flex flex-col lg:flex-row gap-4 items-center shadow-sm">
       <div className="relative flex-1 w-full">
@@ -198,7 +199,7 @@ export function MapelToolbar({
           className="bg-gray-50 border border-gray-200 rounded-xl py-3 px-3 text-gray-900 text-xs font-semibold focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600 transition-all outline-none cursor-pointer min-w-[160px]"
         >
           <option value="">Kelompok: Semua</option>
-          {KELOMPOK_OPTIONS.map((k) => (
+          {kelompokOptions.map((k) => (
             <option key={k} value={k}>
               {k}
             </option>

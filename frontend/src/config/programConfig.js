@@ -411,6 +411,45 @@ const SUBTIPE_MATRIX = {
  * @param {string|null|undefined} schoolSubtipe   - e.g. 'man_ic', 'man_pk', 'man_plus_vokasi', null
  * @returns Config object
  */
+
+const TAB_BY_JENIS = {
+  bidang_keahlian: TAB_BIDANG,
+  program_keahlian: TAB_PROGRAM,
+  konsentrasi_keahlian: TAB_KONSEN,
+  peminatan: TAB_MINAT,
+  mata_pelajaran_pilihan: TAB_MAPIL,
+  keagamaan: TAB_AGAMA,
+  umum: TAB_UMUM,
+};
+
+/** Config dari hasil backend (jenis-tersedia). undefined = masih memuat. */
+export function buildProgramConfig(jenisList) {
+  if (!jenisList) {
+    return {
+      hasTabs: true,
+      tabs: [TAB_SEMUA],
+      description: "Memuat konfigurasi program…",
+    };
+  }
+  if (jenisList.length === 0) return CONFIG_TANPA_PROGRAM;
+  const tabs = jenisList.map(
+    (j) =>
+      TAB_BY_JENIS[j.value] ?? {
+        value: j.value,
+        label: j.label,
+        icon: "list",
+        unit: "Program",
+      },
+  );
+  return {
+    hasTabs: true,
+    tabs: [TAB_SEMUA, ...tabs],
+    defaultJenis: jenisList[0].value,
+    description:
+      "Kelola program pendidikan sesuai kurikulum yang berlaku di sekolah Anda.",
+  };
+}
+
 export function getProgramConfig(schoolJenis, schoolKurikulum, schoolSubtipe) {
   // SuperAdmin tidak terikat ke sekolah — tampilkan semua jenis
   if (!schoolJenis) return CONFIG_SUPERADMIN;

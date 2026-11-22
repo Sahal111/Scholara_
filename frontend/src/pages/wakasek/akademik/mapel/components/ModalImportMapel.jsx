@@ -93,8 +93,8 @@ export default function ModalImportMapel({ isOpen, onClose }) {
               (contoh: <code>7,8,9</code>), atau tulis <strong>Semua</strong>.
             </li>
             <li>
-              Kolom <strong>kelompok</strong>: harus sesuai pilihan yang
-              tersedia (A - Wajib, B - Wajib, dll).
+              Kolom <strong>kelompok</strong>: bebas diisi (maks. 80 karakter).
+              Kelompok baru otomatis dibuat; kosong = "Lainnya".
             </li>
             <li>
               Data akan diproses di latar belakang. Refresh halaman beberapa

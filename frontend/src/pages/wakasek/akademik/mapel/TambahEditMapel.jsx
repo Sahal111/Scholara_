@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
 import { BookOpen, Hash, Clock, Layers } from "lucide-react";
 import Modal from "../../../../components/ui/Modal";
-import { useCreateMapel, useUpdateMapel } from "../../../../hooks/api/useMapel";
+import {
+  useCreateMapel,
+  useUpdateMapel,
+  useMapelKelompok,
+} from "../../../../hooks/api/useMapel";
 import { useAuth } from "../../../../contexts/AuthContext";
 import {
-  KELOMPOK_OPTIONS,
   KURIKULUM_OPTIONS,
   getTingkatByJenjang,
   getLabelTingkat,
@@ -13,7 +16,7 @@ import {
 const emptyForm = {
   kode: "",
   nama_mapel: "",
-  kelompok: "A - Wajib",
+  kelompok: "",
   tingkat: [],
   jam_per_minggu: "2",
   kurikulum: "Keduanya",
@@ -62,7 +65,7 @@ export default function TambahEditMapel({ isOpen, onClose, editData }) {
         ? {
             kode: editData.kode ?? "",
             nama_mapel: editData.nama_mapel ?? "",
-            kelompok: editData.kelompok ?? "A - Wajib",
+            kelompok: editData.kelompok ?? "",
             tingkat: parseTingkatFromRaw(editData.tingkat),
             jam_per_minggu: String(editData.jam_per_minggu ?? "2"),
             kurikulum: editData.kurikulum ?? "Keduanya",
@@ -75,11 +78,17 @@ export default function TambahEditMapel({ isOpen, onClose, editData }) {
   const createMapel = useCreateMapel();
   const updateMapel = useUpdateMapel();
   const isPending = createMapel.isPending || updateMapel.isPending;
+  const { data: kelompokTersedia = [] } = useMapelKelompok();
+  const q = form.kelompok.trim().toLowerCase();
+  const saran = kelompokTersedia.filter(
+    (k) => !q || k.toLowerCase().includes(q),
+  );
 
   const handleSubmit = () => {
     const errs = {};
     if (!form.kode.trim()) errs.kode = "Kode wajib diisi.";
     if (!form.nama_mapel.trim()) errs.nama_mapel = "Nama wajib diisi.";
+    if (!form.kelompok.trim()) errs.kelompok = "Kelompok wajib diisi.";
     if (!form.jam_per_minggu || Number(form.jam_per_minggu) < 1)
       errs.jam_per_minggu = "Jam per minggu minimal 1.";
     if (Object.keys(errs).length) {
@@ -90,7 +99,7 @@ export default function TambahEditMapel({ isOpen, onClose, editData }) {
     const payload = {
       kode: form.kode.trim().toUpperCase(),
       nama_mapel: form.nama_mapel.trim(),
-      kelompok: form.kelompok,
+      kelompok: form.kelompok.trim(),
       tingkat: form.tingkat,
       jam_per_minggu: Number(form.jam_per_minggu),
       kurikulum: form.kurikulum,
@@ -168,28 +177,46 @@ export default function TambahEditMapel({ isOpen, onClose, editData }) {
           </div>
         </div>
 
-        {/* Kelompok */}
+        {/* Kelompok — ketik bebas, saran dari kelompok yang sudah dipakai sekolah */}
         <div>
           <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">
             Kelompok <span className="text-red-500">*</span>
+            <span className="ml-1 font-normal normal-case">
+              (ketik bebas, maks. 80 karakter)
+            </span>
           </label>
-          <div className="flex flex-wrap gap-2">
-            {KELOMPOK_OPTIONS.map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => set("kelompok", k)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all
-                  ${
-                    form.kelompok === k
-                      ? "bg-emerald-700 text-white border-emerald-700"
-                      : "bg-surface-container text-on-surface border-surface-container hover:border-emerald-700/50"
-                  }`}
-              >
-                {k}
-              </button>
-            ))}
-          </div>
+          <input
+            type="text"
+            value={form.kelompok}
+            onChange={(e) => set("kelompok", e.target.value)}
+            maxLength={80}
+            placeholder="Contoh: Kelompok Umum, Mapel Pilihan MIPA…"
+            className={`w-full px-3 py-2.5 text-sm rounded-xl border bg-surface-container-lowest
+              focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-700 transition-all
+              ${errors.kelompok ? "border-red-400" : "border-surface-container"}`}
+          />
+          {errors.kelompok && (
+            <p className="text-xs text-red-500 mt-1">{errors.kelompok}</p>
+          )}
+          {saran.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {saran.map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => set("kelompok", k)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all
+                    ${
+                      form.kelompok === k
+                        ? "bg-emerald-700 text-white border-emerald-700"
+                        : "bg-surface-container text-on-surface border-surface-container hover:border-emerald-700/50"
+                    }`}
+                >
+                  {k}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Tingkat — dinamis sesuai jenjang sekolah */}

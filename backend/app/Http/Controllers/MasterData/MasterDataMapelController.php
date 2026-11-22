@@ -47,6 +47,12 @@ class MasterDataMapelController extends Controller
         return $this->success($this->service->getStats());
     }
 
+    /* ── KELOMPOK (saran & filter, per sekolah) ──────────────── */
+    public function kelompok(): JsonResponse
+    {
+        return $this->success($this->service->kelompokList());
+    }
+
     /* ── SHOW ────────────────────────────────────────────────── */
     public function show(string $ulid): JsonResponse
     {
@@ -126,7 +132,7 @@ class MasterDataMapelController extends Controller
             ['IPA', 'Ilmu Pengetahuan Alam', 'A - Wajib', '4,5,6', '3', 'Kurikulum Merdeka'],
             ['BTQ', 'Baca Tulis Quran', 'C - Muatan Lokal', '1,2,3', '2', 'Kurikulum 2013'],
             ['MAT7', 'Matematika SMP', 'A - Wajib', '7,8,9', '4', 'Keduanya'],
-            ['FIS', 'Fisika', 'A - Wajib', '10,11,12', '4', 'Kurikulum Merdeka'],
+            ['FIS', 'Fisika', 'Kelompok MIPA', '10,11,12', '4', 'Kurikulum Merdeka'],
             ['PJOK', 'Pendidikan Jasmani', 'B - Wajib', 'Semua', '3', 'Keduanya'],
         ];
 

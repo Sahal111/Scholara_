@@ -70,7 +70,8 @@ function FormStruktur({ implementasiUlid, tingkatPilihan, rows, baris, onClose }
     setMapelUlid(id);
     // Isi kelompok dari data mapel bila belum diisi
     const m = mapelList.find((x) => x.id === id);
-    if (m?.kelompok && !kelompok) setKelompok(String(m.kelompok));
+        if (m?.kelompok && !kelompok)
+          setKelompok(String(m.kelompok).slice(0, 50));
   };
 
   // Kosong dikirim sebagai null supaya nilai lama bisa dikosongkan saat ubah

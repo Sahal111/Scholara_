@@ -70,7 +70,15 @@ class ProcessMapelImport implements ShouldQueue
             ];
             $kurikulumValid = ['Kurikulum 2013', 'Kurikulum Merdeka', 'Keduanya'];
 
-            DB::transaction(function () use ($rows, $get, $kelompokValid, $kurikulumValid) {
+            $mapelService = app(\App\Services\Mapel\MapelService::class);
+            $kurikulumIdMap = [
+                'Kurikulum 2013' => $mapelService->resolveKurikulumId('Kurikulum 2013'),
+                'Kurikulum Merdeka' => $mapelService->resolveKurikulumId('Kurikulum Merdeka'),
+                'Keduanya' => null,
+            ];
+
+            DB::transaction(function () use ($rows, $get, $kurikulumValid, $kurikulumIdMap, $mapelService) {
+
                 foreach ($rows as $rowIndex => $row) {
                     // Skip baris kosong
                     if (empty(array_filter($row, fn($v) => trim($v) !== ''))) {
@@ -85,9 +93,14 @@ class ProcessMapelImport implements ShouldQueue
                         continue;
                     }
 
-                    $kelompok = $get($row, 'kelompok') ?? 'A - Wajib';
-                    if (!in_array($kelompok, $kelompokValid)) {
+                    // Kelompok bebas (maks. 80 karakter). Kolom kosong → 'Lainnya' (netral, bukan istilah K13).
+                    $kelompok = $mapelService->normalizeKelompok($get($row, 'kelompok') ?? '', $this->schoolId);
+                    if ($kelompok === '') {
                         $kelompok = 'Lainnya';
+                    }
+                    if (mb_strlen($kelompok) > 80) {
+                        \Illuminate\Support\Facades\Log::warning('ProcessMapelImport: kelompok >80 karakter, baris dilewati', ['kode' => $kode ?? null]);
+                        continue;
                     }
 
                     $kurikulum = $get($row, 'kurikulum') ?? 'Keduanya';
@@ -130,6 +143,7 @@ class ProcessMapelImport implements ShouldQueue
                             'tingkat' => $tingkat,
                             'jam_per_minggu' => $jamPerMinggu,
                             'kurikulum' => $kurikulum,
+                            'kurikulum_id' => $kurikulumIdMap[$kurikulum] ?? null,
                             'is_active' => true,
                         ]
                     );

@@ -130,24 +130,47 @@ class KurikulumService
             $kode = $dasar . '-' . $i++;
         }
 
-        return $this->createForSchool($schoolId, [
-            'nama' => Str::limit($sumber->nama, 88, '') . ' (Salinan)',
-            'kode' => $kode,
-            'tahun_berlaku' => $sumber->tahun_berlaku,
-            'tahun_berakhir' => $sumber->tahun_berakhir,
-            'jenis' => $sumber->jenis,
-            'penerbit' => $sumber->penerbit,
-            'deskripsi' => $sumber->deskripsi,
-            'metadata' => $sumber->metadata,
-            'is_active' => true,
-            'komponen_nilais' => $sumber->komponenNilais
+        return DB::transaction(function () use ($sumber, $schoolId, $kode) {
+            $salinan = $this->createForSchool($schoolId, [
+                'nama' => Str::limit($sumber->nama, 88, '') . ' (Salinan)',
+                'kode' => $kode,
+                'tahun_berlaku' => $sumber->tahun_berlaku,
+                'tahun_berakhir' => $sumber->tahun_berakhir,
+                'jenis' => $sumber->jenis,
+                'penerbit' => $sumber->penerbit,
+                'deskripsi' => $sumber->deskripsi,
+                'metadata' => $sumber->metadata,
+                'is_active' => true,
+                'komponen_nilais' => $sumber->komponenNilais
+                    ->where('is_active', true)
+                    ->map(fn($k) => $k->only(['nama', 'kode', 'kategori', 'bobot_persen', 'urutan', 'is_wajib']))
+                    ->values()
+                    ->all(),
+            ]);
+
+            // Warisi aturan jenis program dari sumber.
+            $now = now();
+            $rows = DB::table('kurikulum_jenis_programs')
+                ->where('kurikulum_id', $sumber->id)
                 ->where('is_active', true)
-                ->map(fn($k) => $k->only(['nama', 'kode', 'kategori', 'bobot_persen', 'urutan', 'is_wajib']))
-                ->values()
-                ->all(),
-        ]);
+                ->get(['jenis_program', 'catatan'])
+                ->map(fn($r) => [
+                    'kurikulum_id' => $salinan->id,
+                    'jenis_program' => $r->jenis_program,
+                    'catatan' => $r->catatan,
+                    'is_active' => true,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ])->all();
+
+            if ($rows) {
+                DB::table('kurikulum_jenis_programs')->insert($rows);
+            }
+
+            return $salinan;
+        });
     }
-    
+
     /**
      * Update kurikulum custom milik sekolah.
      * Hanya bisa update kurikulum milik sekolah sendiri (bukan platform defaults).
@@ -299,6 +322,16 @@ class KurikulumService
     public function assertProgramKompatibel(int $kurikulumId, int $programPendidikanId): void
     {
         $program = \App\Models\ProgramPendidikan::find($programPendidikanId);
+
+        // Kurikulum tanpa aturan di matriks (mis. custom sekolah) tidak membatasi program.
+        $punyaAturan = DB::table('kurikulum_jenis_programs')
+            ->where('kurikulum_id', $kurikulumId)
+            ->where('is_active', true)
+            ->exists();
+
+        if ($program !== null && !$punyaAturan) {
+            return;
+        }
 
         $kompatibel = $program !== null
             && DB::table('kurikulum_jenis_programs')
@@ -531,7 +564,7 @@ class KurikulumService
             ActivityLog::log('delete', 'kurikulum_implementasi', (int) $impl->id, 'Implementasi kurikulum draft dihapus.');
         });
     }
-    
+
     /**
      * Daftar kurikulum yang berlaku di tahun ajaran tertentu.
      * Dipakai saat operator buka form buat kelas.
@@ -587,6 +620,103 @@ class KurikulumService
         ]);
     }
 
+    /**
+     * Jenis program yang boleh dipakai sekolah = jenjang ∩ kurikulum aktif.
+     * Kurikulum aktif = yang terdaftar di tahun ajaran aktif sekolah (bisa >1).
+     * Fallback ke kolom legacy schools.kurikulum jika belum ada yang terdaftar.
+     */
+    public function jenisProgramTersedia(\App\Models\School $school): array
+    {
+        $jenjang = $school->jenisProgramJenjang();
+        if (empty($jenjang)) {
+            return ['kurikulum' => [], 'jenis' => []];
+        }
+
+        $kurikulumIds = DB::table('kurikulum_tahun_ajarans as kta')
+            ->join('tahun_ajarans as ta', 'ta.id', '=', 'kta.tahun_ajaran_id')
+            ->where('kta.school_id', $school->id)
+            ->where('ta.is_active', true)
+            ->pluck('kta.kurikulum_id')
+            ->unique()->values()->all();
+
+        if (empty($kurikulumIds)) {
+            $legacy = $this->resolveIdDariLegacy($school->kurikulum);
+            $kurikulumIds = $legacy ? [$legacy] : [];
+        }
+
+        $kurikulum = empty($kurikulumIds) ? collect() : DB::table('kurikulums')
+            ->whereIn('id', $kurikulumIds)
+            ->get(['id', 'kode', 'nama']);
+
+        $aturan = DB::table('kurikulum_jenis_programs')
+            ->whereIn('kurikulum_id', $kurikulumIds)
+            ->where('is_active', true)
+            ->get(['kurikulum_id', 'jenis_program']);
+
+        $dariKurikulum = $aturan->pluck('jenis_program')->unique()->all();
+
+        // Ada kurikulum yang tidak punya aturan (mis. kurikulum custom sekolah),
+        // atau belum ada kurikulum sama sekali → tidak dibatasi.
+        $adaTanpaAturan = empty($kurikulumIds)
+            || count(array_diff($kurikulumIds, $aturan->pluck('kurikulum_id')->unique()->all())) > 0;
+
+        $jenis = [];
+        foreach (\App\Models\ProgramPendidikan::JENIS as $j) {
+            if (!in_array($j, $jenjang, true))
+                continue;
+            if (!$adaTanpaAturan && !in_array($j, $dariKurikulum, true))
+                continue;
+            $jenis[] = ['value' => $j, 'label' => \App\Models\ProgramPendidikan::JENIS_LABEL[$j] ?? $j];
+        }
+
+        // Kurikulum yang hanya mengizinkan 'umum' (Cambridge/IB) → tampilkan Umum.
+        if (empty($jenis) && in_array('umum', $dariKurikulum, true)) {
+            $jenis[] = ['value' => 'umum', 'label' => \App\Models\ProgramPendidikan::JENIS_LABEL['umum']];
+        }
+
+        return ['kurikulum' => $kurikulum->values()->all(), 'jenis' => $jenis];
+    }
+
+    /** Aturan jenis program sebuah kurikulum, untuk layar pengaturan. */
+    public function aturanProgram(Kurikulum $kurikulum): array
+    {
+        $dipilih = DB::table('kurikulum_jenis_programs')
+            ->where('kurikulum_id', $kurikulum->id)
+            ->where('is_active', true)
+            ->pluck('jenis_program')->all();
+
+        return [
+            'dibatasi' => !empty($dipilih),          // false = bebas (tanpa aturan)
+            'bisa_diubah' => $kurikulum->school_id !== null,
+            'jenis' => array_map(fn($j) => [
+                'value' => $j,
+                'label' => \App\Models\ProgramPendidikan::JENIS_LABEL[$j] ?? $j,
+                'diizinkan' => in_array($j, $dipilih, true),
+            ], \App\Models\ProgramPendidikan::JENIS),
+        ];
+    }
+
+    /** Ganti aturan. $jenis kosong = bebas (hapus semua aturan). */
+    public function simpanAturanProgram(Kurikulum $kurikulum, array $jenis): void
+    {
+        DB::transaction(function () use ($kurikulum, $jenis) {
+            DB::table('kurikulum_jenis_programs')->where('kurikulum_id', $kurikulum->id)->delete();
+
+            $now = now();
+            $rows = collect($jenis)->unique()->map(fn($j) => [
+                'kurikulum_id' => $kurikulum->id,
+                'jenis_program' => $j,
+                'is_active' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])->values()->all();
+
+            if ($rows) {
+                DB::table('kurikulum_jenis_programs')->insert($rows);
+            }
+        });
+    }
+    
     /**
      * Program pendidikan yang kompatibel dengan kurikulum tertentu di sekolah ini.
      */

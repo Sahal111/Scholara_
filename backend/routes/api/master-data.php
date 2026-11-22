@@ -326,6 +326,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
                 ->name('master-data.mapel.dropdown');
             Route::get('/mapel/stats', [MasterDataMapelController::class, 'stats'])
                 ->name('master-data.mapel.stats');
+            Route::get('/mapel/kelompok', [MasterDataMapelController::class, 'kelompok'])
+                ->name('master-data.mapel.kelompok');
             Route::get('/mapel', [MasterDataMapelController::class, 'index'])
                 ->name('master-data.mapel.index');
         });
@@ -359,6 +361,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
         // Static routes (dropdown, tree) SEBELUM wildcard {ulid}
     
         Route::middleware('permission:master_data.program.view')->group(function () {
+            Route::get('/program-pendidikan/jenis-tersedia', [ProgramPendidikanController::class, 'jenisTersedia'])
+                ->name('master-data.program.jenis-tersedia');
             Route::get('/program-pendidikan/dropdown', [ProgramPendidikanController::class, 'dropdown'])
                 ->name('master-data.program.dropdown');
             Route::get('/program-pendidikan/tree', [ProgramPendidikanController::class, 'tree'])
@@ -403,6 +407,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
                 ->name('master-data.kurikulum.index');
             Route::get('/kurikulum/{ulid}', [KurikulumController::class, 'show'])
                 ->name('master-data.kurikulum.show');
+            Route::get('/kurikulum/{ulid}/aturan-program', [KurikulumController::class, 'aturanProgram'])
+                ->name('master-data.kurikulum.aturan-program');
             Route::get('/kurikulum/implementasi/{ulid}/cakupan', [KurikulumCakupanController::class, 'index'])
                 ->name('master-data.kurikulum.implementasi.cakupan');
         });
@@ -414,6 +420,8 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
                 ->name('master-data.kurikulum.salin');
             Route::put('/kurikulum/{ulid}', [KurikulumController::class, 'update'])
                 ->name('master-data.kurikulum.update');
+            Route::put('/kurikulum/{ulid}/aturan-program', [KurikulumController::class, 'simpanAturanProgram'])
+                ->name('master-data.kurikulum.aturan-program.simpan');
             Route::patch('/kurikulum/{ulid}/deactivate', [KurikulumController::class, 'deactivate'])
                 ->name('master-data.kurikulum.deactivate');
             Route::patch('/kurikulum/{ulid}/activate', [KurikulumController::class, 'activate'])

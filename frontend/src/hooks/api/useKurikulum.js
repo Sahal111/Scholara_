@@ -91,6 +91,35 @@ export function useKurikulumDetail(ulid) {
   });
 }
 
+export function useAturanProgram(ulid) {
+  return useQuery({
+    queryKey: [...kurikulumKeys.all, "aturan-program", ulid],
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/${ulid}/aturan-program`);
+      return data;
+    },
+    enabled: !!ulid,
+  });
+}
+
+export function useSimpanAturanProgram() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ulid, jenis }) =>
+      api.put(`${BASE}/${ulid}/aturan-program`, { jenis }),
+    onSuccess: (_, { ulid }) => {
+      qc.invalidateQueries({
+        queryKey: [...kurikulumKeys.all, "aturan-program", ulid],
+      });
+      // Dropdown jenis di halaman Program Pendidikan ikut berubah.
+      qc.invalidateQueries({ queryKey: ["program-pendidikan"] });
+      toast.success("Aturan program kurikulum disimpan.");
+    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message ?? "Gagal menyimpan aturan."),
+  });
+}
+
 export function useKurikulumDropdown() {
   return useQuery({
     queryKey: kurikulumKeys.dropdown(),

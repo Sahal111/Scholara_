@@ -12,6 +12,7 @@ export const mapelKeys = {
   details: () => [...mapelKeys.all, "detail"],
   detail: (ulid) => [...mapelKeys.details(), ulid],
   dropdown: () => [...mapelKeys.all, "dropdown"],
+  kelompok: () => [...mapelKeys.all, "kelompok"],
 };
 
 /* ── Queries ─────────────────────────────────────────────────── */
@@ -67,6 +68,17 @@ export function useMapelDropdown(params = {}) {
       return data?.data ?? data;
     },
     staleTime: 300_000, // 5 menit — mapel jarang berubah
+  });
+}
+
+export function useMapelKelompok() {
+  return useQuery({
+    queryKey: mapelKeys.kelompok(),
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/kelompok`);
+      return data?.data ?? [];
+    },
+    staleTime: 60_000,
   });
 }
 

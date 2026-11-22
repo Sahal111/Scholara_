@@ -67,6 +67,19 @@ class MasterDataKelasController extends Controller
             return $this->error('Belum ada Tahun Ajaran aktif. Silakan aktifkan Tahun Ajaran terlebih dahulu.', 'NO_ACTIVE_TAHUN_AJARAN', 422);
         }
 
+        $kurikulumId = $this->kurikulumService->resolveIdDariLegacy($request->kurikulum);
+
+        if ($request->program_pendidikan_id && $kurikulumId) {
+            try {
+                $this->kurikulumService->assertProgramKompatibel(
+                    $kurikulumId,
+                    (int) $request->program_pendidikan_id
+                );
+            } catch (\DomainException $e) {
+                return $this->error($e->getMessage(), 'PROGRAM_TIDAK_KOMPATIBEL', 422);
+            }
+        }
+
         $kelas = Kelas::create([
             'tahun_ajaran_id' => $request->tahun_ajaran_id ?? $tahunAjaranAktif->id,
             'semester_id' => $request->semester_id ?? $semesterAktif?->id,
@@ -74,7 +87,7 @@ class MasterDataKelasController extends Controller
             'tingkat' => $request->tingkat,
             'program_pendidikan_id' => $request->program_pendidikan_id,
             'kurikulum' => $request->kurikulum,
-            'kurikulum_id' => $this->kurikulumService->resolveIdDariLegacy($request->kurikulum),
+            'kurikulum_id' => $kurikulumId,
             'wali_kelas_id' => $request->wali_kelas_id,
             'kapasitas' => $request->kapasitas,
             'ruangan' => $request->ruangan,
@@ -88,18 +101,37 @@ class MasterDataKelasController extends Controller
     {
         $kelas = Kelas::findOrFail($id);
 
+        $programId = $request->has('program_pendidikan_id')
+            ? $request->program_pendidikan_id
+            : $kelas->program_pendidikan_id;
+
+        // Hitung ulang hanya jika kurikulum berubah / belum terisi (jangan timpa pilihan custom)
+        $kurikulumId = ($kelas->kurikulum_id === null || $request->kurikulum !== $kelas->kurikulum)
+            ? $this->kurikulumService->resolveIdDariLegacy($request->kurikulum)
+            : $kelas->kurikulum_id;
+
+        // Cek kompatibilitas hanya jika program/kurikulum BERUBAH, supaya kelas lama
+        // yang datanya sudah terlanjur tidak cocok tetap bisa diedit (nama, wali, dll).
+        $berubah = (int) $programId !== (int) $kelas->program_pendidikan_id
+            || (int) $kurikulumId !== (int) $kelas->kurikulum_id;
+
+        if ($programId && $kurikulumId && $berubah) {
+            try {
+                $this->kurikulumService->assertProgramKompatibel($kurikulumId, (int) $programId);
+            } catch (\DomainException $e) {
+                return $this->error($e->getMessage(), 'PROGRAM_TIDAK_KOMPATIBEL', 422);
+            }
+        }
+
         $kelas->update([
             'tahun_ajaran_id' => $request->tahun_ajaran_id ?? $kelas->tahun_ajaran_id,
             'semester_id' => $request->semester_id ?? $kelas->semester_id,
             'nama_kelas' => $request->nama_kelas,
             'tingkat' => $request->tingkat,
             // program_pendidikan_id boleh di-null-kan (sekolah ubah jenjang kelas)
-            'program_pendidikan_id' => $request->has('program_pendidikan_id') ? $request->program_pendidikan_id : $kelas->program_pendidikan_id,
+            'program_pendidikan_id' => $programId,
             'kurikulum' => $request->kurikulum,
-            // Hitung ulang hanya jika kurikulum berubah / belum terisi (jangan timpa pilihan custom)
-            'kurikulum_id' => ($kelas->kurikulum_id === null || $request->kurikulum !== $kelas->kurikulum)
-                ? $this->kurikulumService->resolveIdDariLegacy($request->kurikulum)
-                : $kelas->kurikulum_id,
+            'kurikulum_id' => $kurikulumId,
             'wali_kelas_id' => $request->has('wali_kelas_id') ? $request->wali_kelas_id : $kelas->wali_kelas_id,
             'kapasitas' => $request->kapasitas ?? $kelas->kapasitas,
             'ruangan' => $request->ruangan ?? $kelas->ruangan,

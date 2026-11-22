@@ -15,6 +15,15 @@ class StoreMapelRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->kelompok)) {
+            $this->merge([
+                'kelompok' => trim(preg_replace('/\s+/u', ' ', $this->kelompok) ?? ''),
+            ]);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -27,7 +36,7 @@ class StoreMapelRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
             'nama_mapel' => 'required|string|max:150',
-            'kelompok' => 'required|in:' . implode(',', self::KELOMPOK_VALID),
+            'kelompok' => ['required', 'string', 'max:80'],
             'tingkat' => 'nullable|array',
             'tingkat.*' => 'in:1,2,3,4,5,6,7,8,9,10,11,12',
             'program_pendidikan_id' => [
@@ -49,7 +58,8 @@ class StoreMapelRequest extends FormRequest
             'kode.unique' => 'Kode mata pelajaran sudah digunakan.',
             'nama_mapel.required' => 'Nama mata pelajaran wajib diisi.',
             'kelompok.required' => 'Kelompok mata pelajaran wajib dipilih.',
-            'kelompok.in' => 'Kelompok mata pelajaran tidak valid.',
+            'kelompok.max' => 'Kelompok mata pelajaran maksimal 80 karakter.',
+            'kelompok.string' => 'Kelompok mata pelajaran harus berupa teks.',
             'jam_per_minggu.required' => 'Jam per minggu wajib diisi.',
             'kurikulum.required' => 'Kurikulum wajib dipilih.',
             'kurikulum.in' => 'Kurikulum tidak valid.',

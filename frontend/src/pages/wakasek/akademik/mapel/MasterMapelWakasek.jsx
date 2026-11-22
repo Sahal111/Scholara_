@@ -4,16 +4,39 @@ import {
   useMapelStats,
   useToggleMapel,
   useDeleteMapel,
+  exportMapel,
 } from "../../../../hooks/api/useMapel";
 // Reuse komponen UI dari operator — tidak duplikasi
 import TambahEditMapel from "./TambahEditMapel";
 import Confirm from "../../../../components/ui/Confirm";
 import MapelTable from "./components/MapelTable";
 import { MapelStatsGrid, MapelToolbar } from "./components/MapelHelpers";
-import { BookOpen, Plus } from "lucide-react";
+import { BookOpen, Plus, Upload, Download } from "lucide-react";
+import toast from "react-hot-toast";
+import { useAuth } from "../../../../contexts/AuthContext";
+import ModalImportMapel from "./components/ModalImportMapel";
+
+
 
 /* ─── MasterMapelWakasek ──────────────────────────────────────────────────── */
 export default function MasterMapelWakasek() {
+  /* ── Izin & state import/export ── */
+  const { hasPermission } = useAuth();
+  const canManage = hasPermission("master_data.mapel.manage");
+  const [importOpen, setImportOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      await exportMapel();
+    } catch {
+      toast.error("Gagal mengekspor data.");
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   /* ── State modal ── */
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -111,8 +134,28 @@ export default function MasterMapelWakasek() {
           </p>
         </div>
 
-        {/* CTA — hanya Tambah Mapel (import/export domain operator) */}
         <div className="flex flex-wrap items-center gap-3">
+          {canManage && (
+            <>
+              <button
+                onClick={handleExport}
+                disabled={exportLoading}
+                className="px-5 py-2.5 rounded-full border border-[#7c3aed]/30 text-[#7c3aed] font-bold text-sm
+                  flex items-center gap-2 hover:bg-[#7c3aed]/5 transition-colors disabled:opacity-60"
+              >
+                <Download size={16} />
+                {exportLoading ? "Mengekspor…" : "Ekspor"}
+              </button>
+              <button
+                onClick={() => setImportOpen(true)}
+                className="px-5 py-2.5 rounded-full border border-[#7c3aed]/30 text-[#7c3aed] font-bold text-sm
+                  flex items-center gap-2 hover:bg-[#7c3aed]/5 transition-colors"
+              >
+                <Upload size={16} />
+                Import
+              </button>
+            </>
+          )}
           <button
             onClick={openTambah}
             className="bg-[#7c3aed] text-white px-6 py-2.5 rounded-full font-bold text-sm flex items-center gap-2
@@ -152,7 +195,7 @@ export default function MasterMapelWakasek() {
         onDelete={setDeleteTarget}
         onToggle={(id) => toggleActive.mutate(id)}
         onTambah={openTambah}
-        onImport={null} // operator yang handle import
+        onImport={canManage ? () => setImportOpen(true) : null}
         onPageChange={setPage}
       />
 
@@ -161,6 +204,11 @@ export default function MasterMapelWakasek() {
         isOpen={modalOpen}
         onClose={closeModal}
         editData={editData}
+      />
+
+      <ModalImportMapel
+        isOpen={importOpen}
+        onClose={() => setImportOpen(false)}
       />
 
       <Confirm
