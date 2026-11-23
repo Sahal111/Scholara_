@@ -61,16 +61,17 @@ class KurikulumService
         $statusMap = DB::table('kurikulum_tahun_ajarans as kta')
             ->join('tahun_ajarans as ta', 'ta.id', '=', 'kta.tahun_ajaran_id')
             ->where('kta.school_id', $schoolId)
-            ->where('ta.is_active', true)
             ->whereIn('kta.kurikulum_id', $paginator->getCollection()->pluck('id'))
-            ->get(['kta.kurikulum_id', 'kta.status'])
+            ->get(['kta.kurikulum_id', 'kta.status', 'ta.tahun'])
             ->groupBy('kurikulum_id');
 
         $paginator->getCollection()->transform(function ($k) use ($statusMap, $urut) {
             $rows = $statusMap->get($k->id);
-            $k->implementasi_status = $rows
-                ? $rows->sortByDesc(fn($r) => $urut[$r->status] ?? 0)->first()->status
+            $terbaik = $rows
+                ? $rows->sortByDesc(fn($r) => $urut[$r->status] ?? 0)->first()
                 : null;
+            $k->implementasi_status = $terbaik?->status;
+            $k->implementasi_tahun_ajaran = $terbaik?->tahun;
             return $k;
         });
 

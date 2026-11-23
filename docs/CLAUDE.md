@@ -95,6 +95,9 @@
 ### Wakasek
 - [x] Master Kurikulum — daftar kurikulum bawaan Scholara + milik sekolah, filter sumber, detail read-only, CRUD kurikulum sekolah, salin kurikulum bawaan jadi milik sekolah, recycle bin; `MasterKurikulum.jsx`, `ModalKurikulum.jsx`, `KurikulumController.php`
 - [x] Implementasi Kurikulum per Tahun Ajaran — daftarkan (tingkat sesuai jenjang, peringatan bentrok tingkat), ubah/hapus saat Draft, workflow ajukan-review → selesaikan, struktur mapel per tingkat; `KurikulumTahunAjaranSection.jsx`, `ModalUbahImplementasi.jsx`, `StrukturKurikulumSection.jsx`, `KurikulumService.php`, `KurikulumWorkflowService.php`, `KurikulumStrukturService.php`
+- [x] Aturan Program per Kurikulum — jenis program yang boleh dipakai ditentukan per kurikulum (`kurikulum_jenis_programs`; tanpa aturan = bebas), modal Aturan Program (checkbox terkunci untuk jenis yang tidak relevan di jenjang sekolah), salinan kurikulum platform ikut menyalin aturan; `ModalAturanProgram.jsx`, `KurikulumController.php` (`aturanProgram`, `simpanAturanProgram`), `KurikulumService.php`, `School.php` (`jenisProgramJenjang()`)
+- [x] Program Pendidikan mengikuti Kurikulum — dropdown jenis = jenis relevan jenjang ∩ aturan kurikulum berstatus Berlaku (fallback: kurikulum terdaftar belum selesai, lalu legacy `schools.kurikulum`); guard backend `JENIS_TIDAK_TERSEDIA` (`ProgramPendidikanController.php`) & `PROGRAM_TIDAK_KOMPATIBEL` (`MasterDataKelasController.php`); label "Konsentrasi / Paket Keahlian"; cache jenis-tersedia ter-invalidate saat status implementasi / aturan program berubah; `MasterProgramWakasek.jsx`, `programConfig.js`, `useProgramPendidikan.js`
+- [x] Kebersihan status Kurikulum — katalog: Tersedia/Disembunyikan; implementasi: Berlaku; kolom "Tahun Ajaran Ini" (`implementasi_status` + `implementasi_tahun_ajaran`) di Daftar Kurikulum; `MasterKurikulum.jsx`, `implementasiStatus.js`, `KurikulumResource.php`
 
 ### Super Admin
 - [x] Kurikulum Platform — CRUD kurikulum bawaan (satu default per jenis, aktif/nonaktif, hapus hanya bila belum dipakai, kolom "Dipakai X sekolah", pagination); `KurikulumPlatform.jsx`, `KurikulumPlatformController.php`
@@ -134,6 +137,8 @@
 ### Bug Fixes yang Sudah Diselesaikan
 - [x] **Fix route mapel** — `export`, `import`, `template` tidak terdaftar di `api.php` sehingga jatuh ke wildcard `{id}` → 404; diperbaiki dengan menambahkan 3 route statis sebelum `GET /mapel/{id}`; `api.php`
 - [x] **Fix import/export/template mapel dari CSV → Excel** — controller diganti menggunakan pure-PHP ZipArchive + SimpleXML untuk generate `.xlsx` (tanpa PhpSpreadsheet); frontend diupdate untuk accept `.xlsx`/`.xls`; `MasterDataMapelController.php`, `MasterMapel.jsx`
+- [x] **Fix dropdown program pendidikan salah jenis** — `schools.kurikulum` (string legacy "Kurikulum Merdeka") tidak sinkron dengan kurikulum terdaftar; sekarang sumber kebenarannya `kurikulum_tahun_ajarans` berstatus `active`; `KurikulumService.php`
+- [x] **Migrasi program pendidikan** — enum `program_pendidikans` dilonggarkan dan tabel pivot `kurikulum_program_pendidikans` dihapus (`2026_11_22_000001_relax_program_pendidikans_enums.php`, `2026_11_22_000002_drop_deprecated_kurikulum_program_pendidikans.php`); `ProgramPendidikanTest` 18 lolos
 
 ### Testing
 - [x] `TestingUserSeeder.php` — Seed akun uji coba semua role:
@@ -165,7 +170,9 @@
 - `backend/app/Http/Controllers/MasterData/TahunAjaranController.php`
 - `backend/app/Services/KurikulumService.php`
 - `backend/app/Services/KurikulumWorkflowService.php`
-- `backend/app/Services/KurikulumStrukturService.php`
+- `backend/app/Http/Controllers/MasterData/KurikulumController.php`
+- `backend/app/Http/Controllers/MasterData/ProgramPendidikanController.php`
+- `backend/app/Models/School.php` (`jenisProgramJenjang()`)
 
 ---
 

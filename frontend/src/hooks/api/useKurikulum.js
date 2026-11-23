@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext } from "react";
 import api from "../../lib/axios";
 import toast from "react-hot-toast";
+import { programKeys } from "./useProgramPendidikan";
 
 const BASE = "/operator/master-data/kurikulum";
 
@@ -113,6 +114,7 @@ export function useSimpanAturanProgram() {
       });
       // Dropdown jenis di halaman Program Pendidikan ikut berubah.
       qc.invalidateQueries({ queryKey: ["program-pendidikan"] });
+      qc.invalidateQueries({ queryKey: programKeys.all });
       toast.success("Aturan program kurikulum disimpan.");
     },
     onError: (err) =>
@@ -340,8 +342,7 @@ function useAksiImplementasi(fn, pesan) {
         toast(p, { icon: "⚠️", duration: 8000 }),
       );
     },
-    onError: (err) =>
-      toast.error(err.response?.data?.message ?? "Aksi gagal."),
+    onError: (err) => toast.error(err.response?.data?.message ?? "Aksi gagal."),
   });
 }
 
@@ -356,7 +357,7 @@ export const useHapusImplementasi = () =>
     (ulid) => api.delete(`${BASE}/implementasi/${ulid}`),
     "Implementasi kurikulum dihapus.",
   );
-  
+
 /** Detail implementasi + status + aksi_tersedia (sudah difilter permission). */
 export function useImplementasiKurikulum(ulid) {
   const base = useContext(BaseCtx);
@@ -393,6 +394,8 @@ function useWorkflowImplementasi(aksi, pesanSukses, pesanGagal) {
         queryKey: [...implementasiKeys.all, "list"],
       });
       qc.invalidateQueries({ queryKey: kurikulumKeys.tahunAjarans() });
+      // status implementasi menentukan jenis program yang tersedia
+      qc.invalidateQueries({ queryKey: programKeys.all });
       toast.success(pesanSukses);
     },
     onError: (err) => {

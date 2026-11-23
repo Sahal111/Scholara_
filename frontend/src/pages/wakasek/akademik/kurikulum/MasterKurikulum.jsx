@@ -204,7 +204,16 @@ export default function MasterKurikulum() {
       header: "Tahun Ajaran Ini",
       cell: ({ row }) =>
         row.original.implementasi_status ? (
-          <ImplementasiStatusBadge status={row.original.implementasi_status} />
+          <div className="flex flex-col items-start gap-1">
+            <ImplementasiStatusBadge
+              status={row.original.implementasi_status}
+            />
+            {row.original.implementasi_tahun_ajaran && (
+              <span className="text-xs text-gray-500">
+                TA {row.original.implementasi_tahun_ajaran}
+              </span>
+            )}
+          </div>
         ) : (
           <span className="text-xs text-gray-400">Belum dipakai</span>
         ),
