@@ -8,6 +8,8 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Models\Kelas;
+use App\Models\MataPelajaran;
 
 /**
  * Struktur kurikulum per implementasi (kurikulum_tahun_ajarans).
@@ -149,6 +151,154 @@ class KurikulumStrukturService
         $struktur->delete();
     }
 
+    /**
+     * Daftar mapel yang berlaku untuk sebuah kelas (sumber kebenaran tunggal).
+     *
+     * Kelas → kurikulum_id + tahun_ajaran_id + tingkat + program → implementasi AKTIF → struktur.
+     * Fallback ke katalog mapels HANYA bila tidak ada implementasi aktif. Bila ada
+     * implementasi aktif, struktur dipakai sepenuhnya (kosong pun tidak fallback).
+     *
+     * @return array{sumber:string, alasan_fallback:?string, implementasi:?array, mapel:array}
+     */
+    public function mapelUntukKelas(Kelas $kelas): array
+    {
+        if (!$kelas->kurikulum_id) {
+            return $this->fallbackKatalog('KELAS_TANPA_KURIKULUM');
+        }
+
+        $impl = $this->implementasiAktifUntukKelas($kelas);
+        if (!$impl) {
+            return $this->fallbackKatalog('TIDAK_ADA_IMPLEMENTASI_AKTIF');
+        }
+
+        $programId = $kelas->program_pendidikan_id ? (int) $kelas->program_pendidikan_id : null;
+
+        $baris = KurikulumStruktur::query()
+            ->where('school_id', $kelas->school_id)
+            ->where('kurikulum_tahun_ajaran_id', $impl->id)
+            ->where('tingkat', (int) $kelas->tingkat)
+            ->where(function ($q) use ($programId) {
+                $q->whereNull('program_pendidikan_id');
+                if ($programId !== null) {
+                    $q->orWhere('program_pendidikan_id', $programId);
+                }
+            })
+            ->with(['mapel', 'program'])
+            ->get();
+
+        // Satu mapel hanya sekali: baris khusus program mengungguli baris umum.
+        $terpilih = [];
+        foreach ($baris as $b) {
+            $ada = $terpilih[$b->mapel_id] ?? null;
+            if (
+                $ada === null
+                || ($ada->program_pendidikan_id === null && $b->program_pendidikan_id !== null)
+            ) {
+                $terpilih[$b->mapel_id] = $b;
+            }
+        }
+
+        $items = collect($terpilih)
+            ->filter(fn($b) => $b->mapel && !$b->mapel->trashed() && $b->mapel->is_active)
+            ->sort(fn($a, $b) => [$a->urutan_rapor ?? PHP_INT_MAX, $a->id]
+                <=> [$b->urutan_rapor ?? PHP_INT_MAX, $b->id])
+            ->map(fn($b) => [
+                'mapel_ulid' => $b->mapel->ulid,
+                'kode' => $b->mapel->kode,
+                'nama' => $b->mapel->nama_mapel,
+                'kelompok' => $b->kelompok,
+                'alokasi_jp_minggu' => (int) $b->alokasi_jp_minggu,
+                'alokasi_jp_tahun' => $b->alokasi_jp_tahun !== null ? (int) $b->alokasi_jp_tahun : null,
+                'jenis_komponen' => $b->jenis_komponen,
+                'is_wajib' => (bool) $b->is_wajib,
+                'urutan_rapor' => $b->urutan_rapor,
+                'program_ulid' => $b->program?->ulid,
+                'asal_baris' => $b->program_pendidikan_id === null ? 'umum' : 'program',
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'sumber' => 'struktur',
+            'alasan_fallback' => null,
+            'implementasi' => [
+                'ulid' => $impl->ulid,
+                'status' => $impl->status,
+                'kurikulum_kode' => $impl->kurikulum_kode,
+                'kurikulum_nama' => $impl->kurikulum_nama,
+                'tahun_ajaran' => $impl->tahun_ajaran,
+            ],
+            'mapel' => $items,
+        ];
+    }
+
+    /** Implementasi AKTIF yang berlaku bagi kelas (kurikulum, tahun ajaran, semester, tingkat). */
+    private function implementasiAktifUntukKelas(Kelas $kelas): ?object
+    {
+        $tingkat = (int) $kelas->tingkat;
+
+        return DB::table('kurikulum_tahun_ajarans as kta')
+            ->join('kurikulums as k', 'k.id', '=', 'kta.kurikulum_id')
+            ->join('tahun_ajarans as ta', 'ta.id', '=', 'kta.tahun_ajaran_id')
+            ->where('kta.school_id', $kelas->school_id)
+            ->where('kta.kurikulum_id', $kelas->kurikulum_id)
+            ->where('kta.tahun_ajaran_id', $kelas->tahun_ajaran_id)
+            ->where('kta.status', 'active')
+            ->where('kta.is_active', true)
+            ->where(function ($q) use ($kelas) {
+                $q->whereNull('kta.semester_id')
+                    ->orWhere('kta.semester_id', $kelas->semester_id);
+            })
+            ->get([
+                'kta.id',
+                'kta.ulid',
+                'kta.status',
+                'kta.semester_id',
+                'kta.tingkat_kelas',
+                'k.kode as kurikulum_kode',
+                'k.nama as kurikulum_nama',
+                'ta.tahun as tahun_ajaran',
+            ])
+            ->filter(function ($r) use ($tingkat) {
+                $cakupan = json_decode($r->tingkat_kelas ?? 'null', true);
+
+                return empty($cakupan) || in_array($tingkat, array_map('intval', $cakupan), true);
+            })
+            ->sortByDesc(fn($r) => $r->semester_id !== null ? 1 : 0)
+            ->first();
+    }
+
+    /** Katalog mapels aktif sebagai cadangan saat belum ada struktur aktif. */
+    private function fallbackKatalog(string $alasan): array
+    {
+        $items = MataPelajaran::aktif()
+            ->orderByRaw('urutan_rapor IS NULL')
+            ->orderBy('urutan_rapor')
+            ->orderBy('nama_mapel')
+            ->get()
+            ->map(fn($m) => [
+                'mapel_ulid' => $m->ulid,
+                'kode' => $m->kode,
+                'nama' => $m->nama_mapel,
+                'kelompok' => $m->kelompok,
+                'alokasi_jp_minggu' => $m->jam_per_minggu,
+                'alokasi_jp_tahun' => null,
+                'jenis_komponen' => null,
+                'is_wajib' => null,
+                'urutan_rapor' => $m->urutan_rapor,
+                'program_ulid' => null,
+                'asal_baris' => 'katalog',
+            ])
+            ->all();
+
+        return [
+            'sumber' => 'katalog',
+            'alasan_fallback' => $alasan,
+            'implementasi' => null,
+            'mapel' => $items,
+        ];
+    }
+    
     // ── Private ──────────────────────────────────────────────────────────────
 
     private function implementasiDari(KurikulumStruktur $struktur): object

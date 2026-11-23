@@ -11,6 +11,7 @@ use App\Models\ProgramPendidikan;
 use App\Services\KurikulumStrukturService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Models\Kelas;
 
 /**
  * Struktur kurikulum: mapel + alokasi JP per (implementasi × tingkat × program).
@@ -66,6 +67,24 @@ class KurikulumStrukturController extends Controller
         return $this->success(KurikulumStrukturResource::collection($items)->resolve());
     }
 
+    /**
+     * GET /master-data/kelas/{id}/mapel
+     * Mapel yang berlaku untuk kelas (struktur kurikulum aktif, fallback katalog).
+     */
+    public function mapelKelas(string $id): JsonResponse
+    {
+        if (!ctype_digit($id)) {
+            return $this->notFound('Kelas tidak ditemukan.');
+        }
+
+        $kelas = Kelas::find((int) $id); // HasSchoolScope → hanya kelas sekolah ini
+        if (!$kelas) {
+            return $this->notFound('Kelas tidak ditemukan.');
+        }
+
+        return $this->success($this->strukturService->mapelUntukKelas($kelas));
+    }
+    
     /**
      * POST /v1/master-data/kurikulum/implementasi/{implementasiUlid}/struktur
      */

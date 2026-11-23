@@ -234,6 +234,7 @@ Route::middleware(['auth:sanctum', 'role:operator,kepsek,wakasek,super_admin'])
             Route::get('/kelas', [MasterDataKelasController::class, 'index']);
             Route::get('/kelas/{id}', [MasterDataKelasController::class, 'show']);
             Route::get('/kelas/{id}/riwayat', [MasterDataKelasController::class, 'riwayatAkademik']);
+            Route::get('/kelas/{id}/mapel', [KurikulumStrukturController::class, 'mapelKelas']);
             Route::get('/kelas/{kelasId}/periode/{tahunAjaranId}', [MasterDataKelasController::class, 'showPeriode']);
         });
 
