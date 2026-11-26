@@ -2269,3 +2269,11 @@
 #52 /Users/sahalanwarhadi/project_Sahal/Scholara/backend/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php(23): require_once('/Users/sahalanw...')
 #53 {main}
 "} 
+[2026-11-26 21:12:20] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Siswa","key":"nisn","id":3} 
+[2026-11-26 21:12:20] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Siswa","key":"nisn","id":1} 
+[2026-11-26 21:12:20] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Siswa","key":"nisn","id":4} 
+[2026-11-26 21:12:20] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Siswa","key":"nisn","id":2} 
+[2026-11-26 21:12:21] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":1} 
+[2026-11-26 21:12:21] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":2} 
+[2026-11-26 21:12:21] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":3} 
+[2026-11-26 21:12:21] local.WARNING: EncryptedString: Gagal dekripsi kolom. {"model":"App\\Models\\Guru","key":"nuptk","id":4} 
