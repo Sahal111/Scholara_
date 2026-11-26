@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import api from "../../../../lib/axios";
+import PanelMapelKelas from "./PanelMapelKelas";
 
 // ── Icon helper ───────────────────────────────────────────────────────────────
 function Icon({ name, className = "", fill = false }) {
@@ -267,6 +268,9 @@ export default function DetailKelasWakasek() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Left Column */}
         <div className="xl:col-span-2 space-y-6">
+          {/* Mapel Kelas (resolver M1) */}
+          <PanelMapelKelas kelasId={id} />
+
           {/* Riwayat Akademik */}
           <div className="bg-surface-container-lowest rounded-[18px] border border-border-light shadow-sm flex flex-col overflow-hidden">
             <div className="p-6 border-b border-border-light flex justify-between items-center bg-surface-container-lowest">

@@ -38,6 +38,22 @@ export function useKelasDetail(id) {
 }
 
 /**
+ * Mapel yang berlaku untuk satu kelas (struktur kurikulum aktif, fallback katalog).
+ * GET /kelas/{id}/mapel
+ */
+export function useMapelKelas(id) {
+  return useQuery({
+    queryKey: [...kelasKeys.detail(id), "mapel"],
+    queryFn: async () => {
+      const { data } = await api.get(`${BASE}/${id}/mapel`);
+      return data;
+    },
+    enabled: Boolean(id),
+    staleTime: 30_000,
+  });
+}
+
+/**
  * Dropdown kelas aktif (dipakai di form absensi, jadwal, dll)
  */
 export function useKelasDropdown(params = {}) {
