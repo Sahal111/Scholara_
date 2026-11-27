@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasSchoolScope;
 use Illuminate\Database\Eloquent\Model;
 
 class Pengaturan extends Model
 {
+    use HasSchoolScope;
+
     protected $table = 'pengaturans';
 
     // Tidak ada created_at, hanya updated_at
@@ -13,6 +16,7 @@ class Pengaturan extends Model
     const UPDATED_AT = 'updated_at';
 
     protected $fillable = [
+        'school_id',
         'key',
         'value',
         'grup',

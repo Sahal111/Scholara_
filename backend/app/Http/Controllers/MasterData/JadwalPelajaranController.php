@@ -43,6 +43,10 @@ class JadwalPelajaranController extends Controller
             'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
         ]);
 
+        if ($bentrok = $this->cekBentrok($request)) {
+            return response()->json($bentrok, 422);
+        }
+
         $jadwal = JadwalPelajaran::create(
             $request->only(['plot_id', 'kelas_id', 'guru_id', 'mapel_id', 'semester_id', 'hari', 'jam_ke', 'jam_mulai', 'jam_selesai'])
         );
@@ -53,7 +57,6 @@ class JadwalPelajaranController extends Controller
             'data' => $jadwal->load(['mataPelajaran', 'guru']),
         ], 201);
     }
-
     public function update(Request $request, $id)
     {
         $jadwal = JadwalPelajaran::findOrFail($id);
