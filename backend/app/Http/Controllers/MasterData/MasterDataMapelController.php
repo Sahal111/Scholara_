@@ -85,8 +85,21 @@ class MasterDataMapelController extends Controller
     public function destroy(string $ulid): JsonResponse
     {
         $mapel = $this->service->findByUlid($ulid);
-        $this->service->delete($mapel);
 
+        $dipakai = $this->service->pemakaian($mapel);
+        if ($dipakai) {
+            $rincian = collect($dipakai)
+                ->map(fn($n, $label) => "{$n} {$label}")
+                ->implode(', ');
+
+            return $this->error(
+                "Mata pelajaran masih digunakan ({$rincian}). Nonaktifkan saja jika tidak dipakai lagi.",
+                'MAPEL_DIPAKAI',
+                422
+            );
+        }
+
+        $this->service->delete($mapel);
         return $this->success(null, 'Mata pelajaran berhasil dihapus.');
     }
 

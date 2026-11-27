@@ -18,7 +18,8 @@ class MasterDataKelasController extends Controller
 {
     public function __construct(
         private readonly KurikulumService $kurikulumService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request)
     {
@@ -61,7 +62,6 @@ class MasterDataKelasController extends Controller
     public function store(StoreKelasRequest $request)
     {
         $tahunAjaranAktif = \App\Models\TahunAjaran::where('is_active', true)->first();
-        $semesterAktif = \App\Models\Semester::where('is_active', true)->first();
 
         if (!$request->tahun_ajaran_id && !$tahunAjaranAktif) {
             return $this->error('Belum ada Tahun Ajaran aktif. Silakan aktifkan Tahun Ajaran terlebih dahulu.', 'NO_ACTIVE_TAHUN_AJARAN', 422);
@@ -80,9 +80,12 @@ class MasterDataKelasController extends Controller
             }
         }
 
+        $taId = $request->tahun_ajaran_id ?? $tahunAjaranAktif->id;
+
         $kelas = Kelas::create([
-            'tahun_ajaran_id' => $request->tahun_ajaran_id ?? $tahunAjaranAktif->id,
-            'semester_id' => $request->semester_id ?? $semesterAktif?->id,
+            'tahun_ajaran_id' => $taId,
+            'semester_id' => $request->semester_id
+                ?? \App\Models\Semester::where('tahun_ajaran_id', $taId)->where('is_active', true)->value('id'),
             'nama_kelas' => $request->nama_kelas,
             'tingkat' => $request->tingkat,
             'program_pendidikan_id' => $request->program_pendidikan_id,
@@ -151,6 +154,29 @@ class MasterDataKelasController extends Controller
 
         if ($adaSiswa) {
             return $this->error('Kelas masih memiliki siswa aktif.', 'KELAS_HAS_SISWA', 422);
+        }
+
+        $hitung = [
+            'penugasan guru' => \App\Models\PlotGuruMapel::where('kelas_id', $kelas->id)->count(),
+            'jadwal pelajaran' => DB::table('jadwals')->where('kelas_id', $kelas->id)->count(),
+            'data absensi' => DB::table('absensis')->where('kelas_id', $kelas->id)->count(),
+            'rapor' => \App\Models\Rapor::where('kelas_id', $kelas->id)->count(),
+            'riwayat siswa' => RiwayatKelas::where('kelas_id', $kelas->id)->count(),
+            'tugas LMS' => DB::table('assignments')->where('kelas_id', $kelas->id)->count(),
+            'ujian' => DB::table('exams')->where('kelas_id', $kelas->id)->count(),
+        ];
+        $dipakai = array_filter($hitung, fn($n) => $n > 0);
+
+        if ($dipakai) {
+            $rincian = collect($dipakai)
+                ->map(fn($n, $label) => "{$n} {$label}")
+                ->implode(', ');
+
+            return $this->error(
+                "Kelas tidak bisa dihapus karena masih memiliki data terkait ({$rincian}). Nonaktifkan kelas jika sudah tidak dipakai.",
+                'KELAS_DIPAKAI',
+                422
+            );
         }
 
         $kelas->delete();

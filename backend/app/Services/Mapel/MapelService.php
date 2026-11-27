@@ -209,6 +209,24 @@ class MapelService
     }
 
     /**
+     * Daftar pemakaian mapel: label => jumlah (hanya yang > 0).
+     * Soft delete tidak memicu FK, jadi pengecekan dilakukan di aplikasi.
+     */
+    public function pemakaian(MataPelajaran $mapel): array
+    {
+        $hitung = [
+            'penugasan guru' => \App\Models\PlotGuruMapel::where('mapel_id', $mapel->id)->count(),
+            'jadwal pelajaran' => DB::table('jadwals')->where('mapel_id', $mapel->id)->count(),
+            'struktur kurikulum' => DB::table('kurikulum_strukturs')->where('mapel_id', $mapel->id)->count(),
+            'materi LMS' => DB::table('course_materials')->where('mapel_id', $mapel->id)->count(),
+            'tugas LMS' => DB::table('assignments')->where('mapel_id', $mapel->id)->count(),
+            'ujian' => DB::table('exams')->where('mapel_id', $mapel->id)->count(),
+        ];
+
+        return array_filter($hitung, fn($n) => $n > 0);
+    }
+
+    /**
      * Data untuk ekspor Excel (tanpa paginasi, dengan filter).
      */
     public function forExport(array $filters): Collection
