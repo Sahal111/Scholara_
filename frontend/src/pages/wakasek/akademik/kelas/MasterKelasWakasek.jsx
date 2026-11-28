@@ -1,6 +1,7 @@
 import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../../../../lib/axios";
+import { useKurikulumPilihan } from "@/hooks/api/useKurikulumPilihan";
 import toast from "react-hot-toast";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -36,12 +37,15 @@ function ModalKelas({ open, onClose, editData, queryClient }) {
   const empty = {
     nama_kelas: "",
     tingkat: "1",
-    kurikulum: "Merdeka",
+    kurikulum: "Merdeka", // cadangan jalur lama, hanya dipakai saat edit kelas lama tanpa relasi kurikulum
+    kurikulum_ulid: "",
     ruangan: "",
     kapasitas: "30",
     is_active: true,
   };
   const [form, setForm] = useState(empty);
+  const { options: kurikulumOpts } = useKurikulumPilihan();
+  const kurikulumBerlakuUlid = kurikulumOpts.find((k) => k.berlaku)?.ulid;
 
   useEffect(() => {
     if (open)
@@ -51,6 +55,7 @@ function ModalKelas({ open, onClose, editData, queryClient }) {
               nama_kelas: editData.nama_kelas ?? "",
               tingkat: editData.tingkat ?? "1",
               kurikulum: editData.kurikulum ?? "Merdeka",
+              kurikulum_ulid: editData.kurikulum_ref?.ulid ?? "",
               ruangan: editData.ruangan ?? "",
               kapasitas: editData.kapasitas ?? "30",
               is_active: editData.is_active ?? true,
@@ -58,6 +63,13 @@ function ModalKelas({ open, onClose, editData, queryClient }) {
           : empty,
       );
   }, [open, editData]);
+
+  // Kelas baru: otomatis pilih kurikulum yang sedang Berlaku (tetap bisa diganti)
+  useEffect(() => {
+    if (open && !isEdit && !form.kurikulum_ulid && kurikulumBerlakuUlid) {
+      setForm((f) => ({ ...f, kurikulum_ulid: kurikulumBerlakuUlid }));
+    }
+  }, [open, isEdit, form.kurikulum_ulid, kurikulumBerlakuUlid]);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -70,7 +82,7 @@ function ModalKelas({ open, onClose, editData, queryClient }) {
       toast.success(
         `Data kelas berhasil ${isEdit ? "diperbarui" : "ditambahkan"}.`,
       );
-      queryClient.invalidateQueries(["wakasek-kelas"]);
+      queryClient.invalidateQueries(["master-kelas"]);
       onClose();
     },
     onError: (err) => {
@@ -160,12 +172,20 @@ function ModalKelas({ open, onClose, editData, queryClient }) {
                 <span className="text-[#ba1a1a] lowercase normal-case">*</span>
               </label>
               <select
-                value={form.kurikulum}
-                onChange={(e) => set("kurikulum", e.target.value)}
+                value={form.kurikulum_ulid}
+                onChange={(e) => set("kurikulum_ulid", e.target.value)}
                 className={inputCls}
               >
-                <option value="Merdeka">Kurikulum Merdeka</option>
-                <option value="K13">Kurikulum 2013</option>
+                <option value="">
+                  {isEdit
+                    ? `Belum dipilih (nilai lama: ${form.kurikulum})`
+                    : "— Pilih kurikulum —"}
+                </option>
+                {kurikulumOpts.map((k) => (
+                  <option key={k.ulid} value={k.ulid}>
+                    {k.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -223,13 +243,16 @@ function ModalKelas({ open, onClose, editData, queryClient }) {
               mutation.mutate({
                 nama_kelas: form.nama_kelas,
                 tingkat: form.tingkat,
-                kurikulum: form.kurikulum,
+                // Dipilih dari daftar → kirim ULID. Kelas lama tanpa relasi tetap bisa disimpan lewat jalur lama.
+                ...(form.kurikulum_ulid
+                  ? { kurikulum_ulid: form.kurikulum_ulid }
+                  : { kurikulum: form.kurikulum }),
                 ruangan: form.ruangan || null,
                 kapasitas: form.kapasitas,
                 ...(isEdit && { is_active: form.is_active }),
               })
             }
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || (!isEdit && !form.kurikulum_ulid)}
             className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition-all disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg"
             style={{ background: "#7c3aed" }}
           >
@@ -304,7 +327,14 @@ export default function MasterKelasWakasek() {
             per_page: 10,
           },
         })
-        .then((r) => r.data.data),
+        .then((r) => {
+          // Backend: { data: [...], meta: { total, last_page, ... } }.
+          // Diratakan ke bentuk { data, total, last_page, ... } yang dipakai halaman ini.
+          const body = r.data;
+          return Array.isArray(body.data)
+            ? { data: body.data, ...(body.meta ?? {}) }
+            : body.data;
+        }),
     keepPreviousData: true,
   });
 
@@ -318,7 +348,7 @@ export default function MasterKelasWakasek() {
     mutationFn: (id) => api.delete(`/operator/master-data/kelas/${id}`),
     onSuccess: () => {
       toast.success("Data kelas dihapus.");
-      queryClient.invalidateQueries(["wakasek-kelas"]);
+      queryClient.invalidateQueries(["master-kelas"]);
     },
     onError: (err) =>
       toast.error(err.response?.data?.message ?? "Gagal menghapus."),

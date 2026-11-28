@@ -199,7 +199,7 @@ export default function DetailKelasWakasek() {
             <InfoItem
               icon="menu_book"
               label="Kurikulum"
-              value={kelas.kurikulum ?? "-"}
+              value={kelas.kurikulum_ref?.nama ?? kelas.kurikulum ?? "-"}
             />
             <InfoItem
               icon="person"
@@ -476,7 +476,7 @@ export default function DetailKelasWakasek() {
             <div className="space-y-3 text-sm">
               <SistemCard label="Nama Kelas" value={kelas.nama_kelas} />
               <SistemCard label="Tingkat" value={`Kelas ${kelas.tingkat}`} />
-              <SistemCard label="Kurikulum" value={kelas.kurikulum ?? "-"} />
+              <SistemCard label="Kurikulum" value={kelas.kurikulum_ref?.nama ?? kelas.kurikulum ?? "-"} />
               <SistemCard label="Ruangan" value={kelas.ruangan ?? "-"} />
               <SistemCard label="Kapasitas" value={`${kapasitas} Siswa`} />
               <SistemCard

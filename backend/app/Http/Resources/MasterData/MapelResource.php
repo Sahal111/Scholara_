@@ -37,6 +37,11 @@ class MapelResource extends JsonResource
                 ? implode(', ', $tingkatArray)
                 : 'Semua Tingkat',
             'kurikulum' => $this->kurikulum,
+            'kurikulum_ref' => $this->whenLoaded('kurikulumRef', fn() => $this->kurikulumRef ? [
+                'ulid' => $this->kurikulumRef->ulid,
+                'nama' => $this->kurikulumRef->nama,
+                'kode' => $this->kurikulumRef->kode,
+            ] : null),
             'jam_per_minggu' => $this->jam_per_minggu,
             'urutan_rapor' => $this->urutan_rapor,
             'is_active' => $this->is_active,

@@ -211,7 +211,7 @@ export default function DetailKelasPeriodeAkademikWakasek() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-8">
                 <InfoItem label="Tahun Ajaran" value={tahun_ajaran.tahun} />
-                <InfoItem label="Kurikulum" value={kelas.kurikulum ?? "-"} />
+                <InfoItem label="Kurikulum" value={kelas.kurikulum_ref?.nama ?? kelas.kurikulum ?? "-"} />
                 <InfoItem label="Ruangan" value={kelas.ruangan ?? "-"} />
                 <InfoItem
                   label="Wali Kelas"
@@ -352,7 +352,7 @@ export default function DetailKelasPeriodeAkademikWakasek() {
                   <InfoCard label="Nama Kelas" value={kelas.nama_kelas} />
                   <InfoCard label="Tingkat" value={`Kelas ${kelas.tingkat}`} />
                   <InfoCard label="Tahun Ajaran" value={tahun_ajaran.tahun} />
-                  <InfoCard label="Kurikulum" value={kelas.kurikulum ?? "-"} />
+                  <InfoCard label="Kurikulum" value={kelas.kurikulum_ref?.nama ?? kelas.kurikulum ?? "-"} />
                   <InfoCard label="Ruangan" value={kelas.ruangan ?? "-"} />
                   <InfoCard label="Kapasitas" value={`${kapasitas} siswa`} />
                   <InfoCard
@@ -603,7 +603,7 @@ export default function DetailKelasPeriodeAkademikWakasek() {
                 label="Kapasitas"
                 value={`${total_siswa} / ${kapasitas}`}
               />
-              <SummaryRow label="Kurikulum" value={kelas.kurikulum ?? "-"} />
+              <SummaryRow label="Kurikulum" value={kelas.kurikulum_ref?.nama ?? kelas.kurikulum ?? "-"} />
               <SummaryRow
                 label="Tahun Ajaran"
                 value={tahun_ajaran.tahun}

@@ -7,11 +7,8 @@ import {
   useMapelKelompok,
 } from "../../../../hooks/api/useMapel";
 import { useAuth } from "../../../../contexts/AuthContext";
-import {
-  KURIKULUM_OPTIONS,
-  getTingkatByJenjang,
-  getLabelTingkat,
-} from "@/constants/mapel";
+import { getTingkatByJenjang, getLabelTingkat } from "@/constants/mapel";
+import { useKurikulumPilihan } from "@/hooks/api/useKurikulumPilihan";
 
 const emptyForm = {
   kode: "",
@@ -19,7 +16,7 @@ const emptyForm = {
   kelompok: "",
   tingkat: [],
   jam_per_minggu: "2",
-  kurikulum: "Keduanya",
+  kurikulum_ulid: "", // kosong = berlaku untuk semua kurikulum
   is_active: true,
 };
 
@@ -68,7 +65,7 @@ export default function TambahEditMapel({ isOpen, onClose, editData }) {
             kelompok: editData.kelompok ?? "",
             tingkat: parseTingkatFromRaw(editData.tingkat),
             jam_per_minggu: String(editData.jam_per_minggu ?? "2"),
-            kurikulum: editData.kurikulum ?? "Keduanya",
+            kurikulum_ulid: editData.kurikulum_ref?.ulid ?? "",
             is_active: editData.is_active ?? true,
           }
         : emptyForm,
@@ -77,6 +74,7 @@ export default function TambahEditMapel({ isOpen, onClose, editData }) {
 
   const createMapel = useCreateMapel();
   const updateMapel = useUpdateMapel();
+  const { options: kurikulumOpts } = useKurikulumPilihan();
   const isPending = createMapel.isPending || updateMapel.isPending;
   const { data: kelompokTersedia = [] } = useMapelKelompok();
   const q = form.kelompok.trim().toLowerCase();
@@ -102,7 +100,7 @@ export default function TambahEditMapel({ isOpen, onClose, editData }) {
       kelompok: form.kelompok.trim(),
       tingkat: form.tingkat,
       jam_per_minggu: Number(form.jam_per_minggu),
-      kurikulum: form.kurikulum,
+      kurikulum_ulid: form.kurikulum_ulid || null,
       is_active: form.is_active,
     };
 
@@ -284,21 +282,29 @@ export default function TambahEditMapel({ isOpen, onClose, editData }) {
 
           <div>
             <label className="block text-xs font-semibold text-text-secondary mb-1.5 uppercase tracking-wide">
-              Kurikulum <span className="text-red-500">*</span>
+              Khusus Kurikulum
             </label>
             <select
-              value={form.kurikulum}
-              onChange={(e) => set("kurikulum", e.target.value)}
+              value={form.kurikulum_ulid}
+              onChange={(e) => set("kurikulum_ulid", e.target.value)}
               className="w-full px-3 py-2.5 text-sm rounded-xl border border-surface-container
                 bg-surface-container-lowest focus:outline-none focus:ring-2
                 focus:ring-emerald-600/30 focus:border-emerald-700 transition-all"
             >
-              {KURIKULUM_OPTIONS.map((k) => (
-                <option key={k} value={k}>
-                  {k}
+              <option value="">Semua kurikulum</option>
+              {kurikulumOpts.map((k) => (
+                <option key={k.ulid} value={k.ulid}>
+                  {k.label}
                 </option>
               ))}
             </select>
+            {errors.kurikulum_ulid && (
+              <p className="text-xs text-red-500 mt-1">
+                {Array.isArray(errors.kurikulum_ulid)
+                  ? errors.kurikulum_ulid[0]
+                  : errors.kurikulum_ulid}
+              </p>
+            )}
           </div>
         </div>
 

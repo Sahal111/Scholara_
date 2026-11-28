@@ -4,6 +4,7 @@ namespace App\Http\Requests\Mapel;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use App\Services\KurikulumPilihan;
 
 class UpdateMapelRequest extends FormRequest
 {
@@ -50,7 +51,12 @@ class UpdateMapelRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
             'jam_per_minggu' => 'required|integer|min:1|max:40',
-            'kurikulum' => 'required|in:' . implode(',', self::KURIKULUM_VALID),
+            // Jalur lama (string) tetap diterima; jalur baru: kurikulum_ulid (null = berlaku semua kurikulum)
+            'kurikulum' => ['nullable', 'in:' . implode(',', self::KURIKULUM_VALID)],
+            'kurikulum_ulid' => array_merge(
+                $this->filled('kurikulum') ? [] : ['present'],
+                ['nullable', 'string', KurikulumPilihan::rule()]
+            ),
             'is_active' => 'boolean',
         ];
     }
@@ -65,7 +71,8 @@ class UpdateMapelRequest extends FormRequest
             'kelompok.max' => 'Kelompok mata pelajaran maksimal 80 karakter.',
             'kelompok.string' => 'Kelompok mata pelajaran harus berupa teks.',
             'jam_per_minggu.required' => 'Jam per minggu wajib diisi.',
-            'kurikulum.required' => 'Kurikulum wajib dipilih.',
+            'kurikulum_ulid.present' => 'Kurikulum wajib dipilih (kosongkan pilihan untuk berlaku di semua kurikulum).',
+            'kurikulum_ulid.exists' => 'Kurikulum tidak ditemukan atau tidak aktif.',
             'kurikulum.in' => 'Kurikulum tidak valid.',
             'program_pendidikan_id.exists' => 'Program pendidikan tidak ditemukan.',
         ];

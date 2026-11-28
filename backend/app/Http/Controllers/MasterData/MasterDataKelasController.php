@@ -13,6 +13,7 @@ use App\Models\TahunAjaran;
 use App\Services\KurikulumService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\KurikulumPilihan;
 
 class MasterDataKelasController extends Controller
 {
@@ -27,7 +28,7 @@ class MasterDataKelasController extends Controller
         $filterTaId = $request->tahun_ajaran_id ?? $tahunAjaranAktif;
         $perPage = (int) ($request->per_page ?? 10);
 
-        $kelas = Kelas::with(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'programPendidikan:id,ulid,nama,kode'])
+        $kelas = Kelas::with(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'programPendidikan:id,ulid,nama,kode', 'kurikulumRef:id,ulid,nama,kode'])
             ->when($filterTaId, fn($q) => $q->where('tahun_ajaran_id', $filterTaId))
             ->when($request->tingkat, fn($q) => $q->where('tingkat', $request->tingkat))
             ->when($request->semester, fn($q) => $q->whereHas('semester', fn($s) => $s->where('nama', $request->semester)))
@@ -47,7 +48,7 @@ class MasterDataKelasController extends Controller
 
     public function show($id)
     {
-        $kelas = Kelas::with(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'programPendidikan:id,ulid,nama,kode'])->findOrFail($id);
+        $kelas = Kelas::with(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'programPendidikan:id,ulid,nama,kode', 'kurikulumRef:id,ulid,nama,kode'])->findOrFail($id);
 
         $siswaAktif = RiwayatKelas::with('siswa')->where('kelas_id', $id)->aktif()->orderBy('no_absen')->get();
         $siswaKeluar = RiwayatKelas::with('siswa')->where('kelas_id', $id)->whereNotNull('tanggal_keluar')->orderByDesc('tanggal_keluar')->get();
@@ -67,7 +68,9 @@ class MasterDataKelasController extends Controller
             return $this->error('Belum ada Tahun Ajaran aktif. Silakan aktifkan Tahun Ajaran terlebih dahulu.', 'NO_ACTIVE_TAHUN_AJARAN', 422);
         }
 
-        $kurikulumId = $this->kurikulumService->resolveIdDariLegacy($request->kurikulum);
+        $pilihan = KurikulumPilihan::cari($request->kurikulum_ulid);
+        $kurikulumId = $pilihan?->id ?? $this->kurikulumService->resolveIdDariLegacy($request->kurikulum);
+        $kurikulumLegacy = $pilihan ? KurikulumPilihan::legacyKelas($pilihan) : $request->kurikulum;
 
         if ($request->program_pendidikan_id && $kurikulumId) {
             try {
@@ -89,7 +92,7 @@ class MasterDataKelasController extends Controller
             'nama_kelas' => $request->nama_kelas,
             'tingkat' => $request->tingkat,
             'program_pendidikan_id' => $request->program_pendidikan_id,
-            'kurikulum' => $request->kurikulum,
+            'kurikulum' => $kurikulumLegacy,
             'kurikulum_id' => $kurikulumId,
             'wali_kelas_id' => $request->wali_kelas_id,
             'kapasitas' => $request->kapasitas,
@@ -108,10 +111,19 @@ class MasterDataKelasController extends Controller
             ? $request->program_pendidikan_id
             : $kelas->program_pendidikan_id;
 
-        // Hitung ulang hanya jika kurikulum berubah / belum terisi (jangan timpa pilihan custom)
-        $kurikulumId = ($kelas->kurikulum_id === null || $request->kurikulum !== $kelas->kurikulum)
-            ? $this->kurikulumService->resolveIdDariLegacy($request->kurikulum)
-            : $kelas->kurikulum_id;
+        $pilihan = KurikulumPilihan::cari($request->kurikulum_ulid);
+
+        if ($pilihan) {
+            // Jalur baru: kurikulum dipilih langsung dari daftar
+            $kurikulumId = $pilihan->id;
+            $kurikulumLegacy = KurikulumPilihan::legacyKelas($pilihan);
+        } else {
+            // Jalur lama: hitung ulang hanya jika kurikulum berubah / belum terisi (jangan timpa pilihan custom)
+            $kurikulumId = ($kelas->kurikulum_id === null || $request->kurikulum !== $kelas->kurikulum)
+                ? $this->kurikulumService->resolveIdDariLegacy($request->kurikulum)
+                : $kelas->kurikulum_id;
+            $kurikulumLegacy = $request->kurikulum;
+        }
 
         // Cek kompatibilitas hanya jika program/kurikulum BERUBAH, supaya kelas lama
         // yang datanya sudah terlanjur tidak cocok tetap bisa diedit (nama, wali, dll).
@@ -133,7 +145,7 @@ class MasterDataKelasController extends Controller
             'tingkat' => $request->tingkat,
             // program_pendidikan_id boleh di-null-kan (sekolah ubah jenjang kelas)
             'program_pendidikan_id' => $programId,
-            'kurikulum' => $request->kurikulum,
+            'kurikulum' => $kurikulumLegacy,
             'kurikulum_id' => $kurikulumId,
             'wali_kelas_id' => $request->has('wali_kelas_id') ? $request->wali_kelas_id : $kelas->wali_kelas_id,
             'kapasitas' => $request->kapasitas ?? $kelas->kapasitas,
@@ -142,7 +154,7 @@ class MasterDataKelasController extends Controller
         ]);
 
         return $this->success(
-            $kelas->fresh(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'programPendidikan:id,ulid,nama,kode']),
+            $kelas->fresh(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'programPendidikan:id,ulid,nama,kode', 'kurikulumRef:id,ulid,nama,kode']),
             'Kelas berhasil diperbarui.'
         );
     }
@@ -239,7 +251,7 @@ class MasterDataKelasController extends Controller
 
     public function showPeriode($kelasId, $tahunAjaranId)
     {
-        $kelas = Kelas::with(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama'])->findOrFail($kelasId);
+        $kelas = Kelas::with(['wali:id,nama,nuptk', 'tahunAjaran:id,tahun', 'semester:id,nama', 'kurikulumRef:id,ulid,nama,kode'])->findOrFail($kelasId);
         $waliPeriode = \App\Models\UserWaliKelas::with('guru:id,nama,nuptk,foto')->where('kelas_id', $kelasId)->where('tahun_ajaran_id', $tahunAjaranId)->first();
         $tahunAjaran = \App\Models\TahunAjaran::with('semesters')->findOrFail($tahunAjaranId);
         $siswaList = RiwayatKelas::with(['siswa:id,nama_lengkap,nisn,jenis_kelamin,foto', 'semester:id,nama'])->where('kelas_id', $kelasId)->where('tahun_ajaran_id', $tahunAjaranId)->orderBy('no_absen')->get();

@@ -6,6 +6,7 @@ use App\Models\MataPelajaran;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Services\KurikulumPilihan;
 
 /**
  * MapelService — semua business logic mata pelajaran.
@@ -34,7 +35,7 @@ class MapelService
                 isset($filters['is_active']) && $filters['is_active'] !== '',
                 fn($q) => $q->where('is_active', (bool) $filters['is_active'])
             )
-            ->with('programPendidikan')
+            ->with(['programPendidikan', 'kurikulumRef:id,ulid,nama,kode'])
             ->orderBy('kelompok')
             ->orderBy('nama_mapel')
             ->paginate($perPage);
@@ -80,7 +81,7 @@ class MapelService
     public function findByUlid(string $ulid): MataPelajaran
     {
         return MataPelajaran::where('ulid', $ulid)
-            ->with('programPendidikan')
+            ->with(['programPendidikan', 'kurikulumRef:id,ulid,nama,kode'])
             ->firstOrFail();
     }
 
@@ -90,17 +91,21 @@ class MapelService
     public function store(array $validated): MataPelajaran
     {
         return DB::transaction(function () use ($validated) {
-            return MataPelajaran::create([
+            [$kurikulumId, $kurikulumLegacy] = $this->kurikulumDariInput($validated);
+
+            $mapel = MataPelajaran::create([
                 'kode' => strtoupper($validated['kode']),
                 'nama_mapel' => $validated['nama_mapel'],
                 'kelompok' => $this->normalizeKelompok($validated['kelompok']),
                 'tingkat' => $this->parseTingkat($validated['tingkat'] ?? null),
                 'program_pendidikan_id' => $validated['program_pendidikan_id'] ?? null,
                 'jam_per_minggu' => (int) $validated['jam_per_minggu'],
-                'kurikulum' => $validated['kurikulum'],
-                'kurikulum_id' => $this->resolveKurikulumId($validated['kurikulum']),
+                'kurikulum' => $kurikulumLegacy,
+                'kurikulum_id' => $kurikulumId,
                 'is_active' => true,
             ]);
+
+            return $mapel->load('kurikulumRef:id,ulid,nama,kode');
         });
     }
 
@@ -110,6 +115,8 @@ class MapelService
     public function update(MataPelajaran $mapel, array $validated, ?bool $isActive = null): MataPelajaran
     {
         return DB::transaction(function () use ($mapel, $validated, $isActive) {
+            [$kurikulumId, $kurikulumLegacy] = $this->kurikulumDariInput($validated);
+
             $mapel->update([
                 'kode' => strtoupper($validated['kode']),
                 'nama_mapel' => $validated['nama_mapel'],
@@ -119,15 +126,33 @@ class MapelService
                     ? $validated['program_pendidikan_id']
                     : $mapel->program_pendidikan_id,
                 'jam_per_minggu' => (int) $validated['jam_per_minggu'],
-                'kurikulum' => $validated['kurikulum'],
-                'kurikulum_id' => $this->resolveKurikulumId($validated['kurikulum']),
+                'kurikulum' => $kurikulumLegacy,
+                'kurikulum_id' => $kurikulumId,
                 'is_active' => $isActive ?? $mapel->is_active,
             ]);
 
-            return $mapel->fresh('programPendidikan');
+            return $mapel->fresh(['programPendidikan', 'kurikulumRef:id,ulid,nama,kode']);
         });
     }
 
+    /**
+     * Tentukan [kurikulum_id, nilai legacy] dari input.
+     * - ada key kurikulum_ulid  → jalur baru (null = berlaku semua kurikulum)
+     * - tidak ada               → jalur lama (string)
+     */
+    private function kurikulumDariInput(array $validated): array
+    {
+        if (array_key_exists('kurikulum_ulid', $validated)) {
+            $k = KurikulumPilihan::cari($validated['kurikulum_ulid']);
+
+            return [$k?->id, KurikulumPilihan::legacyMapel($k)];
+        }
+
+        return [
+            $this->resolveKurikulumId($validated['kurikulum'] ?? null),
+            $validated['kurikulum'] ?? null,
+        ];
+    }
     /**
      * Toggle status aktif.
      */

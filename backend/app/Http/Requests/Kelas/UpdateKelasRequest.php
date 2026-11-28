@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
+use App\Services\KurikulumPilihan;
 
 class UpdateKelasRequest extends FormRequest
 {
@@ -44,6 +45,8 @@ class UpdateKelasRequest extends FormRequest
                     ->whereNull('deleted_at'),
             ],
             'kurikulum' => 'required|string|max:50',
+            'kurikulum' => ['required_without:kurikulum_ulid', 'nullable', 'in:K13,Merdeka,Keduanya'],
+            'kurikulum_ulid' => ['required_without:kurikulum', 'nullable', 'string', KurikulumPilihan::rule()],
             'wali_kelas_id' => [
                 'nullable',
                 'integer',

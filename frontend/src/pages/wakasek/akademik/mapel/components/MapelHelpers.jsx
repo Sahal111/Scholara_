@@ -30,27 +30,46 @@ export function renderTingkat(tingkat) {
 }
 
 /* ── Helper render kurikulum ───────────────────────────────── */
-export function renderKurikulum(kurikulum) {
-  if (kurikulum === "Keduanya")
+export function renderKurikulum(mapel) {
+  const ref = mapel?.kurikulum_ref;
+  const legacy = mapel?.kurikulum;
+
+  // Nama & kode dari relasi; data lama tanpa relasi memakai nilai string lama
+  let label = null;
+  let kode = null;
+  if (ref) {
+    label = ref.nama;
+    kode = ref.kode;
+  } else if (legacy === "Kurikulum 2013") {
+    label = "K2013";
+    kode = "K13";
+  } else if (legacy === "Kurikulum Merdeka") {
+    label = "Merdeka";
+    kode = "MERDEKA";
+  }
+
+  // Tanpa kurikulum khusus = berlaku untuk semua kurikulum
+  if (!label) {
     return (
-      <div className="flex flex-wrap gap-1">
-        <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap">
-          K2013
-        </span>
-        <span className="text-[11px] font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap">
-          Merdeka
-        </span>
-      </div>
-    );
-  if (kurikulum === "Kurikulum 2013")
-    return (
-      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200 whitespace-nowrap">
-        K2013
+      <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 whitespace-nowrap">
+        Semua kurikulum
       </span>
     );
+  }
+
+  const warna =
+    kode === "K13"
+      ? "bg-amber-100 text-amber-800 border-amber-200"
+      : kode === "MERDEKA"
+        ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+        : "bg-violet-100 text-violet-800 border-violet-200";
+
   return (
-    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 whitespace-nowrap">
-      Merdeka
+    <span
+      title={label}
+      className={`inline-block max-w-[170px] truncate align-middle text-[11px] font-bold px-2.5 py-1 rounded-full border ${warna}`}
+    > 
+      {label}
     </span>
   );
 }

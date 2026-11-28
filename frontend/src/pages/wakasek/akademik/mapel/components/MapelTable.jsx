@@ -189,7 +189,7 @@ export default function MapelTable({
                     </span>
                   </td>
 
-                  <td className="py-4 px-5">{renderKurikulum(m.kurikulum)}</td>
+                  <td className="py-4 px-5">{renderKurikulum(m)}</td>
 
                   <td className="py-4 px-5">
                     <div className="flex flex-wrap gap-1">
@@ -198,7 +198,9 @@ export default function MapelTable({
                   </td>
 
                   <td className="py-4 px-5 text-center">
-                    <span className="font-semibold text-gray-900">{m.jam_per_minggu}</span>
+                    <span className="font-semibold text-gray-900">
+                      {m.jam_per_minggu}
+                    </span>
                     <span className="text-gray-400 text-xs"> jam</span>
                   </td>
 
